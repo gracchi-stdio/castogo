@@ -1,0 +1,74 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/gosimple/slug"
+	"github.com/gracchi-stdio/podlog/internal/domain"
+	"github.com/gracchi-stdio/podlog/internal/repository"
+)
+
+type EpisodeService struct {
+	repo repository.EpisodeRepository
+}
+
+func NewEpisodeService(repo repository.EpisodeRepository) *EpisodeService {
+	return &EpisodeService{repo: repo}
+}
+
+func (s *EpisodeService) Create(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
+	if ep.Slug == "" {
+		ep.Slug = slug.Make(ep.Title)
+	}
+
+	created, err := s.repo.Create(ctx, ep)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique") {
+			return nil, domain.ErrDuplicateSlug
+		}
+		return nil, fmt.Errorf("create episode: %w", err)
+	}
+
+	return created, nil
+}
+
+func (s *EpisodeService) GetByID(ctx context.Context, id int64) (*domain.Episode, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *EpisodeService) GetBySlug(ctx context.Context, slug string) (*domain.Episode, error) {
+	return s.repo.GetBySlug(ctx, slug)
+}
+
+func (s *EpisodeService) List(ctx context.Context, filter repository.EpisodeFilter) ([]*domain.Episode, error) {
+	if filter.Limit <= 0 {
+		filter.Limit = 20
+	}
+	if filter.Limit > 100 {
+		filter.Limit = 100
+	}
+
+	return s.repo.List(ctx, filter)
+}
+
+func (s *EpisodeService) Update(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
+	return s.repo.Update(ctx, ep)
+}
+
+func (s *EpisodeService) Delete(ctx context.Context, id int64) error {
+	return s.repo.Delete(ctx, id)
+}
+
+func (s *EpisodeService) CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error) {
+	return s.repo.CountByStatus(ctx, status)
+}
+
+func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+
+	return s.repo.ListPublished(ctx, limit, offset)
+}

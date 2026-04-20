@@ -1,0 +1,46 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:${PORT:-8080}"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./static:/app/static
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=podlog
+      - POSTGRES_PASSWORD=podlog
+      - POSTGRES_DB=podlog
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U podlog"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: postgres:17-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./sql/migrations:/migrations
+    entrypoint: >
+      sh -c "
+        for f in /migrations/*.sql; do
+          echo Running $$f ...;
+          PGPASSWORD=podlog psql -h db -U podlog -d podlog -f $$f;
+        done
+      "
+
+volumes:
+  pgdata:

@@ -1,0 +1,27 @@
+# Build
+bin/
+*.exe
+
+# Generated code (regenerated via make generate)
+internal/db/
+
+# templ generated (regenerated via make generate)
+internal/view/**/*_templ.go
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+pgdata/
+
+# Air temp files
+tmp/
