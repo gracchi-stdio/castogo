@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/gracchi-stdio/podlog/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/domain"
 )
 
 //	Note: [16]byte for UUID — uuid.UUID is just a [16]byte

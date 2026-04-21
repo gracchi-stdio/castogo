@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/gracchi-stdio/podlog/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/domain"
 )
 
 type EpisodeFilter struct {

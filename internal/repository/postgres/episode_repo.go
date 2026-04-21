@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gracchi-stdio/podlog/internal/db"
-	"github.com/gracchi-stdio/podlog/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

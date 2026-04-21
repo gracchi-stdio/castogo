@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gracchi-stdio/podlog/internal/domain"
-	"github.com/gracchi-stdio/podlog/internal/repository"
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,7 +25,7 @@ func (s *AuthService) VerifyCredentials(ctx context.Context, email, password str
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(bytes)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return nil, fmt.Errorf("invalid credentials")
 	}
 

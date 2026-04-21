@@ -1,6 +1,6 @@
 # Podlog
 
-Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with draft/scheduled/published/archived workflow), users, and auto-generates RSS feeds compliant with Apple/Spotify/Google namespaces. Module: `github.com/gracchi-stdio/podlog`
+Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with draft/scheduled/published/archived workflow), users, and auto-generates RSS feeds compliant with Apple/Spotify/Google namespaces. Module: `github.com/gracchi-stdio/castogo`
 
 ## Tech Stack
 
@@ -78,4 +78,4 @@ Keep mutable admin model separate from read-only feed model. Test the serializat
 
 - `docs/gofiber-v3-reference.md` — full API reference (routing, middleware, request/response, errors)
 - `docs/gofiber-v3-sessions.md` — session middleware (config, storage, security, login/logout)
-- `docs/gofiber-v3-examples.go` — working code patterns (10 examples)
+- `docs/gofiber-v3-examples.md` — working code patterns (10 examples)

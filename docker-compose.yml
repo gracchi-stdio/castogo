@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - "8080:${PORT:-8080}"
+    environment:
+      - DATABASE_URL=postgres://podlog:podlog@db:5432/podlog?sslmode=disable
     env_file:
       - .env
     depends_on:

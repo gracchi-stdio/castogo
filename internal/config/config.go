@@ -1,6 +1,9 @@
 package config
 
-import "github.com/caarlos0/env/v11"
+import (
+	"github.com/caarlos0/env/v11"
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
 	DatabaseURL   string `env:"DATABASE_URL" envDefault:"postgres://user:password@localhost:5432/mydb?sslmode=disable"`
@@ -14,6 +17,9 @@ type Config struct {
 var Cfg Config
 
 func LoadConfig() error {
+	// Load .env file if it exists (local dev). Docker sets env vars directly.
+	godotenv.Load()
+
 	err := env.Parse(&Cfg)
 	if err != nil {
 		return err

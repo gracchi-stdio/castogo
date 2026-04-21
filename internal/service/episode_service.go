@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gosimple/slug"
-	"github.com/gracchi-stdio/podlog/internal/domain"
-	"github.com/gracchi-stdio/podlog/internal/repository"
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/repository"
 )
 
 type EpisodeService struct {

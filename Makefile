@@ -4,10 +4,10 @@ dev: generate
 	go run ./cmd/server
 
 build: generate
-	go build -o bin/podlog ./cmd/server
+	go build -o bin/castogo ./cmd/server
 
 run: build
-	./bin/podlog
+	./bin/castogo
 
 test:
 	go test -v ./... -count=1
