@@ -1,6 +1,7 @@
 package view
 
 templ RegisterPage() {
+  @BaseLayout() {
     <h1>Register</h1>
     <form method="POST" action="/auth/register">
       <input type="email" name="email" required />
@@ -8,3 +9,4 @@ templ RegisterPage() {
       <button type="submit">Register</button>
     </form>
   }
+}

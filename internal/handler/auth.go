@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view"
 )
@@ -18,7 +19,9 @@ func NewAuthHandler(auth *service.AuthService) *AuthHandler {
 }
 
 func (h *AuthHandler) RegisterRoutes(app *fiber.App) {
-	app.Get("/register", templ.Handler(view.RegisterPage()))
+	if config.Cfg.RegistrationEnabled {
+		app.Get("/register", templ.Handler(view.RegisterPage()))
+	}
 }
 
 func (h *AuthHandler) Login(c fiber.Ctx) error {

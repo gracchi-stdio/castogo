@@ -22,7 +22,7 @@ internal/handler/            — HTTP handlers + route registration
 internal/view/               — Templ templates (*_templ.go generated, gitignored)
 sql/migrations/              — numbered: 001_, 002_, 003_
 sql/queries/                 — sqlc query source of truth
-static/                      — CSS, JS, Datastar runtime
+static/                      — placeholder (actual static dir is public/)
 ```
 
 ## GoFiber v3 Rules
@@ -67,6 +67,13 @@ Defined in `internal/domain/errors.go`:
 
 Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postgres.
 
+## Shoelace Components
+
+- Shoelace is the UI component library, loaded via CDN in `base_layout.templ`
+- Always prefer Shoelace components over native HTML elements (e.g., `<sl-select>` not `<select>`, `<sl-button>` not `<button>`)
+- Shoelace web components fire custom events (e.g., `sl-change` not `change`) — Datastar's `data-bind` does NOT work with web components out of the box; use `data-on:sl-change` with manual signal wiring
+- Static assets served from `public/` directory via Fiber's static middleware (registered LAST in route order)
+
 ## RSS Feed Architecture (future)
 
 When we build the RSS feed layer, use a 3-layer design:
@@ -76,8 +83,19 @@ When we build the RSS feed layer, use a 3-layer design:
 
 Keep mutable admin model separate from read-only feed model. Test the serialization boundary with golden XML fixtures.
 
+## Datastar + Templ Rules
+
+- Signal values are JS expressions — strings must be quoted: `data-signals:status="'all'"` not `"all"`
+- Shoelace web components need manual signal wiring: `data-on:sl-change="$signal = el.value"` (not `data-bind`)
+- Use Fiber's `adaptor.HTTPHandlerFunc` for Datastar SSE handlers (not manual fasthttp bridge)
+- Backend is source of truth — signals are for user input and temp UI state only
+- Keep element IDs stable across SSE swaps for morphing and CSS transitions
+- Expressions use `$` prefix for signals: `$count++`, `$name.toUpperCase()`
+- Full Datastar reference: `docs/datastar-reference.md`
+
 ## Reference Docs
 
+- `docs/datastar-reference.md` — Datastar SDK, attributes, expressions, patching, animations
 - `docs/gofiber-v3-reference.md` — full API reference (routing, middleware, request/response, errors)
 - `docs/gofiber-v3-sessions.md` — session middleware (config, storage, security, login/logout)
 - `docs/gofiber-v3-examples.md` — working code patterns (10 examples)

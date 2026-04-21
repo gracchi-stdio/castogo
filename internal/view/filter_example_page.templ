@@ -1,0 +1,18 @@
+package view
+
+templ FilterPage() {
+    @BaseLayout() {
+        <main>
+            <h1>Episode Filter</h1>
+            <div data-signals:status="'all'" data-init="@get('/filter/items')">
+                <sl-select label="Filter by status" value="all" data-on:sl-change="$status = el.value; @get('/filter/items')">
+                    <sl-option value="all">All</sl-option>
+                    <sl-option value="draft">Draft</sl-option>
+                    <sl-option value="published">Published</sl-option>
+                    <sl-option value="archived">Archived</sl-option>
+                </sl-select>
+                <div id="list">Loading...</div>
+            </div>
+        </main>
+    }
+}

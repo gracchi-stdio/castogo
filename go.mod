@@ -3,6 +3,7 @@ module github.com/gracchi-stdio/castogo
 go 1.26.2
 
 require (
+	github.com/a-h/templ v0.3.1001
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/gofiber/fiber/v3 v3.1.0
 	github.com/gofiber/storage/postgres/v3 v3.4.0
@@ -10,11 +11,12 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
+	github.com/starfederation/datastar-go v1.2.1
 	golang.org/x/crypto v0.50.0
 )
 
 require (
-	github.com/a-h/templ v0.3.1001 // indirect
+	github.com/CAFxX/httpcompression v0.0.9 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/gofiber/schema v1.7.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.2 // indirect

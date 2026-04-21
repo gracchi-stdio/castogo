@@ -1,0 +1,32 @@
+/* Podlog — custom styles layered on Shoelace */
+
+/* View Transitions — slide old list out, new list in */
+::view-transition-old(#list) {
+    animation: slide-out-left 0.2s ease forwards;
+}
+
+::view-transition-new(#list) {
+    animation: slide-in-right 0.2s ease forwards;
+}
+
+@keyframes slide-out-left {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

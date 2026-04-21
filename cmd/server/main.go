@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/session"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	fiberPostgres "github.com/gofiber/storage/postgres/v3"
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/handler"
@@ -42,11 +43,16 @@ func main() {
 	}))
 
 	// Register handlers and services
-
 	userRepo := postgres.NewUserRepo(db)
 	authService := service.NewAuthService(userRepo)
 	authHandler := handler.NewAuthHandler(authService)
 	authHandler.RegisterRoutes(app)
+
+	clockHandler := handler.NewClockHandler()
+	clockHandler.RegisterRoutes(app)
+
+	filterHandler := handler.NewFilterHandler()
+	filterHandler.RegisterRoutes(app)
 
 	app.Get("/healthcheck", func(c fiber.Ctx) error {
 		if err := db.Ping(c.Context()); err != nil {
@@ -59,6 +65,9 @@ func main() {
 		}
 		return c.JSON(fiber.Map{"db": "ok"})
 	})
+
+	// Static files — must be registered LAST so it doesn't swallow routes
+	app.Use("/*", static.New("./public"))
 
 	log.Printf("starting Castogo on: %s (%s)", config.Cfg.Port, config.Cfg.Env)
 
