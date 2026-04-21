@@ -5,7 +5,7 @@ Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with d
 ## Tech Stack
 
 - Go 1.26.2, GoFiber v3.1.0, PostgreSQL 17, sqlc, pgx/v5
-- Frontend: Shoelace (CDN), Datastar (runtime from `static/`)
+- Frontend: Shoelace (CDN), Datastar (runtime from `static/`), Templ (type-safe HTML templates)
 - Config: `github.com/caarlos0/env/v11` — global `config.Cfg`, `config.Cfg.IsDev`
 - No Node.js toolchain, no build step for frontend
 
@@ -18,6 +18,8 @@ internal/db/                 — sqlc generated (gitignored, run `make generate`
 internal/domain/             — domain types + errors
 internal/repository/         — interfaces + postgres implementations
 internal/service/             — business logic
+internal/handler/            — HTTP handlers + route registration
+internal/view/               — Templ templates (*_templ.go generated, gitignored)
 sql/migrations/              — numbered: 001_, 002_, 003_
 sql/queries/                 — sqlc query source of truth
 static/                      — CSS, JS, Datastar runtime

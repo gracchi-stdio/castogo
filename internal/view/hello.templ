@@ -1,0 +1,10 @@
+package view
+
+templ RegisterPage() {
+    <h1>Register</h1>
+    <form method="POST" action="/auth/register">
+      <input type="email" name="email" required />
+      <input type="password" name="password" required />
+      <button type="submit">Register</button>
+    </form>
+  }

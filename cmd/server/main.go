@@ -10,7 +10,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/session"
 	fiberPostgres "github.com/gofiber/storage/postgres/v3"
 	"github.com/gracchi-stdio/castogo/internal/config"
+	"github.com/gracchi-stdio/castogo/internal/handler"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
+	"github.com/gracchi-stdio/castogo/internal/service"
 )
 
 func main() {
@@ -23,8 +25,7 @@ func main() {
 		AppName: "Castogo",
 	})
 
- log.Print(config.Cfg.DatabaseURL)
-	app.Use(logger.New())	
+	app.Use(logger.New())
 	app.Use(recoverer.New())
 
 	db, err := postgres.NewPool(context.Background(), config.Cfg.DatabaseURL)
@@ -40,24 +41,24 @@ func main() {
 		Storage: pgStorage,
 	}))
 
+	// Register handlers and services
 
+	userRepo := postgres.NewUserRepo(db)
+	authService := service.NewAuthService(userRepo)
+	authHandler := handler.NewAuthHandler(authService)
+	authHandler.RegisterRoutes(app)
 
-	app.Get("/", func(c fiber.Ctx) error {
-		return c.SendString("Ok")
+	app.Get("/healthcheck", func(c fiber.Ctx) error {
+		if err := db.Ping(c.Context()); err != nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(
+				fiber.Map{
+					"status": "unhealthy",
+					"error":  err.Error(),
+				},
+			)
+		}
+		return c.JSON(fiber.Map{"db": "ok"})
 	})
-
-app.Get("/healthcheck", func (c fiber.Ctx) error {
- if err := db.Ping(c.Context()); err != nil {
-		return c.Status(fiber.StatusServiceUnavailable).JSON(
-			fiber.Map{
-				"status": "unhealthy",
-				"error":  err.Error(),
-			},
-		)
- }
- return c.JSON(fiber.Map{"db": "ok"})
-})
-
 
 	log.Printf("starting Castogo on: %s (%s)", config.Cfg.Port, config.Cfg.Env)
 

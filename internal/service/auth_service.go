@@ -39,3 +39,17 @@ func (s *AuthService) HashPassword(password string) (string, error) {
 	}
 	return string(hash), nil
 }
+
+func (s *AuthService) Register(ctx context.Context, email, password string) (*domain.User, error) {
+	hashedPassword, err := s.HashPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("register user: %w", err)
+	}
+
+	return s.userRepo.Create(ctx,
+		&domain.User{
+			Email:        email,
+			PasswordHash: hashedPassword,
+		},
+	)
+}
