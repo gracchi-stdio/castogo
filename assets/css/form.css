@@ -1,0 +1,35 @@
+/* Form field groups */
+.field-group {
+  margin-bottom: 1rem;
+}
+
+/* Invalid field — red border + label via ::part() into Shoelace shadow DOM */
+.field-invalid sl-input::part(base) {
+  border-color: var(--sl-color-danger-600);
+}
+
+.field-invalid sl-input::part(form-control-label) {
+  color: var(--sl-color-danger-700);
+}
+
+.field-invalid sl-input:focus-within::part(base) {
+  border-color: var(--sl-color-danger-600);
+  box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-300);
+}
+
+/* Inline error text */
+.field-error {
+  font-size: var(--sl-input-help-text-font-size-medium);
+  color: var(--sl-color-danger-700);
+  margin: 0.25rem 0 0 0;
+}
+
+/* General error box */
+.error-box {
+  color: var(--sl-color-danger-800);
+  background: color-mix(in srgb, var(--sl-color-danger-600) 15%, transparent);
+  border-color: var(--sl-color-danger-600);
+  padding: 0.75rem;
+  border-radius: var(--sl-border-radius-medium);
+  margin: 1rem 0;
+}

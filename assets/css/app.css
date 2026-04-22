@@ -1,89 +1,41 @@
 @import "./base.css";
 
-/* Login page — centered card */
-.login-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-}
+/* Form styles */
+@import "./form.css";
 
-.login-card {
-    width: 100%;
-    max-width: 400px;
-}
+/* pages */
+@import "./login.css";
 
-.login-card [slot="header"] {
-    text-align: center;
-}
-
-.login-card h1 {
-    margin: 0;
-    font-size: var(--sl-font-size-2x-large);
-}
-
-/* Form field groups */
-.field-group {
-    margin-bottom: 1rem;
-}
-
-/* Invalid field — red border + label via ::part() into Shoelace shadow DOM */
-.field-invalid sl-input::part(base) {
-    border-color: var(--sl-color-danger-600);
-}
-
-.field-invalid sl-input::part(form-control-label) {
-    color: var(--sl-color-danger-700);
-}
-
-.field-invalid sl-input:focus-within::part(base) {
-    border-color: var(--sl-color-danger-600);
-    box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-300);
-}
-
-/* Inline error text */
-.field-error {
-    font-size: var(--sl-input-help-text-font-size-medium);
-    color: var(--sl-color-danger-700);
-    margin: 0.25rem 0 0 0;
-}
-
-/* General error box */
-.error-box {
-    color: var(--sl-color-danger-700);
-    background: var(--sl-color-danger-100);
-    padding: 0.75rem;
-    border-radius: var(--sl-border-radius-medium);
-    margin-top: 1rem;
-}
+/* admin */
+@import "./admin.css";
 
 /* View Transitions — slide old list out, new list in */
 ::view-transition-old(#list) {
-    animation: slide-out-left 0.2s ease forwards;
+  animation: slide-out-left 0.2s ease forwards;
 }
 
 ::view-transition-new(#list) {
-    animation: slide-in-right 0.2s ease forwards;
+  animation: slide-in-right 0.2s ease forwards;
 }
 
 @keyframes slide-out-left {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(-30px);
-    }
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
 }
 
 @keyframes slide-in-right {
-    from {
-        opacity: 0;
-        transform: translateX(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

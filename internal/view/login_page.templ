@@ -5,6 +5,8 @@ import "github.com/gracchi-stdio/castogo/internal/config"
 templ LoginPage() {
     @BaseLayout() {
         <main class="login-page">
+            <div data-show="$error != ''" data-text="$error" class="error-box"></div>
+        
             <sl-card class="login-card">
                 <div slot="header">
                     <h1>{ config.Cfg.AppName }</h1>
@@ -26,7 +28,6 @@ templ LoginPage() {
                         data-on:click="@post('/login')">
                         Sign In
                     </sl-button>
-                    <div data-show="$error != ''" data-text="$error" class="error-box"></div>
                 </div>
             </sl-card>
         </main>

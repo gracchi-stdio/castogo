@@ -1,0 +1,22 @@
+/* Login page — centered card */
+.login-page {
+  display: grid;
+  place-content: center;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-card {
+  width: 100%;
+  min-width: 400px;
+}
+
+.login-card [slot="header"] {
+  text-align: center;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: var(--sl-font-size-2x-large);
+}

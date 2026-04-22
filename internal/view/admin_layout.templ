@@ -1,0 +1,61 @@
+package view
+
+import "github.com/gracchi-stdio/castogo/internal/config"
+
+templ SidebarNav() {
+	<nav class="sidebar-nav">
+		<a href="/admin" class="nav-item">
+			<sl-icon name="grid"></sl-icon>
+			Dashboard
+		</a>
+		<a href="/admin/episodes" class="nav-item">
+			<sl-icon name="headphones"></sl-icon>
+			Episodes
+		</a>
+		<sl-divider></sl-divider>
+		<a href="/admin/settings" class="nav-item">
+			<sl-icon name="gear"></sl-icon>
+			Settings
+		</a>
+	</nav>
+}
+
+templ AdminLayout(title string, actions templ.Component) {
+	@BaseLayout() {
+		<!-- Mobile drawer sidebar -->
+		<sl-drawer id="admin-drawer" class="admin-drawer" placement="start" label={ config.Cfg.AppName }>
+			@SidebarNav()
+		</sl-drawer>
+
+		<!-- Admin layout container -->
+		<div class="admin-layout">
+			<!-- Desktop sidebar (hidden on mobile via CSS) -->
+			<aside class="admin-sidebar">
+				<div class="sidebar-header">
+					<span class="sidebar-brand">{ config.Cfg.AppName }</span>
+					<img src="/logo.svg" alt="Logo" class="sidebar-logo">
+				</div>
+				@SidebarNav()
+			</aside>
+
+			<!-- Main area -->
+			<div class="admin-main">
+				<header class="admin-topbar">
+					<sl-icon-button class="admin-hamburger" name="list" label="Menu"
+						data-on:click="document.getElementById('admin-drawer').show()">
+					</sl-icon-button>
+					<h2 class="topbar-title">{ title }</h2>
+					<div class="topbar-actions">
+						if actions != nil {
+							@actions
+						}
+						<sl-avatar initials="A" label="User" style="--size: 2rem"></sl-avatar>
+					</div>
+				</header>
+				<main class="admin-content">
+					{ children... }
+				</main>
+			</div>
+		</div>
+	}
+}

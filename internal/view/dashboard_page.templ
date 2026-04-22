@@ -1,0 +1,43 @@
+package view
+
+templ DashboardPage() {
+	@AdminLayout("Dashboard", dashboardActions()) {
+		<div class="stat-grid">
+			<sl-card class="stat-card">
+				<div class="stat-icon"><sl-icon name="headphones" style="font-size: 1.5rem"></sl-icon></div>
+				<div class="stat-info">
+					<span class="stat-value">0</span>
+					<span class="stat-label">Total Episodes</span>
+				</div>
+			</sl-card>
+			<sl-card class="stat-card">
+				<div class="stat-icon"><sl-icon name="send" style="font-size: 1.5rem"></sl-icon></div>
+				<div class="stat-info">
+					<span class="stat-value">0</span>
+					<span class="stat-label">Published</span>
+				</div>
+			</sl-card>
+			<sl-card class="stat-card">
+				<div class="stat-icon"><sl-icon name="pencil" style="font-size: 1.5rem"></sl-icon></div>
+				<div class="stat-info">
+					<span class="stat-value">0</span>
+					<span class="stat-label">Drafts</span>
+				</div>
+			</sl-card>
+			<sl-card class="stat-card">
+				<div class="stat-icon"><sl-icon name="clock" style="font-size: 1.5rem"></sl-icon></div>
+				<div class="stat-info">
+					<span class="stat-value">0</span>
+					<span class="stat-label">Scheduled</span>
+				</div>
+			</sl-card>
+		</div>
+	}
+}
+
+templ dashboardActions() {
+	<sl-button variant="default" size="small">
+		<sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
+		View Public Site
+	</sl-button>
+}

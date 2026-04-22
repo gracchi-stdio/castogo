@@ -5,7 +5,7 @@ Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with d
 ## Tech Stack
 
 - Go 1.26.2, GoFiber v3.1.0, PostgreSQL 17, sqlc, pgx/v5
-- Frontend: Shoelace (CDN), Datastar (runtime from `static/`), Templ (type-safe HTML templates)
+- Frontend: Shoelace (CDN), Datastar (runtime), Templ (type-safe HTML templates)
 - Config: `github.com/caarlos0/env/v11` — global `config.Cfg`, `config.Cfg.IsDev`
 - No Node.js toolchain, no build step for frontend
 
@@ -22,7 +22,10 @@ internal/handler/            — HTTP handlers + route registration
 internal/view/               — Templ templates (*_templ.go generated, gitignored)
 sql/migrations/              — numbered: 001_, 002_, 003_
 sql/queries/                 — sqlc query source of truth
-static/                      — placeholder (actual static dir is public/)
+assets/css/                  — CSS source files (base.css, form.css, login.css, etc.)
+  └─ app.css                 — @import all partials (entry point for build)
+public/css/app.css           — compiled/bundled output (served to browser)
+public/js/app.js             — client-side JS
 ```
 
 ## GoFiber v3 Rules
@@ -70,9 +73,19 @@ Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postg
 ## Shoelace Components
 
 - Shoelace is the UI component library, loaded via CDN in `base_layout.templ`
-- Always prefer Shoelace components over native HTML elements (e.g., `<sl-select>` not `<select>`, `<sl-button>` not `<button>`)
+- Always prefer Shoelace components over native HTML elements (e.g., `<sl-select>` not `<select>`, `<sl-button>` not `<button>`, `<sl-drawer>` for slide-in panels)
 - Shoelace web components fire custom events (e.g., `sl-change` not `change`) — Datastar's `data-bind` does NOT work with web components out of the box; use `data-on:sl-change` with manual signal wiring
+- `<sl-menu>` is for system menus (dropdowns, context menus). For navigation sidebars, use `<nav>` + `<a>` elements with `<sl-icon>` for icons
+- Use `<sl-drawer>` for mobile slide-in navigation (handles overlay, escape key, backdrop click)
 - Static assets served from `public/` directory via Fiber's static middleware (registered LAST in route order)
+
+## CSS Architecture
+
+- Source files live in `assets/css/` — each concern gets its own file (base.css, form.css, login.css, admin.css)
+- `assets/css/app.css` uses `@import` to combine all partials
+- Compiled output goes to `public/css/app.css` (what the browser loads)
+- Only Shoelace CSS custom properties for colors, spacing, borders — no hardcoded values
+- Mobile-first responsive: base styles for small screens, `@media (min-width: 768px)` for larger viewports
 
 ## RSS Feed Architecture (future)
 
@@ -100,3 +113,4 @@ Keep mutable admin model separate from read-only feed model. Test the serializat
 - `docs/gofiber-v3-reference.md` — full API reference (routing, middleware, request/response, errors)
 - `docs/gofiber-v3-sessions.md` — session middleware (config, storage, security, login/logout)
 - `docs/gofiber-v3-examples.md` — working code patterns (10 examples)
+- `docs/shoelace-drawer-menu-details.md` — Drawer, Menu, Menu Item, Details component reference
