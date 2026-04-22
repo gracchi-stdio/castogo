@@ -25,3 +25,6 @@ pgdata/
 
 # Air temp files
 tmp/
+
+# build artifacts
+scripts/

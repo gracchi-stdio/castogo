@@ -1,0 +1,34 @@
+package view
+
+import "github.com/gracchi-stdio/castogo/internal/config"
+
+templ LoginPage() {
+    @BaseLayout() {
+        <main class="login-page">
+            <sl-card class="login-card">
+                <div slot="header">
+                    <h1>{ config.Cfg.AppName }</h1>
+                </div>
+                <div data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
+                    <div class="field-group" data-class:field-invalid="$email_error != ''">
+                        <sl-input label="Email" type="email"
+                            data-on:sl-input="$email = el.value; $email_error = ''">
+                        </sl-input>
+                        <p data-show="$email_error != ''" data-text="$email_error" class="field-error"></p>
+                    </div>
+                    <div class="field-group" data-class:field-invalid="$password_error != ''">
+                        <sl-input label="Password" type="password" password-toggle
+                            data-on:sl-input="$password = el.value; $password_error = ''">
+                        </sl-input>
+                        <p data-show="$password_error != ''" data-text="$password_error" class="field-error"></p>
+                    </div>
+                    <sl-button variant="primary" style="width: 100%"
+                        data-on:click="@post('/login')">
+                        Sign In
+                    </sl-button>
+                    <div data-show="$error != ''" data-text="$error" class="error-box"></div>
+                </div>
+            </sl-card>
+        </main>
+    }
+}

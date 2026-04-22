@@ -12,7 +12,8 @@ type Config struct {
 	Env                 string `env:"ENV" envDefault:"development"`
 	SiteURL             string `env:"SITE_URL" envDefault:"http://localhost:8080"`
 	IsDev               bool
-	RegistrationEnabled bool `env:"REGISTRATION_ENABLED" envDefault:"false"`
+	AppName             string `env:"APP_NAME" envDefault:"Castogo"`
+	RegistrationEnabled bool   `env:"REGISTRATION_ENABLED" envDefault:"false"`
 }
 
 var Cfg Config

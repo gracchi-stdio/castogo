@@ -96,6 +96,7 @@ Keep mutable admin model separate from read-only feed model. Test the serializat
 ## Reference Docs
 
 - `docs/datastar-reference.md` — Datastar SDK, attributes, expressions, patching, animations
+- `docs/open-props-reference.md` — Open Props design tokens, colors, spacing, typography, Shoelace integration
 - `docs/gofiber-v3-reference.md` — full API reference (routing, middleware, request/response, errors)
 - `docs/gofiber-v3-sessions.md` — session middleware (config, storage, security, login/logout)
 - `docs/gofiber-v3-examples.md` — working code patterns (10 examples)

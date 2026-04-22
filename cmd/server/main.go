@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
@@ -16,6 +17,15 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/service"
 )
 
+type structValidator struct {
+	validate *validator.Validate
+}
+
+// Validator needs to implement the Validate method
+func (v *structValidator) Validate(out any) error {
+	return v.validate.Struct(out)
+}
+
 func main() {
 	err := config.LoadConfig()
 	if err != nil {
@@ -23,7 +33,8 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		AppName: "Castogo",
+		StructValidator: &structValidator{validate: validator.New()},
+		AppName:         "Castogo",
 	})
 
 	app.Use(logger.New())
