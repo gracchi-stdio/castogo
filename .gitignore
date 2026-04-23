@@ -28,3 +28,6 @@ tmp/
 
 # build artifacts
 scripts/
+
+node_modules/
+dist/

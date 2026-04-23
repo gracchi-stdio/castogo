@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@shoelace-style/shoelace": "^2.20.1"
+  },
+  "devDependencies": {
+    "browserslist": "^4",
+    "lightningcss": "^1",
+    "vite": "^6"
+  }
+}

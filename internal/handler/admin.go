@@ -14,8 +14,18 @@ func NewAdminHandler() *AdminHandler {
 
 func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.dashboard)
+	g.GET("/episodes", h.episodesList)
+	g.GET("/episodes/new", h.episodeNew)
 }
 
 func (h *AdminHandler) dashboard(c echo.Context) error {
 	return echo.WrapHandler(templ.Handler(view.DashboardPage(getSharedData(c))))(c)
+}
+
+func (h *AdminHandler) episodesList(c echo.Context) error {
+	return echo.WrapHandler(templ.Handler(view.EpisodesListPage(getSharedData(c))))(c)
+}
+
+func (h *AdminHandler) episodeNew(c echo.Context) error {
+	return echo.WrapHandler(templ.Handler(view.EpisodeNewPage(getSharedData(c))))(c)
 }

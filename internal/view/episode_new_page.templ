@@ -1,0 +1,18 @@
+package view
+
+import "github.com/gracchi-stdio/castogo/internal/domain"
+
+templ EpisodeNewPage(shared *domain.AdminSharedData) {
+	@AdminLayout("New Episode", shared, episodeNewActions()) {
+		<sl-card>
+			<p>Episode creation form will go here.</p>
+		</sl-card>
+	}
+}
+
+templ episodeNewActions() {
+	<sl-button variant="default" size="small" href="/admin/episodes">
+		<sl-icon name="arrow-left" slot="prefix"></sl-icon>
+		Back to Episodes
+	</sl-button>
+}

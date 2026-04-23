@@ -6,21 +6,28 @@ import (
 )
 
 templ SidebarNav() {
-	<nav class="sidebar-nav">
-		<a href="/admin" class="nav-item">
-			<sl-icon name="grid"></sl-icon>
+	<sl-menu class="sidebar-menu">
+		<sl-menu-label>General</sl-menu-label>
+		<sl-menu-item data-on:click="window.location.href = '/admin'">
+			<sl-icon slot="prefix" name="grid"></sl-icon>
 			Dashboard
-		</a>
-		<a href="/admin/episodes" class="nav-item">
-			<sl-icon name="headphones"></sl-icon>
-			Episodes
-		</a>
+		</sl-menu-item>
+		<sl-menu-label>Podcast</sl-menu-label>
+		<sl-menu-item data-on:click="window.location.href = '/admin/episodes'">
+			<sl-icon slot="prefix" name="list-ul"></sl-icon>
+			All Episodes
+		</sl-menu-item>
+		<sl-menu-item data-on:click="window.location.href = '/admin/episodes/new'">
+			<sl-icon slot="prefix" name="plus-circle"></sl-icon>
+			New Episode
+		</sl-menu-item>
 		<sl-divider></sl-divider>
-		<a href="/admin/settings" class="nav-item">
-			<sl-icon name="gear"></sl-icon>
+		<sl-menu-label>System</sl-menu-label>
+		<sl-menu-item data-on:click="window.location.href = '/admin/settings'">
+			<sl-icon slot="prefix" name="gear"></sl-icon>
 			Settings
-		</a>
-	</nav>
+		</sl-menu-item>
+	</sl-menu>
 }
 
 templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Component) {

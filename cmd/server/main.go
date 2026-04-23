@@ -4,8 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
+	echosession "github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/handler"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/service"
+	"github.com/gracchi-stdio/castogo/internal/session"
 )
 
 func main() {
@@ -34,10 +34,16 @@ func main() {
 		return c.Request().URL.Path == "/healthcheck"
 	}
 
+	// Session store (PostgreSQL-backed)
+	sessionStore, err := session.NewPGStore(db, []byte(config.Cfg.SessionSecret))
+	if err != nil {
+		log.Fatalf("failed to create session store: %v", err)
+	}
+
 	// Middleware
 	e.Use(middleware.Recover())
 	e.Use(handler.RequestLogger(skipHealth))
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte(config.Cfg.SessionSecret))))
+	e.Use(echosession.Middleware(sessionStore))
 
 	// Services
 	userRepo := postgres.NewUserRepo(db)
@@ -63,6 +69,9 @@ func main() {
 		}
 		return c.JSON(200, map[string]string{"db": "ok"})
 	})
+
+	// Shoelace assets from node_modules
+	e.Static("/shoelace", "node_modules/@shoelace-style/shoelace")
 
 	// Static files — must be registered LAST so it doesn't swallow routes
 	e.Static("/", "public")

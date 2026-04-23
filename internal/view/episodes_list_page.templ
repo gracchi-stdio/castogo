@@ -1,0 +1,25 @@
+package view
+
+import "github.com/gracchi-stdio/castogo/internal/domain"
+
+templ EpisodesListPage(shared *domain.AdminSharedData) {
+	@AdminLayout("Episodes", shared, episodesListActions()) {
+		<sl-card class="episodes-empty">
+			<div class="empty-state">
+				<sl-icon name="headphones" style="font-size: 3rem; color: var(--sl-color-neutral-300)"></sl-icon>
+				<p>No episodes yet. Create your first episode to get started.</p>
+				<sl-button variant="primary" href="/admin/episodes/new">
+					<sl-icon name="plus-circle" slot="prefix"></sl-icon>
+					New Episode
+				</sl-button>
+			</div>
+		</sl-card>
+	}
+}
+
+templ episodesListActions() {
+	<sl-button variant="primary" size="small" href="/admin/episodes/new">
+		<sl-icon name="plus-circle" slot="prefix"></sl-icon>
+		New Episode
+	</sl-button>
+}

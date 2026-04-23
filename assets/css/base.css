@@ -3,3 +3,24 @@ body {
     font-family: var(--sl-font-sans);
 }
 
+/* View Transitions — smooth cross-page navigation */
+@view-transition {
+    navigation: auto;
+}
+
+/* Main content area cross-fades */
+::view-transition-old(root) {
+    animation: 150ms ease-out both fade-out;
+}
+
+::view-transition-new(root) {
+    animation: 150ms ease-in both fade-in;
+}
+
+@keyframes fade-out {
+    to { opacity: 0; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+}

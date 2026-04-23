@@ -1,27 +1,23 @@
 /* Admin Layout — mobile-first */
 
-/* === Shared sidebar nav styling === */
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+/* === Sidebar menu === */
+.sidebar-menu {
+  border: none;
+  background: transparent;
+  --padding: 0;
 }
 
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--sl-border-radius-medium);
-  color: var(--sl-color-neutral-700);
-  text-decoration: none;
-  font-size: var(--sl-font-size-medium);
-  transition: background 0.15s, color 0.15s;
+.sidebar-menu::part(base) {
+  background: transparent;
 }
 
-.nav-item:hover {
-  background: var(--sl-color-primary-700);
-  color: var(--sl-color-neutral-0);
+.sidebar-menu sl-menu-label {
+  font-size: var(--sl-font-size-x-small);
+  font-weight: var(--sl-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-color-neutral-400);
+  padding: 0.75rem 0.75rem 0.25rem;
 }
 
 /* === Drawer (mobile sidebar) === */
@@ -45,6 +41,33 @@
 /* === Desktop sidebar (hidden on mobile) === */
 .admin-sidebar {
   display: none;
+  view-transition-name: admin-sidebar;
+}
+
+.admin-main {
+  view-transition-name: admin-content;
+}
+
+/* Sidebar: no animation — looks identical on both pages, so just hold it */
+::view-transition-group(admin-sidebar) {
+  animation-duration: 0s;
+}
+
+::view-transition-old(admin-sidebar) {
+  animation: none;
+}
+
+::view-transition-new(admin-sidebar) {
+  animation: none;
+}
+
+/* Content: cross-fade */
+::view-transition-old(admin-content) {
+  animation: 150ms ease-out both fade-out;
+}
+
+::view-transition-new(admin-content) {
+  animation: 150ms ease-in both fade-in;
 }
 
 /* === Layout === */
