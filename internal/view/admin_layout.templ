@@ -1,6 +1,9 @@
 package view
 
-import "github.com/gracchi-stdio/castogo/internal/config"
+import (
+	"github.com/gracchi-stdio/castogo/internal/config"
+	"github.com/gracchi-stdio/castogo/internal/domain"
+)
 
 templ SidebarNav() {
 	<nav class="sidebar-nav">
@@ -20,7 +23,7 @@ templ SidebarNav() {
 	</nav>
 }
 
-templ AdminLayout(title string, actions templ.Component) {
+templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Component) {
 	@BaseLayout() {
 		<!-- Mobile drawer sidebar -->
 		<sl-drawer id="admin-drawer" class="admin-drawer" placement="start" label={ config.Cfg.AppName }>
@@ -49,7 +52,20 @@ templ AdminLayout(title string, actions templ.Component) {
 						if actions != nil {
 							@actions
 						}
-						<sl-avatar initials="A" label="User" style="--size: 2rem"></sl-avatar>
+						<sl-dropdown placement="bottom-end" distance="8">
+							<sl-avatar slot="trigger" initials={shared.User.Email[0:2]} label={ shared.User.Email } style="--size: 2rem; cursor: pointer"></sl-avatar>
+							<sl-menu>
+								<sl-menu-item disabled>
+									<sl-icon slot="prefix" name="person"></sl-icon>
+									{ shared.User.Email }
+								</sl-menu-item>
+								<sl-divider></sl-divider>
+								<sl-menu-item data-on:click="@post('/logout')">
+									<sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
+									Sign Out
+								</sl-menu-item>
+							</sl-menu>
+						</sl-dropdown>
 					</div>
 				</header>
 				<main class="admin-content">

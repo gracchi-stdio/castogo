@@ -4,26 +4,16 @@ import (
 	"context"
 	"log"
 
-	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/logger"
-	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
-	"github.com/gofiber/fiber/v3/middleware/session"
-	"github.com/gofiber/fiber/v3/middleware/static"
-	fiberPostgres "github.com/gofiber/storage/postgres/v3"
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/handler"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/service"
 )
-
-// type structValidator struct {
-// 	validate *validator.Validate
-// }
-
-// // Validator needs to implement the Validate method
-// func (v *structValidator) Validate(out any) error {
-// 	return v.validate.Struct(out)
-// }
 
 func main() {
 	err := config.LoadConfig()
@@ -31,60 +21,52 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	app := fiber.New(fiber.Config{
-		// StructValidator: &structValidator{validate: validator.New()},
-		AppName: "Castogo",
-	})
+	e := echo.New()
+	e.HideBanner = false
 
-	app.Use(logger.New())
-	app.Use(recoverer.New())
-
+	// Database
 	db, err := postgres.NewPool(context.Background(), config.Cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
-	pgStorage := fiberPostgres.New(fiberPostgres.Config{
-		DB: db,
-	})
+	skipHealth := func(c echo.Context) bool {
+		return c.Request().URL.Path == "/healthcheck"
+	}
 
-	app.Use(session.New(session.Config{
-		Storage: pgStorage,
-	}))
+	// Middleware
+	e.Use(middleware.Recover())
+	e.Use(handler.RequestLogger(skipHealth))
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte(config.Cfg.SessionSecret))))
 
-	// Register handlers and services
+	// Services
 	userRepo := postgres.NewUserRepo(db)
 	authService := service.NewAuthService(userRepo)
+
+	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
-	authHandler.RegisterRoutes(app)
+	authHandler.RegisterRoutes(e)
 
 	clockHandler := handler.NewClockHandler()
-	clockHandler.RegisterRoutes(app)
+	clockHandler.RegisterRoutes(e)
 
 	filterHandler := handler.NewFilterHandler()
-	filterHandler.RegisterRoutes(app)
+	filterHandler.RegisterRoutes(e)
 
 	adminHandler := handler.NewAdminHandler()
-	adminHandler.RegisterRoutes(app)
+	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
+	adminHandler.RegisterRoutes(adminGroup)
 
-	app.Get("/healthcheck", func(c fiber.Ctx) error {
-		if err := db.Ping(c.Context()); err != nil {
-			return c.Status(fiber.StatusServiceUnavailable).JSON(
-				fiber.Map{
-					"status": "unhealthy",
-					"error":  err.Error(),
-				},
-			)
+	e.GET("/healthcheck", func(c echo.Context) error {
+		if err := db.Ping(c.Request().Context()); err != nil {
+			return c.JSON(503, map[string]string{"status": "unhealthy", "error": err.Error()})
 		}
-		return c.JSON(fiber.Map{"db": "ok"})
+		return c.JSON(200, map[string]string{"db": "ok"})
 	})
 
 	// Static files — must be registered LAST so it doesn't swallow routes
-	app.Use("/*", static.New("./public"))
+	e.Static("/", "public")
 
 	log.Printf("starting Castogo on: %s (%s)", config.Cfg.Port, config.Cfg.Env)
-
-	if err := app.Listen(":" + config.Cfg.Port); err != nil {
-		log.Fatalf("failed to start server: %v", err)
-	}
+	e.Logger.Fatal(e.Start(":" + config.Cfg.Port))
 }

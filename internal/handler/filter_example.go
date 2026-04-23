@@ -2,11 +2,9 @@ package handler
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/a-h/templ"
-	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/adaptor"
+	"github.com/labstack/echo/v4"
 	"github.com/gracchi-stdio/castogo/internal/view"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -31,18 +29,17 @@ func NewFilterHandler() *FilterHandler {
 	return &FilterHandler{}
 }
 
-func (h *FilterHandler) RegisterRoutes(app *fiber.App) {
-	app.Get("/filter", templ.Handler(view.FilterPage()))
-	app.Get("/filter/items", adaptor.HTTPHandlerFunc(h.itemsHTTP))
+func (h *FilterHandler) RegisterRoutes(e *echo.Echo) {
+	e.GET("/filter", echo.WrapHandler(templ.Handler(view.FilterPage())))
+	e.GET("/filter/items", h.items)
 }
 
-func (h *FilterHandler) itemsHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *FilterHandler) items(c echo.Context) error {
 	signals := &struct {
 		Status string `json:"status"`
 	}{}
-	if err := datastar.ReadSignals(r, signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if err := readSignals(c, signals); err != nil {
+		return err
 	}
 
 	// filter episodes by selected status
@@ -66,6 +63,6 @@ func (h *FilterHandler) itemsHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	html += `</ul></div>`
 
-	sse := datastar.NewSSE(w, r)
-	sse.PatchElements(html, datastar.WithUseViewTransitions(true))
+	sse(c).PatchElements(html, datastar.WithUseViewTransitions(true))
+	return nil
 }

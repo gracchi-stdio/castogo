@@ -4,7 +4,22 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/labstack/echo/v4"
+	"github.com/starfederation/datastar-go/datastar"
 )
+
+var validate = validator.New()
+
+// sse returns a Datastar SSE generator wired through Echo's raw response writer.
+func sse(c echo.Context) *datastar.ServerSentEventGenerator {
+	return datastar.NewSSE(c.Response().Writer, c.Request())
+}
+
+// readSignals reads Datastar signals from the request body into target.
+func readSignals(c echo.Context, target any) error {
+	return datastar.ReadSignals(c.Request(), target)
+}
 
 func fieldValidationErrors(err error) map[string]string {
 	result := map[string]string{}
@@ -29,5 +44,12 @@ func validationMsg(field, tag, param string) string {
 		return field + " must be at least " + param + " characters"
 	default:
 		return field + " is invalid"
+	}
+}
+
+func getSharedData(c echo.Context) *domain.AdminSharedData {
+	user := c.Get("user").(*domain.User)
+	return &domain.AdminSharedData{
+		User: user,
 	}
 }

@@ -1,7 +1,9 @@
 package view
 
-templ DashboardPage() {
-	@AdminLayout("Dashboard", dashboardActions()) {
+import "github.com/gracchi-stdio/castogo/internal/domain"
+
+templ DashboardPage(shared *domain.AdminSharedData) {
+	@AdminLayout("Dashboard", shared, dashboardActions()) {
 		<div class="stat-grid">
 			<sl-card class="stat-card">
 				<div class="stat-icon"><sl-icon name="headphones" style="font-size: 1.5rem"></sl-icon></div>

@@ -4,7 +4,7 @@ Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with d
 
 ## Tech Stack
 
-- Go 1.26.2, GoFiber v3.1.0, PostgreSQL 17, sqlc, pgx/v5
+- Go 1.26.2, Echo v4, PostgreSQL 17, sqlc, pgx/v5
 - Frontend: Shoelace (CDN), Datastar (runtime), Templ (type-safe HTML templates)
 - Config: `github.com/caarlos0/env/v11` — global `config.Cfg`, `config.Cfg.IsDev`
 - No Node.js toolchain, no build step for frontend
@@ -19,32 +19,83 @@ internal/domain/             — domain types + errors
 internal/repository/         — interfaces + postgres implementations
 internal/service/             — business logic
 internal/handler/            — HTTP handlers + route registration
+  ├─ helpers.go              — shared: sse(), readSignals(), validate, fieldValidationErrors
+  ├─ logger.go               — colored request logger middleware
+  ├─ middleware.go            — AuthMiddleware, redirectLogin
+  ├─ auth.go                 — login/session handler
+  ├─ admin.go                — admin dashboard handler
+  ├─ clock.go                — SSE clock example
+  └─ filter_example.go       — SSE filter example
 internal/view/               — Templ templates (*_templ.go generated, gitignored)
 sql/migrations/              — numbered: 001_, 002_, 003_
 sql/queries/                 — sqlc query source of truth
-assets/css/                  — CSS source files (base.css, form.css, login.css, etc.)
+assets/css/                  — CSS source files (base.css, form.css, login.css, admin.css)
   └─ app.css                 — @import all partials (entry point for build)
 public/css/app.css           — compiled/bundled output (served to browser)
 public/js/app.js             — client-side JS
 ```
 
-## GoFiber v3 Rules
+## Echo v4 Rules
 
-- Handler signature: `func(c fiber.Ctx) error` — value receiver, NOT `*fiber.Ctx`
-- Body binding: `c.Bind().Body(&x)` or `c.Bind().JSON(&x)` — NOT `c.BodyParser()`
-- Error handler: `app.SetErrorHandler()` — NOT `app.Settings.ErrorHandler`
-- Middleware MUST call `c.Next()` to continue chain
-- Import: `github.com/gofiber/fiber/v3`
+- Handler signature: `func(c echo.Context) error`
+- Built on standard `net/http` — no adaptor needed for Datastar SDK or any stdlib middleware
+- Request: `c.Request()` returns `*http.Request`, `c.Response()` returns `*echo.Response` (wraps `http.ResponseWriter`)
+- JSON binding: `c.Bind(&x)` (reads from JSON body, query params, or path params)
+- Templ pages: `echo.WrapHandler(templ.Handler(view.Page()))`
+- Route groups: `e.Group("/admin", middleware)` for protected routes
+- Static files: `e.Static("/", "public")` — register LAST so it doesn't swallow routes
+- Import: `github.com/labstack/echo/v4`, middleware: `github.com/labstack/echo/v4/middleware`
+- Sessions: `github.com/labstack/echo-contrib/session` (gorilla/sessions)
 
-## GoFiber-First
+## Echo-First
 
-Use GoFiber's built-in middleware and contrib packages instead of writing from scratch. Check these before implementing anything:
-- `github.com/gofiber/fiber/v3/middleware/` — CORS, CSRF, logger, recover, session, keyauth, limiter, compress, etag, favicon, static, redirect
-- `github.com/gofiber/contrib/` — additional community middleware
-- `github.com/gofiber/storage/` — session storage backends (redis, postgres, sqlite3, etc.)
-- `github.com/gofiber/template/` — template engines if needed
+Use Echo's built-in middleware before writing from scratch. Check these first:
+- `github.com/labstack/echo/v4/middleware/` — CORS, CSRF, logger, recover, rate limiter, compress, static, redirect, basic auth, JWT, key auth
+- `github.com/labstack/echo-contrib/` — session (gorilla/sessions), prometheus, jaeger, cassandra
+- `github.com/gorilla/sessions` — session stores (cookie, redis, filesystem)
 
-If GoFiber has a middleware for it, use it. Don't reinvent authentication, rate limiting, CORS, CSRF protection, etc.
+If Echo has a middleware for it, use it. Don't reinvent authentication, rate limiting, CORS, CSRF protection, etc.
+
+## Datastar + Echo Pattern
+
+Datastar's SDK (`datastar.NewSSE`) calls `http.ResponseController.Flush()` which conflicts with Echo's `Response.Flush()` (calls `WriteHeader` if not committed). Solution: pass the **raw writer** `c.Response().Writer` instead of Echo's `Response` wrapper.
+
+Shared helpers in `internal/handler/helpers.go`:
+
+```go
+// sse returns a Datastar SSE generator wired through Echo's raw response writer.
+func sse(c echo.Context) *datastar.ServerSentEventGenerator {
+    return datastar.NewSSE(c.Response().Writer, c.Request())
+}
+
+// readSignals reads Datastar signals from the request body into target.
+func readSignals(c echo.Context, target any) error {
+    return datastar.ReadSignals(c.Request(), target)
+}
+```
+
+Usage in handlers:
+```go
+sse(c).MarshalAndPatchSignals(map[string]string{"error": "message"})
+sse(c).Redirect("/admin")
+sse(c).PatchElements(html)
+```
+
+Session saving before SSE (Set-Cookie header committed together with SSE response):
+```go
+sess.Save(c.Request(), c.Response().Writer)
+sse(c).Redirect("/admin")
+```
+
+## Session & Auth
+
+- Sessions: `session.Get("session", c)` from `echo-contrib/session`
+- UUID stored as string in session: `sess.Values["user_id"] = user.ID.String()`
+  - `gob` (used by securecookie) doesn't support `[16]byte` — must store as string
+- Session options: `Path: "/"`, `HttpOnly: true`, `SameSite: Lax`, `MaxAge: 30 days`
+- Auth middleware checks session → loads user → sets `c.Set("user", user)`
+- Unauthenticated requests redirect to `/login` via `c.Redirect(302, "/login")`
+- Login page redirects to `/admin` if user already signed in
 
 ## Learning Project
 
@@ -58,7 +109,7 @@ This is a guided learning project, not vibe coding. For each new feature or step
 
 - `internal/db/` is generated by sqlc — never edit directly
 - Edit `sql/queries/*.sql`, then run `make generate`
-- Sessions are DB-backed (sessions table in Postgres), not in-memory
+- Sessions via `echo-contrib/session` (gorilla/sessions) — cookie store for now, PostgreSQL later
 - sqlc config: `emit_json_tags`, `emit_empty_slices`, `emit_pointers_for_null_types`
 
 ## Domain Errors
@@ -77,7 +128,7 @@ Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postg
 - Shoelace web components fire custom events (e.g., `sl-change` not `change`) — Datastar's `data-bind` does NOT work with web components out of the box; use `data-on:sl-change` with manual signal wiring
 - `<sl-menu>` is for system menus (dropdowns, context menus). For navigation sidebars, use `<nav>` + `<a>` elements with `<sl-icon>` for icons
 - Use `<sl-drawer>` for mobile slide-in navigation (handles overlay, escape key, backdrop click)
-- Static assets served from `public/` directory via Fiber's static middleware (registered LAST in route order)
+- Static assets served from `public/` directory via Echo's static middleware (registered LAST in route order)
 
 ## CSS Architecture
 
@@ -86,6 +137,21 @@ Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postg
 - Compiled output goes to `public/css/app.css` (what the browser loads)
 - Only Shoelace CSS custom properties for colors, spacing, borders — no hardcoded values
 - Mobile-first responsive: base styles for small screens, `@media (min-width: 768px)` for larger viewports
+
+## Datastar + Templ Rules
+
+- Signal values are JS expressions — strings must be quoted: `data-signals:status="'all'"` not `"all"`
+- Shoelace web components need manual signal wiring: `data-on:sl-change="$signal = el.value"` (not `data-bind`)
+- Backend is source of truth — signals are for user input and temp UI state only
+- Keep element IDs stable across SSE swaps for morphing and CSS transitions
+- Expressions use `$` prefix for signals: `$count++`, `$name.toUpperCase()`
+- Datastar Go SDK: `sse(c)` for writing, `readSignals(c, &target)` for reading — both in `helpers.go`
+- SDK convenience methods: `sse(c).Redirect(url)`, `sse(c).MarshalAndPatchSignals(map)`, `sse(c).PatchElements(html)`
+- Full Datastar reference: `docs/datastar-reference.md`
+
+## CSRF
+
+Not needed yet. `SameSite: Lax` + JSON-only `fetch()` via Datastar provides adequate protection. Add when introducing traditional form endpoints or cross-origin API access.
 
 ## RSS Feed Architecture (future)
 
@@ -96,21 +162,8 @@ When we build the RSS feed layer, use a 3-layer design:
 
 Keep mutable admin model separate from read-only feed model. Test the serialization boundary with golden XML fixtures.
 
-## Datastar + Templ Rules
-
-- Signal values are JS expressions — strings must be quoted: `data-signals:status="'all'"` not `"all"`
-- Shoelace web components need manual signal wiring: `data-on:sl-change="$signal = el.value"` (not `data-bind`)
-- Use Fiber's `adaptor.HTTPHandlerFunc` for Datastar SSE handlers (not manual fasthttp bridge)
-- Backend is source of truth — signals are for user input and temp UI state only
-- Keep element IDs stable across SSE swaps for morphing and CSS transitions
-- Expressions use `$` prefix for signals: `$count++`, `$name.toUpperCase()`
-- Full Datastar reference: `docs/datastar-reference.md`
-
 ## Reference Docs
 
 - `docs/datastar-reference.md` — Datastar SDK, attributes, expressions, patching, animations
-- `docs/open-props-reference.md` — Open Props design tokens, colors, spacing, typography, Shoelace integration
-- `docs/gofiber-v3-reference.md` — full API reference (routing, middleware, request/response, errors)
-- `docs/gofiber-v3-sessions.md` — session middleware (config, storage, security, login/logout)
-- `docs/gofiber-v3-examples.md` — working code patterns (10 examples)
 - `docs/shoelace-drawer-menu-details.md` — Drawer, Menu, Menu Item, Details component reference
+- `docs/open-props-reference.md` — Open Props design tokens, colors, spacing, typography, Shoelace integration

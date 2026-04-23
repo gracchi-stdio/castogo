@@ -174,24 +174,53 @@ sse.PatchElementTempl(ctx, myTemplComponent())
 
 Adopt after literal HTML strings work — debug one thing at a time.
 
-## Fiber + Datastar Bridge
+## Echo + Datastar Pattern
 
-Use Fiber's `adaptor.HTTPHandlerFunc` — cleaner than manual fasthttp→net/http conversion:
+Datastar's SDK calls `http.ResponseController.Flush()` internally, which conflicts with Echo's `Response.Flush()` (calls `WriteHeader` if not committed). Fix: pass the **raw writer** `c.Response().Writer`.
+
+Shared helpers (in `internal/handler/helpers.go`):
 
 ```go
-import "github.com/gofiber/fiber/v3/middleware/adaptor"
-
-func (h *Handler) RegisterRoutes(app *fiber.App) {
-    app.Get("/page", templ.Handler(view.MyPage()))
-    app.Get("/stream", adaptor.HTTPHandlerFunc(h.streamHTTP))
+func sse(c echo.Context) *datastar.ServerSentEventGenerator {
+    return datastar.NewSSE(c.Response().Writer, c.Request())
 }
 
-func (h *Handler) streamHTTP(w http.ResponseWriter, r *http.Request) {
-    signals := &MySignals{}
-    datastar.ReadSignals(r, signals)
-    sse := datastar.NewSSE(w, r)
-    // ...
+func readSignals(c echo.Context, target any) error {
+    return datastar.ReadSignals(c.Request(), target)
 }
+```
+
+Usage:
+
+```go
+// One-shot SSE (login, form submit)
+sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid"})
+sse(c).Redirect("/admin")
+
+// Long-lived SSE (live updates)
+out := sse(c)
+for {
+    select {
+    case <-ticker.C:
+        out.PatchElements(`<div id="clock">` + now + `</div>`)
+    case <-c.Request().Context().Done():
+        return nil
+    }
+}
+
+// Reading signals from frontend
+input := &MySignals{}
+if err := readSignals(c, input); err != nil {
+    sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid request"})
+    return nil
+}
+```
+
+Session before SSE — `sess.Save()` adds Set-Cookie header, then `sse(c)` commits everything:
+
+```go
+sess.Save(c.Request(), c.Response().Writer)
+sse(c).Redirect("/admin")
 ```
 
 ## Animations & View Transitions
