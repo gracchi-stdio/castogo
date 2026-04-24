@@ -1,18 +1,24 @@
 package view
 
-import "github.com/gracchi-stdio/castogo/internal/domain"
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+)
 
 templ EpisodeNewPage(shared *domain.AdminSharedData) {
 	@AdminLayout("New Episode", shared, episodeNewActions()) {
-		<sl-card>
-			<p>Episode creation form will go here.</p>
-		</sl-card>
+		@card.Card(card.CardArgs{}) {
+			@card.CardContent(card.CardContentArgs{}) {
+				<p class="text-muted-foreground">Episode creation form will go here.</p>
+			}
+		}
 	}
 }
 
 templ episodeNewActions() {
-	<sl-button variant="default" size="small" href="/admin/episodes">
-		<sl-icon name="arrow-left" slot="prefix"></sl-icon>
+	@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+		@Icon("arrow-left", "size-4 mr-1")
 		Back to Episodes
-	</sl-button>
+	}
 }

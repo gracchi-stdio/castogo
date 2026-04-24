@@ -1,41 +1,46 @@
-@import "./base.css";
+@import "tailwindcss";
+@import "./theme.css";
 
-/* Form styles */
-@import "./form.css";
-
-/* pages */
-@import "./login.css";
-
-/* admin */
-@import "./admin.css";
-
-/* View Transitions — slide old list out, new list in */
-::view-transition-old(episode-list) {
-  animation: slide-out-left 0.2s ease forwards;
+/* View Transitions — smooth cross-page navigation */
+@view-transition {
+  navigation: auto;
 }
 
-::view-transition-new(episode-list) {
-  animation: slide-in-right 0.2s ease forwards;
+/* Main content area cross-fades */
+::view-transition-old(root) {
+  animation: 150ms ease-out both fade-out;
 }
 
-@keyframes slide-out-left {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
+::view-transition-new(root) {
+  animation: 150ms ease-in both fade-in;
 }
 
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+/* Admin sidebar — no animation (looks identical across pages) */
+::view-transition-group(admin-sidebar) {
+  animation-duration: 0s;
+}
+
+::view-transition-old(admin-sidebar) {
+  animation: none;
+}
+
+::view-transition-new(admin-sidebar) {
+  animation: none;
+}
+
+/* Admin content — cross-fade */
+::view-transition-old(admin-content) {
+  animation: 150ms ease-out both fade-out;
+}
+
+::view-transition-new(admin-content) {
+  animation: 150ms ease-in both fade-in;
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
 }

@@ -3,33 +3,39 @@ package view
 import "github.com/gracchi-stdio/castogo/internal/config"
 
 templ BaseLayout() {
-<!DOCTYPE html>
-<html>
-
-<head>
-  <!-- Shoelace theme (plain CSS, served from node_modules via Go static route) -->
-  <link rel="stylesheet" href="/shoelace/dist/themes/light.css" />
-  <link rel="stylesheet" media="(prefers-color-scheme:dark)"
-    href="/shoelace/dist/themes/dark.css"
-    onload="document.documentElement.classList.add('sl-theme-dark');" />
-
-  <!-- Datastar -->
-  <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.1/bundles/datastar.js"></script>
-
-  if config.Cfg.IsDev {
-    <!-- Vite dev server: HMR client + app bundle (includes Shoelace components + CSS) -->
-    <script type="module" src="http://localhost:3000/@vite/client"></script>
-    <script type="module" src="http://localhost:3000/assets/js/app.js"></script>
-  } else {
-    <!-- Production: pre-built bundles -->
-    <link rel="stylesheet" href="/css/app.css" />
-    <script type="module" src="/js/app.js"></script>
-  }
-</head>
-
-<body class="container">
-  { children... }
-</body>
-
-</html>
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ config.Cfg.AppName }</title>
+			<!-- Theme init: runs BEFORE paint for zero FOUC -->
+			<script>
+				(function() {
+					var theme = localStorage.getItem('theme');
+					if (!theme) {
+						theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+					}
+					document.documentElement.classList.toggle('dark', theme === 'dark');
+					localStorage.setItem('theme', theme);
+				})();
+			</script>
+			<!-- Enable View Transitions API -->
+			<meta name="view-transition" content="same-origin"/>
+			<!-- Datastar -->
+			<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.1/bundles/datastar.js"></script>
+			if config.Cfg.IsDev {
+				<!-- Vite dev server: HMR client + app bundle -->
+				<script type="module" src="http://localhost:3000/@vite/client"></script>
+				<script type="module" src="http://localhost:3000/assets/js/app.js"></script>
+			} else {
+				<!-- Production: pre-built bundles -->
+				<link rel="stylesheet" href="/css/app.css"/>
+				<script type="module" src="/js/app.js"></script>
+			}
+		</head>
+		<body class="min-h-screen bg-background font-sans antialiased" data-signals="{theme: (localStorage.getItem('theme') || 'light')}">
+			{ children... }
+		</body>
+	</html>
 }

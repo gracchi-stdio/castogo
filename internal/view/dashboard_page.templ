@@ -1,45 +1,39 @@
 package view
 
-import "github.com/gracchi-stdio/castogo/internal/domain"
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+)
 
 templ DashboardPage(shared *domain.AdminSharedData) {
 	@AdminLayout("Dashboard", shared, dashboardActions()) {
-		<div class="stat-grid">
-			<sl-card class="stat-card">
-				<div class="stat-icon"><sl-icon name="headphones" style="font-size: 1.5rem"></sl-icon></div>
-				<div class="stat-info">
-					<span class="stat-value">0</span>
-					<span class="stat-label">Total Episodes</span>
-				</div>
-			</sl-card>
-			<sl-card class="stat-card">
-				<div class="stat-icon"><sl-icon name="send" style="font-size: 1.5rem"></sl-icon></div>
-				<div class="stat-info">
-					<span class="stat-value">0</span>
-					<span class="stat-label">Published</span>
-				</div>
-			</sl-card>
-			<sl-card class="stat-card">
-				<div class="stat-icon"><sl-icon name="pencil" style="font-size: 1.5rem"></sl-icon></div>
-				<div class="stat-info">
-					<span class="stat-value">0</span>
-					<span class="stat-label">Drafts</span>
-				</div>
-			</sl-card>
-			<sl-card class="stat-card">
-				<div class="stat-icon"><sl-icon name="clock" style="font-size: 1.5rem"></sl-icon></div>
-				<div class="stat-info">
-					<span class="stat-value">0</span>
-					<span class="stat-label">Scheduled</span>
-				</div>
-			</sl-card>
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			@statCard("headphones", "0", "Total Episodes")
+			@statCard("send", "0", "Published")
+			@statCard("pencil", "0", "Drafts")
+			@statCard("clock", "0", "Scheduled")
 		</div>
 	}
 }
 
+templ statCard(iconName string, value string, label string) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{Class: "flex items-center gap-4"}) {
+			<div class="flex items-center justify-center size-12 rounded-lg bg-primary/10 text-primary">
+				@Icon(iconName, "size-6")
+			</div>
+			<div class="flex flex-col">
+				<span class="text-3xl font-bold leading-none">{ value }</span>
+				<span class="text-sm text-muted-foreground">{ label }</span>
+			</div>
+		}
+	}
+}
+
 templ dashboardActions() {
-	<sl-button variant="default" size="small">
-		<sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
+	@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+		@Icon("external-link", "size-4 mr-1")
 		View Public Site
-	</sl-button>
+	}
 }

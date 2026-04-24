@@ -1,35 +1,72 @@
 package view
 
-import "github.com/gracchi-stdio/castogo/internal/config"
+import (
+	"github.com/gracchi-stdio/castogo/internal/config"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+)
 
 templ LoginPage() {
-    @BaseLayout() {
-        <main class="login-page">
-            <div data-show="$error != ''" data-text="$error" class="error-box"></div>
-        
-            <sl-card class="login-card">
-                <div slot="header">
-                    <h1>{ config.Cfg.AppName }</h1>
-                </div>
-                <div data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
-                    <div class="field-group" data-class:field-invalid="$email_error != ''">
-                        <sl-input label="Email" type="email"
-                            data-on:sl-input="$email = el.value; $email_error = ''">
-                        </sl-input>
-                        <p data-show="$email_error != ''" data-text="$email_error" class="field-error"></p>
-                    </div>
-                    <div class="field-group" data-class:field-invalid="$password_error != ''">
-                        <sl-input label="Password" type="password" password-toggle
-                            data-on:sl-input="$password = el.value; $password_error = ''">
-                        </sl-input>
-                        <p data-show="$password_error != ''" data-text="$password_error" class="field-error"></p>
-                    </div>
-                    <sl-button variant="primary" style="width: 100%"
-                        data-on:click="@post('/login')">
-                        Sign In
-                    </sl-button>
-                </div>
-            </sl-card>
-        </main>
-    }
+	@BaseLayout() {
+		<main class="min-h-screen flex items-center justify-center p-4">
+			<div data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
+				<div data-show="$error != ''" data-text="$error"
+					class="text-destructive bg-destructive/15 border border-destructive p-3 rounded-md mb-4">
+				</div>
+				@card.Card(card.CardArgs{Class: "w-full max-w-sm"}) {
+					@card.CardHeader(card.CardHeaderArgs{Class: "text-center"}) {
+						@card.CardTitle(card.CardTitleArgs{}) {
+							<h1 class="text-2xl font-bold">{ config.Cfg.AppName }</h1>
+						}
+					}
+					@card.CardContent(card.CardContentArgs{}) {
+						<div class="space-y-4">
+							<div class="space-y-2">
+								@label.Label(label.LabelArgs{For: "email"}) {
+									Email
+								}
+								@input.Input(input.InputArgs{
+									Type:  "email",
+									ID:    "email",
+									Name:  "email",
+									Class: "w-full",
+									Attributes: map[string]any{
+										"data-on-input": "$email = el.value; $email_error = ''",
+									},
+								})
+								<p data-show="$email_error != ''" data-text="$email_error"
+									class="text-sm text-destructive"></p>
+							</div>
+							<div class="space-y-2">
+								@label.Label(label.LabelArgs{For: "password"}) {
+									Password
+								}
+								@input.Input(input.InputArgs{
+									Type:  "password",
+									ID:    "password",
+									Name:  "password",
+									Class: "w-full",
+									Attributes: map[string]any{
+										"data-on-input": "$password = el.value; $password_error = ''",
+									},
+								})
+								<p data-show="$password_error != ''" data-text="$password_error"
+									class="text-sm text-destructive"></p>
+							</div>
+							@button.Button(button.ButtonArgs{
+								Class: "w-full",
+								Attributes: map[string]any{
+									"data-on-click": "@post('/login')",
+								},
+							}) {
+								Sign In
+							}
+						</div>
+					}
+				}
+			</div>
+		</main>
+	}
 }

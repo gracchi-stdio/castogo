@@ -70,9 +70,6 @@ func main() {
 		return c.JSON(200, map[string]string{"db": "ok"})
 	})
 
-	// Shoelace assets from node_modules
-	e.Static("/shoelace", "node_modules/@shoelace-style/shoelace")
-
 	// Static files — must be registered LAST so it doesn't swallow routes
 	e.Static("/", "public")
 

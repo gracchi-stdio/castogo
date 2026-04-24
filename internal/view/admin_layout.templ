@@ -3,81 +3,116 @@ package view
 import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/avatar"
+	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
+	"github.com/gracchi-stdio/castogo/internal/view/components/sidebar"
+	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
 )
 
-templ SidebarNav() {
-	<sl-menu class="sidebar-menu">
-		<sl-menu-label>General</sl-menu-label>
-		<sl-menu-item data-on:click="window.location.href = '/admin'">
-			<sl-icon slot="prefix" name="grid"></sl-icon>
-			Dashboard
-		</sl-menu-item>
-		<sl-menu-label>Podcast</sl-menu-label>
-		<sl-menu-item data-on:click="window.location.href = '/admin/episodes'">
-			<sl-icon slot="prefix" name="list-ul"></sl-icon>
-			All Episodes
-		</sl-menu-item>
-		<sl-menu-item data-on:click="window.location.href = '/admin/episodes/new'">
-			<sl-icon slot="prefix" name="plus-circle"></sl-icon>
-			New Episode
-		</sl-menu-item>
-		<sl-divider></sl-divider>
-		<sl-menu-label>System</sl-menu-label>
-		<sl-menu-item data-on:click="window.location.href = '/admin/settings'">
-			<sl-icon slot="prefix" name="gear"></sl-icon>
-			Settings
-		</sl-menu-item>
-	</sl-menu>
+// sidebarSections returns the navigation sections for the admin sidebar.
+func sidebarSections(currentPath string) []sidebar.SidebarSection {
+	return []sidebar.SidebarSection{
+		{
+			Title: "General",
+			Items: []sidebar.SidebarItem{
+				{Title: "Dashboard", Href: "/admin", Icon: "layout-grid"},
+			},
+		},
+		{
+			Title: "Podcast",
+			Items: []sidebar.SidebarItem{
+				{Title: "All Episodes", Href: "/admin/episodes", Icon: "list"},
+				{Title: "New Episode", Href: "/admin/episodes/new", Icon: "circle-plus"},
+			},
+		},
+		{
+			Title: "System",
+			Items: []sidebar.SidebarItem{
+				{Title: "Settings", Href: "/admin/settings", Icon: "settings"},
+			},
+		},
+	}
 }
 
 templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Component) {
 	@BaseLayout() {
-		<!-- Mobile drawer sidebar -->
-		<sl-drawer id="admin-drawer" class="admin-drawer" placement="start" label={ config.Cfg.AppName }>
-			@SidebarNav()
-		</sl-drawer>
-
-		<!-- Admin layout container -->
-		<div class="admin-layout">
-			<!-- Desktop sidebar (hidden on mobile via CSS) -->
-			<aside class="admin-sidebar">
-				<div class="sidebar-header">
-					<span class="sidebar-brand">{ config.Cfg.AppName }</span>
-					<img src="/logo.svg" alt="Logo" class="sidebar-logo">
-				</div>
-				@SidebarNav()
-			</aside>
-
-			<!-- Main area -->
-			<div class="admin-main">
-				<header class="admin-topbar">
-					<sl-icon-button class="admin-hamburger" name="list" label="Menu"
-						data-on:click="document.getElementById('admin-drawer').show()">
-					</sl-icon-button>
-					<h2 class="topbar-title">{ title }</h2>
-					<div class="topbar-actions">
-						if actions != nil {
-							@actions
+		{{
+		sidebarID := "admin_sidebar"
+		sections := sidebarSections("")
+		navArgs := sidebar.SidebarNavArgs{
+			SidebarID:   sidebarID,
+			Sections:    sections,
+			CurrentPath: "",
+		}
+		}}
+		<div class="relative flex min-h-screen flex-col bg-background">
+			<div class="flex flex-1">
+				<!-- Mobile sidebar (sheet overlay) -->
+				@sidebar.SidebarMobile(sidebar.SidebarMobileArgs{ID: sidebarID}) {
+					@sidebar.SidebarContent(sidebar.SidebarContentArgs{ID: sidebarID}) {
+						@sidebar.SidebarHeader(sidebar.SidebarHeaderArgs{}) {
+							<div class="flex flex-row gap-3 items-center w-full">
+								@sidebar.SidebarCloseButton(sidebar.SidebarCloseButtonArgs{ID: sidebarID})
+								<span class="font-semibold">{ config.Cfg.AppName }</span>
+							</div>
 						}
-						<sl-dropdown placement="bottom-end" distance="8">
-							<sl-avatar slot="trigger" initials={shared.User.Email[0:2]} label={ shared.User.Email } style="--size: 2rem; cursor: pointer"></sl-avatar>
-							<sl-menu>
-								<sl-menu-item disabled>
-									<sl-icon slot="prefix" name="person"></sl-icon>
-									{ shared.User.Email }
-								</sl-menu-item>
-								<sl-divider></sl-divider>
-								<sl-menu-item data-on:click="@post('/logout')">
-									<sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
-									Sign Out
-								</sl-menu-item>
-							</sl-menu>
-						</sl-dropdown>
-					</div>
-				</header>
-				<main class="admin-content">
-					{ children... }
-				</main>
+						@sidebar.SidebarNavMobile(navArgs)
+						@sidebar.SidebarFooter(sidebar.SidebarFooterArgs{}) {
+							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+						}
+					}
+				}
+				<!-- Desktop sidebar -->
+				@sidebar.SidebarDesktop(sidebar.SidebarDesktopArgs{ID: sidebarID}) {
+					@sidebar.SidebarContent(sidebar.SidebarContentArgs{ID: sidebarID}) {
+						@sidebar.SidebarHeader(sidebar.SidebarHeaderArgs{}) {
+							<div class="flex items-center gap-2 px-2 py-1">
+								<img src="/logo.svg" alt="Logo" class="h-5 w-5"/>
+								<span class="font-semibold">{ config.Cfg.AppName }</span>
+							</div>
+						}
+						<div class="pl-2">
+							@sidebar.SidebarNavDesktop(navArgs)
+						</div>
+						@sidebar.SidebarFooter(sidebar.SidebarFooterArgs{}) {
+							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+						}
+					}
+				}
+				<!-- Main area -->
+				<div class="flex-1 flex flex-col min-w-0" style="view-transition-name: admin-content">
+					<header class="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+						@sidebar.SidebarTrigger(sidebar.SidebarTriggerArgs{ID: sidebarID, Class: "md:hidden"})
+						<h2 class="text-lg font-semibold flex-1">{ title }</h2>
+						<div class="flex items-center gap-2">
+							if actions != nil {
+								@actions
+							}
+							<!-- User dropdown -->
+							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
+								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{ID: "user-menu", AsChild: true}) {
+									@avatar.Avatar(avatar.AvatarArgs{Class: "cursor-pointer"}) {
+										{ shared.User.Email[0:2] }
+									}
+								}
+								@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{ID: "user-menu", Align: "end"}) {
+									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu", Disabled: true, Inset: true}) {
+										@Icon("user", "size-4 mr-2")
+										{ shared.User.Email }
+									}
+									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
+									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu", OnClick: "@post('/logout')", Inset: true}) {
+										@Icon("log-out", "size-4 mr-2")
+										Sign Out
+									}
+								}
+							}
+						</div>
+					</header>
+					<main class="flex-1 p-4">
+						{ children... }
+					</main>
+				</div>
 			</div>
 		</div>
 	}

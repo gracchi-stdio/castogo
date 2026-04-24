@@ -1,18 +1,21 @@
 package view
 
+import "github.com/gracchi-stdio/castogo/internal/view/components/button"
 
 templ AddSubPage() {
-@BaseLayout() {
-<h1>Simple Inter Page</h1>
-<p>This is a simple interaction page.</p>
-
-<div>
-  <sl-button-group label="Alignment">
-    <sl-button>Add</sl-button>
-    <sl-button>Subtract</sl-button>
-  </sl-button-group>
-</div>
-
-<h2 data-signals:count="1"></h2>
-}
+	@BaseLayout() {
+		<main class="p-6 max-w-md mx-auto">
+			<h1 class="text-2xl font-bold mb-2">Simple Interaction Page</h1>
+			<p class="text-muted-foreground mb-4">This is a simple interaction page.</p>
+			<div class="flex gap-2 mb-4" data-signals:count="1">
+				@button.Button(button.ButtonArgs{Variant: "outline"}) {
+					Add
+				}
+				@button.Button(button.ButtonArgs{Variant: "outline"}) {
+					Subtract
+				}
+			</div>
+			<h2 class="text-xl font-semibold" data-text="$count"></h2>
+		</main>
+	}
 }

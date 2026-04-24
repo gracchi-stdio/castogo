@@ -1,25 +1,29 @@
 package view
 
-import "github.com/gracchi-stdio/castogo/internal/domain"
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+)
 
 templ EpisodesListPage(shared *domain.AdminSharedData) {
 	@AdminLayout("Episodes", shared, episodesListActions()) {
-		<sl-card class="episodes-empty">
-			<div class="empty-state">
-				<sl-icon name="headphones" style="font-size: 3rem; color: var(--sl-color-neutral-300)"></sl-icon>
-				<p>No episodes yet. Create your first episode to get started.</p>
-				<sl-button variant="primary" href="/admin/episodes/new">
-					<sl-icon name="plus-circle" slot="prefix"></sl-icon>
+		@card.Card(card.CardArgs{}) {
+			@card.CardContent(card.CardContentArgs{Class: "flex flex-col items-center gap-4 py-8"}) {
+				@Icon("headphones", "size-12 text-muted-foreground/30")
+				<p class="text-muted-foreground">No episodes yet. Create your first episode to get started.</p>
+				@button.Button(button.ButtonArgs{Variant: "default"}) {
+					@Icon("circle-plus", "size-4 mr-1")
 					New Episode
-				</sl-button>
-			</div>
-		</sl-card>
+				}
+			}
+		}
 	}
 }
 
 templ episodesListActions() {
-	<sl-button variant="primary" size="small" href="/admin/episodes/new">
-		<sl-icon name="plus-circle" slot="prefix"></sl-icon>
+	@button.Button(button.ButtonArgs{Variant: "default", Size: "sm"}) {
+		@Icon("circle-plus", "size-4 mr-1")
 		New Episode
-	</sl-button>
+	}
 }
