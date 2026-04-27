@@ -4,6 +4,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 )
@@ -15,55 +16,59 @@ templ LoginPage() {
 				<div data-show="$error != ''" data-text="$error"
 					class="text-destructive bg-destructive/15 border border-destructive p-3 rounded-md mb-4">
 				</div>
-				@card.Card(card.CardArgs{Class: "w-full max-w-sm"}) {
-					@card.CardHeader(card.CardHeaderArgs{Class: "text-center"}) {
-						@card.CardTitle(card.CardTitleArgs{}) {
-							<h1 class="text-2xl font-bold">{ config.Cfg.AppName }</h1>
-						}
-					}
-					@card.CardContent(card.CardContentArgs{}) {
-						<div class="space-y-4">
-							<div class="space-y-2">
-								@label.Label(label.LabelArgs{For: "email"}) {
-									Email
-								}
-								@input.Input(input.InputArgs{
-									Type:  "email",
-									ID:    "email",
-									Name:  "email",
-									Class: "w-full",
-									Attributes: map[string]any{
-										"data-on-input": "$email = el.value; $email_error = ''",
-									},
-								})
-								<p data-show="$email_error != ''" data-text="$email_error"
-									class="text-sm text-destructive"></p>
-							</div>
-							<div class="space-y-2">
-								@label.Label(label.LabelArgs{For: "password"}) {
-									Password
-								}
-								@input.Input(input.InputArgs{
-									Type:  "password",
-									ID:    "password",
-									Name:  "password",
-									Class: "w-full",
-									Attributes: map[string]any{
-										"data-on-input": "$password = el.value; $password_error = ''",
-									},
-								})
-								<p data-show="$password_error != ''" data-text="$password_error"
-									class="text-sm text-destructive"></p>
-							</div>
-							@button.Button(button.ButtonArgs{
-								Class: "w-full",
-								Attributes: map[string]any{
-									"data-on-click": "@post('/login')",
-								},
-							}) {
-								Sign In
+				@form.Form(form.FormArgs{
+					Action:      "/login",
+					ContentType: "json",
+					Class:       "w-full max-w-sm",
+				}) {
+					@card.Card(card.CardArgs{}) {
+						@card.CardHeader(card.CardHeaderArgs{Class: "text-center"}) {
+							@card.CardTitle(card.CardTitleArgs{}) {
+								<h1 class="text-2xl font-bold">{ config.Cfg.AppName }</h1>
 							}
-						</div>
+						}
+						@card.CardContent(card.CardContentArgs{}) {
+							<div class="space-y-4">
+								<div class="space-y-2">
+									@label.Label(label.LabelArgs{For: "email"}) {
+										Email
+									}
+									@input.Input(input.InputArgs{
+										Type:  "email",
+										ID:    "email",
+										Name:  "email",
+										Class: "w-full",
+										Attributes: map[string]any{
+											"data-on:input": "$email = el.value; $email_error = ''",
+										},
+									})
+									<p data-show="$email_error != ''" data-text="$email_error"
+										class="text-sm text-destructive"></p>
+								</div>
+								<div class="space-y-2">
+									@label.Label(label.LabelArgs{For: "password"}) {
+										Password
+									}
+									@input.Input(input.InputArgs{
+										Type:  "password",
+										ID:    "password",
+										Name:  "password",
+										Class: "w-full",
+										Attributes: map[string]any{
+											"data-on:input": "$password = el.value; $password_error = ''",
+										},
+									})
+									<p data-show="$password_error != ''" data-text="$password_error"
+										class="text-sm text-destructive"></p>
+								</div>
+								@button.Button(button.ButtonArgs{
+									Type:  "submit",
+									Class: "w-full",
+								}) {
+									Sign In
+								}
+							</div>
+						}
 					}
 				}
 			</div>

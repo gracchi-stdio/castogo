@@ -1,0 +1,18 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ./cmd/server"
+  delay = 200
+  exclude_dir = ["assets", "tmp", "vendor", "public", "node_modules", "internal/db", "docs"]
+  exclude_regex = []
+  include_ext = ["go"]
+  kill_delay = "0s"
+  send_interrupt = false
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

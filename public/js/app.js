@@ -1,1 +1,0 @@
-window.addEventListener("pageswap",e=>{e.viewTransition&&sessionStorage.setItem("scrollPosition",window.scrollY)});window.addEventListener("pagereveal",e=>{if(e.viewTransition){const i=sessionStorage.getItem("scrollPosition");i&&window.scrollTo(0,parseInt(i))}});

@@ -4,21 +4,105 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
 )
 
 templ EpisodeNewPage(shared *domain.AdminSharedData) {
 	@AdminLayout("New Episode", shared, episodeNewActions()) {
-		@card.Card(card.CardArgs{}) {
-			@card.CardContent(card.CardContentArgs{}) {
-				<p class="text-muted-foreground">Episode creation form will go here.</p>
-			}
-		}
+		<div data-signals:title="''" data-signals:description="''" data-signals:uploading="false" data-signals:uploading_status="''"
+			data-signals:error="''" data-signals:title_error="''"
+			data-signals:description_error="''" data-signals:audio_file_error="''">
+			<!-- General error banner -->
+			<div data-show="$error != ''" data-text="$error"
+				class="text-destructive bg-destructive/15 border border-destructive p-3 rounded-md mb-4">
+			</div>
+			<!-- Loading overlay -->
+			<div data-show="$uploading" class="fixed inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
+				<div class="flex items-center gap-3 bg-card border rounded-lg px-6 py-4 shadow-lg">
+					<svg class="animate-spin size-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					</svg>
+					<span class="text-sm font-medium" data-text="$uploading_status"></span>
+				</div>
+			</div>
+			<form enctype="multipart/form-data" id="episode-form">
+				@card.Card(card.CardArgs{}) {
+					@card.CardContent(card.CardContentArgs{}) {
+						<div class="space-y-4">
+							<!-- Title -->
+							<div class="space-y-2">
+								@label.Label(label.LabelArgs{For: "title"}) {
+									Title
+								}
+								@input.Input(input.InputArgs{
+									Type:        "text",
+									ID:          "title",
+									Name:        "title",
+									Placeholder: "My Awesome Episode",
+									Class:       "w-full",
+									Attributes: map[string]any{
+										"data-on:input": "$title = el.value; $title_error = ''",
+									},
+								})
+								<p data-show="$title_error != ''" data-text="$title_error"
+									class="text-sm text-destructive"></p>
+							</div>
+							<!-- Description -->
+							<div class="space-y-2">
+								@label.Label(label.LabelArgs{For: "description"}) {
+									Description
+								}
+								@textarea.Textarea(textarea.TextareaArgs{
+									ID:          "description",
+									Name:        "description",
+									Placeholder: "What's this episode about?",
+									Class:       "w-full",
+									Rows:        4,
+									Attributes: map[string]any{
+										"data-on:input": "$description = el.value; $description_error = ''",
+									},
+								})
+								<p data-show="$description_error != ''" data-text="$description_error"
+									class="text-sm text-destructive"></p>
+							</div>
+							<!-- Audio File -->
+							<div class="space-y-2">
+								@label.Label(label.LabelArgs{For: "audio_file"}) {
+									Audio File
+								}
+								<input type="file" id="audio_file" name="audio_file" accept="audio/*"
+									data-on:change="$audio_file_error = ''"
+									class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm file:border-0 file:bg-primary file:text-primary-foreground file:hover:bg-primary/90 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:text-sm file:font-medium file:cursor-pointer" />
+								<p data-show="$audio_file_error != ''" data-text="$audio_file_error"
+									class="text-sm text-destructive"></p>
+							</div>
+							<!-- Submit -->
+							<div class="flex justify-end">
+								@button.Button(button.ButtonArgs{
+									Type: "button",
+									Attributes: map[string]any{
+										"data-on:click": "$uploading_status = 'Starting upload...'; $uploading = true; @post('/admin/episodes/create', {contentType: 'form', form: '#episode-form'})",
+									},
+								}) {
+									Create Episode
+								}
+							</div>
+						</div>
+					}
+				}
+			</form>
+		</div>
 	}
 }
 
 templ episodeNewActions() {
-	@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
-		@Icon("arrow-left", "size-4 mr-1")
-		Back to Episodes
-	}
+	<a href="/admin/episodes">
+		@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+			@Icon("arrow-left", "size-4 mr-1")
+			Back to Episodes
+		}
+	</a>
 }

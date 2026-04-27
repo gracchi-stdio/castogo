@@ -64,10 +64,12 @@ templ SidebarDesktop(args SidebarDesktopArgs) {
 	classes := SidebarDesktopVariants(args)
 	}}
 	<aside
-		id={ args.ID + "_desktop" }
-		class={ classes }
-		{ args.Attributes... }
+			id={ args.ID + "_desktop" }
+			class={ classes }
+			style="view-transition-name: admin-sidebar"
+			{ args.Attributes... }
 	>
+
 		<div class="no-scrollbar h-full overflow-auto">
 			{ children... }
 		</div>

@@ -48,6 +48,7 @@ func main() {
 	// Services
 	userRepo := postgres.NewUserRepo(db)
 	authService := service.NewAuthService(userRepo)
+	storageService := service.NewBunnyStorageService(config.Cfg.BunnyStorageEndpoint, config.Cfg.BunnyStoragePassword)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -59,7 +60,7 @@ func main() {
 	filterHandler := handler.NewFilterHandler()
 	filterHandler.RegisterRoutes(e)
 
-	adminHandler := handler.NewAdminHandler()
+	adminHandler := handler.NewAdminHandler(storageService)
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)
 

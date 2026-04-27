@@ -2,10 +2,10 @@
 bin/
 *.exe
 
-# Generated code (regenerated via make generate)
+# Generated code (regenerated via `just generate`)
 internal/db/
 
-# templ generated (regenerated via make generate)
+# templ generated (regenerated via `just generate`)
 internal/view/**/*_templ.go
 
 # Environment
@@ -31,3 +31,7 @@ scripts/
 
 node_modules/
 dist/
+
+# Vite production build output
+public/assets/
+public/.vite/

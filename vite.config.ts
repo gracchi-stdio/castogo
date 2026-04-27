@@ -7,15 +7,14 @@ export default defineConfig({
   ],
   publicDir: false,
   build: {
+    manifest: true,
     emptyOutDir: false,
+    outDir: 'public',
     rollupOptions: {
-      input: {
-        js: 'assets/js/app.js',
-      },
+      input: 'assets/js/app.js',
       output: {
-        dir: 'public',
-        entryFileNames: 'js/app.js',
-        assetFileNames: 'css/app.css',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },

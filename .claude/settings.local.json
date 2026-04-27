@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s https://raw.githubusercontent.com/eduncan911/podcast/master/README.md)"
+      "Bash(curl -s https://raw.githubusercontent.com/eduncan911/podcast/master/README.md)",
+      "mcp__anytype__API-list-types",
+      "mcp__anytype__API-create-object",
+      "mcp__anytype__API-search-space",
+      "mcp__anytype__API-list-templates",
+      "mcp__anytype__API-update-object"
     ]
   }
 }

@@ -14,7 +14,7 @@ services:
       - ./static:/app/static
 
   db:
-    image: postgres:17-alpine
+    image: docker.io/library/postgres:17-alpine
     environment:
       - POSTGRES_USER=podlog
       - POSTGRES_PASSWORD=podlog
@@ -30,17 +30,17 @@ services:
       retries: 5
 
   migrate:
-    image: postgres:17-alpine
+    image: docker.io/library/postgres:17-alpine
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./sql/migrations:/migrations
     entrypoint: >
-      sh -c "
+      sh -ec "
         for f in /migrations/*.sql; do
           echo Running $$f ...;
-          PGPASSWORD=podlog psql -h db -U podlog -d podlog -f $$f;
+          PGPASSWORD=podlog psql -v ON_ERROR_STOP=1 -h host.containers.internal -p 5432 -U podlog -d podlog -f $$f;
         done
       "
 

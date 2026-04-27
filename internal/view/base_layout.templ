@@ -3,6 +3,9 @@ package view
 import "github.com/gracchi-stdio/castogo/internal/config"
 
 templ BaseLayout() {
+	{{
+		productionCSS, productionJS := viteAssets("assets/js/app.js")
+	}}
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -29,9 +32,13 @@ templ BaseLayout() {
 				<script type="module" src="http://localhost:3000/@vite/client"></script>
 				<script type="module" src="http://localhost:3000/assets/js/app.js"></script>
 			} else {
-				<!-- Production: pre-built bundles -->
-				<link rel="stylesheet" href="/css/app.css"/>
-				<script type="module" src="/js/app.js"></script>
+				<!-- Production: Vite manifest assets -->
+				for _, cssPath := range productionCSS {
+					<link rel="stylesheet" href={ templ.SafeURL(cssPath) }/>
+				}
+				if productionJS != "" {
+					<script type="module" src={ templ.SafeURL(productionJS) }></script>
+				}
 			}
 		</head>
 		<body class="min-h-screen bg-background font-sans antialiased" data-signals="{theme: (localStorage.getItem('theme') || 'light')}">
