@@ -28,6 +28,13 @@ templ EpisodeNewPage(shared *domain.AdminSharedData) {
 			data-signals:audio_mime_type="'--'"
 			data-signals:audio_file_size="'--'"
 			data-signals:metadata_extracted="false"
+			data-signals:meta_duration="0"
+			data-signals:meta_sample_rate="0"
+			data-signals:meta_channel_count="0"
+			data-signals:meta_bitrate="0"
+			data-signals:meta_file_size="0"
+			data-signals:meta_format="''"
+			data-signals:meta_mime_type="''"
 		>
 			<!-- General error banner -->
 			<div
@@ -40,7 +47,7 @@ templ EpisodeNewPage(shared *domain.AdminSharedData) {
 				<div class="flex items-center gap-3 bg-card border rounded-lg px-6 py-4 shadow-lg">
 					<svg class="animate-spin size-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7962 7962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 					</svg>
 					<span class="text-sm font-medium" data-text="$uploading_status"></span>
 				</div>
@@ -110,14 +117,14 @@ templ EpisodeNewPage(shared *domain.AdminSharedData) {
 									class="text-sm text-destructive"
 								></p>
 							</div>
-							<!-- Audio Metadata -->
-							<input type="hidden" name="duration" id="metadata_duration" value="0"/>
-							<input type="hidden" name="sample_rate" id="metadata_sample_rate" value="0"/>
-							<input type="hidden" name="channel_count" id="metadata_channel_count" value="0"/>
-							<input type="hidden" name="bitrate" id="metadata_bitrate" value="0"/>
-							<input type="hidden" name="file_size" id="metadata_file_size" value="0"/>
-							<input type="hidden" name="format" id="metadata_format" value=""/>
-							<input type="hidden" name="mimeType" id="metadata_mime_type" value=""/>
+							<!-- Audio Metadata (bound to signals, no manual JS needed) -->
+							<input type="hidden" name="duration" data-bind="meta_duration"/>
+							<input type="hidden" name="sample_rate" data-bind="meta_sample_rate"/>
+							<input type="hidden" name="channel_count" data-bind="meta_channel_count"/>
+							<input type="hidden" name="bitrate" data-bind="meta_bitrate"/>
+							<input type="hidden" name="file_size" data-bind="meta_file_size"/>
+							<input type="hidden" name="format" data-bind="meta_format"/>
+							<input type="hidden" name="mimeType" data-bind="meta_mime_type"/>
 							<!-- Audio Metadata Preview -->
 							<div data-show="$metadata_extracted" class="mt-4 p-4 rounded-md border bg-muted/50">
 								<h4 class="text-sm font-medium mb-2">Audio Metadata</h4>

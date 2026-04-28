@@ -22,13 +22,6 @@ const FORMAT_MAP = {
   "audio/x-flac": "flac",
 };
 
-function getCodec(mimeType) {
-  if (CODEC_MAP[mimeType]) {
-    return CODEC_MAP[mimeType];
-  }
-  return "Unknown";
-}
-
 function getFormat(mimeType) {
   if (FORMAT_MAP[mimeType]) {
     return FORMAT_MAP[mimeType];
@@ -57,13 +50,6 @@ function formatFileSize(bytes) {
   return `${bytes.toFixed(2)} ${units[i]}`;
 }
 
-function setHiddenInput(id, value) {
-  const input = document.getElementById(id);
-  if (input) {
-    input.value = value;
-  }
-}
-
 // main extraction function
 window.extractAudioMetadata = function (el) {
   const file = el.files[0];
@@ -72,11 +58,6 @@ window.extractAudioMetadata = function (el) {
   const fileSize = file.size;
   const mimeType = file.type;
   const format = getFormat(mimeType);
-
-  // set hidden inputs for form submission
-  setHiddenInput("audio_format", format);
-  setHiddenInput("audio_mimeType", mimeType);
-  setHiddenInput("audio_file_size", fileSize);
 
   // decode audio to get duration and sample rate
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -91,15 +72,18 @@ window.extractAudioMetadata = function (el) {
         const channelCount = decodedData.numberOfChannels;
         const bitrate = Math.round((fileSize * 8) / duration / 1000);
 
-        // set hidden inputs for form submission
-        setHiddenInput("audio_duration", duration);
-        setHiddenInput("audio_sample_rate", sampleRate);
-        setHiddenInput("audio_channel_count", channelCount);
-        setHiddenInput("audio_bitrate", bitrate);
-
-        // update datastar signal
+        // update datastar signals — raw values auto-bind to hidden inputs
         const detail = {
           only: {
+            // raw values (bound to hidden inputs via data-bind)
+            meta_duration: duration,
+            meta_sample_rate: sampleRate,
+            meta_channel_count: channelCount,
+            meta_bitrate: bitrate,
+            meta_file_size: fileSize,
+            meta_format: format,
+            meta_mime_type: mimeType,
+            // formatted display values
             audio_duration: formatDuration(duration),
             audio_sample_rate: sampleRate.toLocaleString() + " Hz",
             audio_channel_count:
