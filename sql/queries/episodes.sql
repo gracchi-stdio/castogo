@@ -1,6 +1,6 @@
 -- name: CreateEpisode :one
-INSERT INTO episodes (title, slug, episode_number, description, duration, explicit, cover_image_url, audio_source_url, published_at, status)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+INSERT INTO episodes (title, slug, episode_number, description, duration, explicit, cover_image_url, audio_source_url, audio_metadata, published_at, status)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, sqlc.narg('audio_metadata'), $9, $10)
 RETURNING *;
 
 -- name: GetEpisodeByID :one
@@ -35,6 +35,7 @@ SET title = COALESCE(sqlc.narg('title'), title),
     explicit = COALESCE(sqlc.narg('explicit'), explicit),
     cover_image_url = COALESCE(sqlc.narg('cover_image_url'), cover_image_url),
     audio_source_url = COALESCE(sqlc.narg('audio_source_url'), audio_source_url),
+    audio_metadata = COALESCE(sqlc.narg('audio_metadata'), audio_metadata),
     published_at = COALESCE(sqlc.narg('published_at'), published_at),
     status = COALESCE(sqlc.narg('status'), status),
     updated_at = NOW()

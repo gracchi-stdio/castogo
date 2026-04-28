@@ -1,4 +1,5 @@
 // Podlog — app entry point
+import "./audio-metadata.js";
 
 // Import CSS (Vite resolves @import and bundles)
 import '../css/app.css';
