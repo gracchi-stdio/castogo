@@ -49,7 +49,9 @@ func main() {
 	userRepo := postgres.NewUserRepo(db)
 	authService := service.NewAuthService(userRepo)
 	storageService := service.NewBunnyStorageService(config.Cfg.BunnyStorageEndpoint, config.Cfg.BunnyStoragePassword)
-
+	episodeRepo := postgres.NewEpisodeRepo(db)
+	episodeService := service.NewEpisodeService(episodeRepo)
+	audioProcessor := service.NewFFmpegProcessor()
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	authHandler.RegisterRoutes(e)
@@ -60,7 +62,7 @@ func main() {
 	filterHandler := handler.NewFilterHandler()
 	filterHandler.RegisterRoutes(e)
 
-	adminHandler := handler.NewAdminHandler(storageService)
+	adminHandler := handler.NewAdminHandler(storageService, episodeService, audioProcessor)
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)
 

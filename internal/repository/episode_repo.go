@@ -22,4 +22,5 @@ type EpisodeRepository interface {
 	Delete(ctx context.Context, id int64) error
 	CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error)
 	ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error)
+	GetMaxEpisodeNumber(ctx context.Context) (int, error)
 }

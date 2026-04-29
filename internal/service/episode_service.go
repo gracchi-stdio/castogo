@@ -23,6 +23,14 @@ func (s *EpisodeService) Create(ctx context.Context, ep *domain.Episode) (*domai
 		ep.Slug = slug.Make(ep.Title)
 	}
 
+	if ep.EpisodeNumber == 0 {
+		max, err := s.repo.GetMaxEpisodeNumber(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("get next episode number: %w", err)
+		}
+		ep.EpisodeNumber = max + 1
+	}
+
 	created, err := s.repo.Create(ctx, ep)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique") {

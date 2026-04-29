@@ -4,11 +4,13 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"time"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
+	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view"
 	"github.com/labstack/echo/v4"
@@ -16,11 +18,18 @@ import (
 
 type AdminHandler struct {
 	storageService service.StorageService
+	episodeService *service.EpisodeService
+	audioProcessor service.AudioProcessor
 }
 
-func NewAdminHandler(storageService service.StorageService) *AdminHandler {
+func NewAdminHandler(
+	storageService service.StorageService,
+	episodeService *service.EpisodeService,
+	audioProcessor service.AudioProcessor) *AdminHandler {
 	return &AdminHandler{
 		storageService: storageService,
+		episodeService: episodeService,
+		audioProcessor: audioProcessor,
 	}
 }
 
@@ -29,6 +38,7 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("/episodes", h.episodesList)
 	g.GET("/episodes/create", h.episodeCreatePage)
 	g.POST("/episodes/create", h.episodeCreateAction)
+	g.GET("/settings", h.settingsPage)
 }
 
 func (h *AdminHandler) dashboard(c echo.Context) error {
@@ -85,29 +95,78 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	// --- Streaming progress starts here ---
 	out := sse(c)
 
-	// Step 1: Upload audio file
+	// Step 1: Save upload to temp file
 	out.MarshalAndPatchSignals(map[string]string{"uploading_status": "Validating file..."})
-	time.Sleep(1 * time.Second)
 
-	out.MarshalAndPatchSignals(map[string]string{"uploading_status": "Uploading audio file..."})
+	tmp, err := service.NewTempFile(file, ext)
+	if err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to create temporary file", "uploading": ""})
+		return nil
+	}
+	defer tmp.Cleanup()
+
+	// Step 2: Process with FFmpeg
+	out.MarshalAndPatchSignals(map[string]string{"uploading_status": "Processing audio..."})
+
+	processResult, err := h.audioProcessor.Process(c.Request().Context(), tmp.Path, service.DefaultProcessingOptions())
+	if err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to process audio file", "uploading": ""})
+		return nil
+	}
+	defer os.Remove(processResult.OutputPath)
+
+	// Step 3: Upload processed file to Bunny Storage
+	out.MarshalAndPatchSignals(map[string]string{"uploading_status": "Uploading audio..."})
 
 	slug := slugify(input.Title)
 	b := make([]byte, 4)
 	_, _ = rand.Read(b)
 	uniqueID := fmt.Sprintf("%x", b)
-	filename := fmt.Sprintf("episodes/%s-%s%s", slug, uniqueID[:8], ext)
+	filename := fmt.Sprintf("episodes/%s-%s.mp3", slug, uniqueID[:8])
 
-	cdnURL, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
+	processedFile, err := os.Open(processResult.OutputPath)
+	if err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to open processed audio file", "uploading": ""})
+		return nil
+	}
+	defer processedFile.Close()
+
+	cdnURL, err := h.storageService.UploadFile(c.Request().Context(), processedFile, filename)
 	if err != nil {
 		log.Printf("upload failed: %v", err)
 		out.MarshalAndPatchSignals(map[string]string{"error": "Failed to upload audio file", "uploading": ""})
 		return nil
 	}
 
-	// Step 2: Create episode record
+	// Step 4: Create episode record
 	out.MarshalAndPatchSignals(map[string]string{"uploading_status": "Creating episode record..."})
-	time.Sleep(1 * time.Second)
-	// TODO: save episode to DB via episodeService
+
+	audioMetadata := domain.AudioMetadata{
+		Duration:     int(processResult.Duration),
+		SampleRate:   service.DefaultProcessingOptions().TargetSample,
+		ChannelCount: 2,
+		BitRate:      processResult.Bitrate,
+		FileSize:     processResult.FileSize,
+		Format:       "mp3",
+		MimeType:     "audio/mpeg",
+	}
+
+	episode := &domain.Episode{
+		Title:          input.Title,
+		Slug:           slug,
+		Description:    input.Description,
+		Duration:       audioMetadata.Duration,
+		AudioMetadata:  audioMetadata,
+		AudioSourceURL: cdnURL,
+		Status:         domain.EpisodeStatusDraft,
+	}
+
+	_, err = h.episodeService.Create(c.Request().Context(), episode)
+	if err != nil {
+		log.Printf("create episode failed: %v", err)
+		out.MarshalAndPatchSignals(map[string]string{"error": "Failed to create episode", "uploading": ""})
+		return nil
+	}
 
 	out.MarshalAndPatchSignals(map[string]string{"uploading_status": "Finishing up..."})
 	time.Sleep(500 * time.Millisecond)
@@ -120,16 +179,6 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	return nil
 }
 
-func slugify(s string) string {
-	s = strings.ToLower(s)
-	s = strings.Map(func(r rune) rune {
-		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
-			return r
-		}
-		if r == ' ' || r == '-' || r == '_' {
-			return '-'
-		}
-		return -1
-	}, s)
-	return strings.Trim(s, "-")
+func (h *AdminHandler) settingsPage(c echo.Context) error {
+	return echo.WrapHandler(templ.Handler(view.SettingsPage(getSharedData(c))))(c)
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -52,4 +53,28 @@ func getSharedData(c echo.Context) *domain.AdminSharedData {
 	return &domain.AdminSharedData{
 		User: user,
 	}
+}
+
+func parseInt(s string) int {
+	v, _ := strconv.Atoi(s)
+	return v
+}
+
+func parseInt64(s string) int64 {
+	v, _ := strconv.ParseInt(s, 10, 64)
+	return v
+}
+
+func slugify(s string) string {
+	s = strings.ToLower(s)
+	s = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+			return r
+		}
+		if r == ' ' || r == '-' || r == '_' {
+			return '-'
+		}
+		return -1
+	}, s)
+	return strings.Trim(s, "-")
 }

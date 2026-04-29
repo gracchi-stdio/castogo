@@ -1,0 +1,271 @@
+package view
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/gracchi-stdio/castogo/internal/view/shared"
+)
+
+templ SettingsPage(data *domain.AdminSharedData) {
+	@AdminLayout("Settings", data, nil) {
+		<div
+			data-signals:title="''"
+			data-signals:description="''"
+			data-signals:site_url="''"
+			data-signals:language="'en'"
+			data-signals:copyright="''"
+			data-signals:author_name="''"
+			data-signals:author_email="''"
+			data-signals:cover_image_url="''"
+			data-signals:category="''"
+			data-signals:subcategory="''"
+			data-signals:owner_name="''"
+			data-signals:owner_email="''"
+			data-signals:error="''"
+			data-signals:loading="false"
+			data-signals:loading_status="''"
+		>
+			@shared.ErrorBanner(shared.ErrorBannerArgs{
+				ErrorSignal: "error",
+			})
+
+			@shared.LoadingOverlay(shared.LoadingOverlayArgs{
+				Signal: "loading",
+				Status: "loading_status",
+			})
+
+			<form id="settings-form">
+				@card.Card(card.CardArgs{}) {
+					@card.CardContent(card.CardContentArgs{}) {
+						<div class="space-y-6">
+							<!-- Podcast Info -->
+							<div>
+								<h3 class="text-lg font-medium mb-4">Podcast Info</h3>
+								<div class="space-y-4">
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "title"}) {
+											Title
+										}
+										@input.Input(input.InputArgs{
+											Type:        "text",
+											ID:          "title",
+											Name:        "title",
+											Placeholder: "My Awesome Podcast",
+											Class:       "w-full",
+											Attributes: map[string]any{
+												"data-on:input": "$title = el.value",
+											},
+										})
+									</div>
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "description"}) {
+											Description
+										}
+										@textarea.Textarea(textarea.TextareaArgs{
+											ID:          "description",
+											Name:        "description",
+											Placeholder: "What's your podcast about?",
+											Class:       "w-full",
+											Rows:        4,
+											Attributes: map[string]any{
+												"data-on:input": "$description = el.value",
+											},
+										})
+									</div>
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "cover_image_url"}) {
+											Cover Image URL
+										}
+										@input.Input(input.InputArgs{
+											Type:        "url",
+											ID:          "cover_image_url",
+											Name:        "cover_image_url",
+											Placeholder: "https://cdn.example.com/cover.jpg",
+											Class:       "w-full",
+											Attributes: map[string]any{
+												"data-on:input": "$cover_image_url = el.value",
+											},
+										})
+									</div>
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "site_url"}) {
+											Site URL
+										}
+										@input.Input(input.InputArgs{
+											Type:        "url",
+											ID:          "site_url",
+											Name:        "site_url",
+											Placeholder: "https://example.com",
+											Class:       "w-full",
+											Attributes: map[string]any{
+												"data-on:input": "$site_url = el.value",
+											},
+										})
+									</div>
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "language"}) {
+												Language
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "language",
+												Name:        "language",
+												Placeholder: "en",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$language = el.value",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "copyright"}) {
+												Copyright
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "copyright",
+												Name:        "copyright",
+												Placeholder: "2026 My Podcast",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$copyright = el.value",
+												},
+											})
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Author & Owner -->
+							<div>
+								<h3 class="text-lg font-medium mb-4">Author & Owner</h3>
+								<div class="space-y-4">
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "author_name"}) {
+												Author Name
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "author_name",
+												Name:        "author_name",
+												Placeholder: "John Doe",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$author_name = el.value",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "author_email"}) {
+												Author Email
+											}
+											@input.Input(input.InputArgs{
+												Type:        "email",
+												ID:          "author_email",
+												Name:        "author_email",
+												Placeholder: "john@example.com",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$author_email = el.value",
+												},
+											})
+										</div>
+									</div>
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "owner_name"}) {
+												Owner Name
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "owner_name",
+												Name:        "owner_name",
+												Placeholder: "John Doe",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$owner_name = el.value",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "owner_email"}) {
+												Owner Email
+											}
+											@input.Input(input.InputArgs{
+												Type:        "email",
+												ID:          "owner_email",
+												Name:        "owner_email",
+												Placeholder: "john@example.com",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$owner_email = el.value",
+												},
+											})
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Category -->
+							<div>
+								<h3 class="text-lg font-medium mb-4">Category</h3>
+								<div class="space-y-4">
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "category"}) {
+												Category
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "category",
+												Name:        "category",
+												Placeholder: "Technology",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$category = el.value",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "subcategory"}) {
+												Subcategory
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "subcategory",
+												Name:        "subcategory",
+												Placeholder: "Podcasting",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-on:input": "$subcategory = el.value",
+												},
+											})
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Submit -->
+							<div class="flex justify-end">
+								@button.Button(button.ButtonArgs{
+									Type: "submit",
+									Attributes: map[string]any{
+										"data-on:click": "$loading_status = 'Saving settings...'; $loading = true; @post('/admin/settings', {contentType: 'form', form: '#settings-form'})",
+									},
+								}) {
+									Save Settings
+								}
+							</div>
+						</div>
+					}
+				}
+			</form>
+		</div>
+	}
+}

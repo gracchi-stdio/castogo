@@ -4,45 +4,32 @@ services:
     ports:
       - "8080:${PORT:-8080}"
     environment:
-      - DATABASE_URL=postgres://podlog:podlog@db:5432/podlog?sslmode=disable
+      - DATABASE_URL=postgres://castogo:castogo@db:5432/castogo?sslmode=disable
     env_file:
       - .env
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./static:/app/static
+      - tmp_audio:/tmp/audio
 
   db:
     image: docker.io/library/postgres:17-alpine
     environment:
-      - POSTGRES_USER=podlog
-      - POSTGRES_PASSWORD=podlog
-      - POSTGRES_DB=podlog
+      - POSTGRES_USER=castogo
+      - POSTGRES_PASSWORD=castogo
+      - POSTGRES_DB=castogo
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./sql/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U podlog"]
+      test: ["CMD-SHELL", "pg_isready -U castogo"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  migrate:
-    image: docker.io/library/postgres:17-alpine
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./sql/migrations:/migrations
-    entrypoint: >
-      sh -ec "
-        for f in /migrations/*.sql; do
-          echo Running $$f ...;
-          PGPASSWORD=podlog psql -v ON_ERROR_STOP=1 -h host.containers.internal -p 5432 -U podlog -d podlog -f $$f;
-        done
-      "
-
 volumes:
   pgdata:
+  tmp_audio:

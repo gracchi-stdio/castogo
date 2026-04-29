@@ -2,6 +2,7 @@ package view
 
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/shared"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
@@ -9,8 +10,8 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
 )
 
-templ EpisodeNewPage(shared *domain.AdminSharedData) {
-	@AdminLayout("New Episode", shared, episodeNewActions()) {
+templ EpisodeNewPage(data *domain.AdminSharedData) {
+	@AdminLayout("New Episode", data, episodeNewActions()) {
 		<div
 			data-signals:title="''"
 			data-signals:description="''"
@@ -37,21 +38,14 @@ templ EpisodeNewPage(shared *domain.AdminSharedData) {
 			data-signals:meta_mime_type="''"
 		>
 			<!-- General error banner -->
-			<div
-				data-show="$error != ''"
-				data-text="$error"
-				class="text-destructive bg-destructive/15 border border-destructive p-3 rounded-md mb-4"
-			></div>
-			<!-- Loading overlay -->
-			<div data-show="$uploading" class="fixed inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
-				<div class="flex items-center gap-3 bg-card border rounded-lg px-6 py-4 shadow-lg">
-					<svg class="animate-spin size-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7962 7962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-					</svg>
-					<span class="text-sm font-medium" data-text="$uploading_status"></span>
-				</div>
-			</div>
+			@shared.ErrorBanner(shared.ErrorBannerArgs{
+				ErrorSignal: "error",
+			})
+
+			@shared.LoadingOverlay(shared.LoadingOverlayArgs{
+				Signal: "uploading",
+				Status: "uploading_status",
+			})
 			<form enctype="multipart/form-data" id="episode-form">
 				@card.Card(card.CardArgs{}) {
 					@card.CardContent(card.CardContentArgs{}) {
@@ -103,28 +97,47 @@ templ EpisodeNewPage(shared *domain.AdminSharedData) {
 								@label.Label(label.LabelArgs{For: "audio_file"}) {
 									Audio File
 								}
-								<input
-									type="file"
-									id="audio_file"
-									name="audio_file"
-									accept="audio/*"
-									data-on:change="$audio_file_error = ''; window.extractAudioMetadata(el)"
-									class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm file:border-0 file:bg-primary file:text-primary-foreground file:hover:bg-primary/90 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:text-sm file:font-medium file:cursor-pointer"
-								/>
+								@input.Input(input.InputArgs{
+									Type:  "file",
+									ID:    "audio_file",
+									Name:  "audio_file",
+									Class: "w-full",
+									Attributes: map[string]any{
+										"accept":              "audio/*",
+										"data-on:change":      "$audio_file_error = ''; window.extractAudioMetadata(el)",
+										"data-on:audiometadata": `
+											$meta_duration = evt.detail.meta_duration;
+											$meta_sample_rate = evt.detail.meta_sample_rate;
+											$meta_channel_count = evt.detail.meta_channel_count;
+											$meta_bitrate = evt.detail.meta_bitrate;
+											$meta_file_size = evt.detail.meta_file_size;
+											$meta_format = evt.detail.meta_format;
+											$meta_mime_type = evt.detail.meta_mime_type;
+											$audio_duration = evt.detail.audio_duration;
+											$audio_sample_rate = evt.detail.audio_sample_rate;
+											$audio_channel_count = evt.detail.audio_channel_count;
+											$audio_bitrate = evt.detail.audio_bitrate;
+											$audio_format = evt.detail.audio_format;
+											$audio_mime_type = evt.detail.audio_mime_type;
+											$audio_file_size = evt.detail.audio_file_size;
+											$metadata_extracted = true;
+										`,
+									},
+								})
 								<p
 									data-show="$audio_file_error != ''"
 									data-text="$audio_file_error"
 									class="text-sm text-destructive"
 								></p>
 							</div>
-							<!-- Audio Metadata (bound to signals, no manual JS needed) -->
-							<input type="hidden" name="duration" data-bind="meta_duration"/>
-							<input type="hidden" name="sample_rate" data-bind="meta_sample_rate"/>
-							<input type="hidden" name="channel_count" data-bind="meta_channel_count"/>
-							<input type="hidden" name="bitrate" data-bind="meta_bitrate"/>
-							<input type="hidden" name="file_size" data-bind="meta_file_size"/>
-							<input type="hidden" name="format" data-bind="meta_format"/>
-							<input type="hidden" name="mimeType" data-bind="meta_mime_type"/>
+							<!-- Audio Metadata (bound to signals via data-bind:signal) -->
+							<input type="hidden" name="duration" data-bind:meta_duration/>
+							<input type="hidden" name="sample_rate" data-bind:meta_sample_rate/>
+							<input type="hidden" name="channel_count" data-bind:meta_channel_count/>
+							<input type="hidden" name="bitrate" data-bind:meta_bitrate/>
+							<input type="hidden" name="file_size" data-bind:meta_file_size/>
+							<input type="hidden" name="format" data-bind:meta_format/>
+							<input type="hidden" name="mimeType" data-bind:meta_mime_type/>
 							<!-- Audio Metadata Preview -->
 							<div data-show="$metadata_extracted" class="mt-4 p-4 rounded-md border bg-muted/50">
 								<h4 class="text-sm font-medium mb-2">Audio Metadata</h4>

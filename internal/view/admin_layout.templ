@@ -3,7 +3,6 @@ package view
 import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view/components/avatar"
 	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
 	"github.com/gracchi-stdio/castogo/internal/view/components/sidebar"
 	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
@@ -88,20 +87,36 @@ templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Co
 							if actions != nil {
 								@actions
 							}
+							<!-- DEBUG: basic Datastar test -->
+							<div data-signals:dbg_open="false" class="relative inline-block">
+								<button type="button" data-on-click="$dbg_open = !$dbg_open" class="text-xs border px-1 rounded">test</button>
+								<span data-show="$dbg_open" style="display:none">IT WORKS</span>
+							</div>
 							<!-- User dropdown -->
 							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
-								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{ID: "user-menu", AsChild: true}) {
-									@avatar.Avatar(avatar.AvatarArgs{Class: "cursor-pointer"}) {
-										{ shared.User.Email[0:2] }
-									}
+								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
+									ID:    "user-menu",
+									Class: "h-8 w-8 rounded-full p-0 inline-flex items-center justify-center bg-primary text-primary-foreground cursor-pointer",
+								}) {
+									{ shared.User.Email[0:2] }
 								}
 								@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{ID: "user-menu", Align: "end"}) {
-									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu", Disabled: true, Inset: true}) {
-										@Icon("user", "size-4 mr-2")
+									@dropdown.DropdownMenuLabel(dropdown.DropdownMenuLabelArgs{ID: "user-menu"}) {
 										{ shared.User.Email }
 									}
 									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
-									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu", OnClick: "@post('/logout')", Inset: true}) {
+									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu"}) {
+										<a href="/admin/settings" class="flex items-center gap-2">
+											@Icon("settings", "size-4")
+											Settings
+										</a>
+									}
+									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
+									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
+										ID:      "user-menu",
+										Variant: "destructive",
+										OnClick: "@post('/logout')",
+									}) {
 										@Icon("log-out", "size-4 mr-2")
 										Sign Out
 									}

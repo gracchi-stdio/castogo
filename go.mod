@@ -17,9 +17,12 @@ require (
 )
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
+	connectrpc.com/connect v1.19.1 // indirect
 	github.com/CAFxX/httpcompression v0.0.9 // indirect
 	github.com/Oudwins/tailwind-merge-go v0.2.1 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/coreycole/datastarui v0.0.0-20260131230526-8815ff5a1c48 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -50,4 +53,5 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )

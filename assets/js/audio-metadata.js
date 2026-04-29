@@ -72,35 +72,30 @@ window.extractAudioMetadata = function (el) {
         const channelCount = decodedData.numberOfChannels;
         const bitrate = Math.round((fileSize * 8) / duration / 1000);
 
-        // update datastar signals — raw values auto-bind to hidden inputs
+        // dispatch custom event with metadata — handled by data-on:audiometadata in the template
         const detail = {
-          only: {
-            // raw values (bound to hidden inputs via data-bind)
-            meta_duration: duration,
-            meta_sample_rate: sampleRate,
-            meta_channel_count: channelCount,
-            meta_bitrate: bitrate,
-            meta_file_size: fileSize,
-            meta_format: format,
-            meta_mime_type: mimeType,
-            // formatted display values
-            audio_duration: formatDuration(duration),
-            audio_sample_rate: sampleRate.toLocaleString() + " Hz",
-            audio_channel_count:
-              channelCount === 1
-                ? "Mono"
-                : channelCount === 2
-                  ? "Stereo"
-                  : channelCount + " channels",
-            audio_bitrate: bitrate + " kbps",
-            audio_format: format.toUpperCase(),
-            audio_mime_type: mimeType,
-            audio_file_size: formatFileSize(fileSize),
-            metadata_extracted: "true",
-          },
+          meta_duration: duration,
+          meta_sample_rate: sampleRate,
+          meta_channel_count: channelCount,
+          meta_bitrate: bitrate,
+          meta_file_size: fileSize,
+          meta_format: format,
+          meta_mime_type: mimeType,
+          audio_duration: formatDuration(duration),
+          audio_sample_rate: sampleRate.toLocaleString() + " Hz",
+          audio_channel_count:
+            channelCount === 1
+              ? "Mono"
+              : channelCount === 2
+                ? "Stereo"
+                : channelCount + " channels",
+          audio_bitrate: bitrate + " kbps",
+          audio_format: format.toUpperCase(),
+          audio_mime_type: mimeType,
+          audio_file_size: formatFileSize(fileSize),
         };
 
-        document.dispatchEvent(new CustomEvent('datastar-patch-signals', { detail }));
+        el.dispatchEvent(new CustomEvent('audiometadata', { detail }));
 
       audioContext.close();
       },

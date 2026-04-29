@@ -11,13 +11,13 @@ SELECT * FROM episodes WHERE slug = $1;
 
 -- name: ListEpisodes :many
 SELECT * FROM episodes
-WHERE ($1::episode_status = '' OR status = $1::episode_status)
-  AND ($2 = '' OR title ILIKE '%' || $2 || '%')
+WHERE (@status = '' OR status::text = @status)
+  AND (@search = '' OR title ILIKE '%' || @search || '%')
 ORDER BY episode_number DESC
-LIMIT $3 OFFSET $4;
+LIMIT @page_limit OFFSET @page_offset;
 
--- name: CountEpisodesByStatus :many
-SELECT status, COUNT(*) AS count FROM episodes GROUP BY status;
+-- name: CountEpisodesByStatus :one
+SELECT COUNT(*) AS count FROM episodes WHERE status = @status::episode_status;
 
 -- name: ListPublishedEpisodes :many
 SELECT * FROM episodes
@@ -44,3 +44,6 @@ RETURNING *;
 
 -- name: DeleteEpisode :exec
 DELETE FROM episodes WHERE id = $1;
+
+-- name: GetMaxEpisodeNumber :one
+SELECT COALESCE(MAX(episode_number), 1) FROM episodes;
