@@ -96,7 +96,7 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.Episode) (*domain.E
 		Explicit:       boolPtr(ep.Explicit),
 		CoverImageUrl:  stringPtr(ep.CoverImageURL),
 		AudioSourceUrl: stringPtr(ep.AudioSourceURL),
-		Status:         episodeStatusPtr(db.EpisodeStatus(ep.Status)),
+		Status:         db.NullEpisodeStatus{EpisodeStatus: db.EpisodeStatus(ep.Status), Valid: true},
 	}
 
 	if ep.PublishAt != nil {
@@ -197,6 +197,3 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-func episodeStatusPtr(s db.EpisodeStatus) *db.EpisodeStatus {
-	return &s
-}

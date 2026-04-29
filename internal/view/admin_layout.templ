@@ -87,11 +87,7 @@ templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Co
 							if actions != nil {
 								@actions
 							}
-							<!-- DEBUG: basic Datastar test -->
-							<div data-signals:dbg_open="false" class="relative inline-block">
-								<button type="button" data-on-click="$dbg_open = !$dbg_open" class="text-xs border px-1 rounded">test</button>
-								<span data-show="$dbg_open" style="display:none">IT WORKS</span>
-							</div>
+
 							<!-- User dropdown -->
 							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
 								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{

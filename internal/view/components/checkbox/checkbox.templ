@@ -47,7 +47,7 @@ templ Checkbox(args CheckboxArgs) {
 			class={ allClasses }
 			data-class={ dataClass }
 			role="checkbox"
-			data-on-click={ toggleExpr }
+			data-on:click={ toggleExpr }
 			data-attr-aria-checked={ signals.Conditional("checked", "'true'", "'false'") }
 			data-attr-data-state={ signals.Conditional("checked", "'checked'", "'unchecked'") }
 			data-attr-disabled={ signals.Signal("disabled") }

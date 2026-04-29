@@ -7,7 +7,7 @@ templ FilterPage() {
 			<div data-signals:status="'all'" data-init="@get('/filter/items')">
 				<div class="mb-4">
 					<select name="status" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-						data-on-change="$status = el.value; @get('/filter/items')">
+						data-on:change="$status = el.value; @get('/filter/items')">
 						<option value="all">All</option>
 						<option value="draft">Draft</option>
 						<option value="published">Published</option>

@@ -6,7 +6,9 @@
       "mcp__anytype__API-create-object",
       "mcp__anytype__API-search-space",
       "mcp__anytype__API-list-templates",
-      "mcp__anytype__API-update-object"
+      "mcp__anytype__API-update-object",
+      "mcp__anytype__API-get-type",
+      "mcp__anytype__API-list-tags"
     ]
   }
 }
