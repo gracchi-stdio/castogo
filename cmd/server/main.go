@@ -45,13 +45,18 @@ func main() {
 	e.Use(handler.RequestLogger(skipHealth))
 	e.Use(echosession.Middleware(sessionStore))
 
-	// Services
+	// Repositories
 	userRepo := postgres.NewUserRepo(db)
+	episodeRepo := postgres.NewEpisodeRepo(db)
+	podcastRepo := postgres.NewPodcastConfigRepository(db)
+
+	// Services
 	authService := service.NewAuthService(userRepo)
 	storageService := service.NewBunnyStorageService(config.Cfg.BunnyStorageEndpoint, config.Cfg.BunnyStoragePassword)
-	episodeRepo := postgres.NewEpisodeRepo(db)
 	episodeService := service.NewEpisodeService(episodeRepo)
 	audioProcessor := service.NewFFmpegProcessor()
+	settingsService := service.NewSettingsService(podcastRepo)
+
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	authHandler.RegisterRoutes(e)
@@ -62,7 +67,12 @@ func main() {
 	filterHandler := handler.NewFilterHandler()
 	filterHandler.RegisterRoutes(e)
 
-	adminHandler := handler.NewAdminHandler(storageService, episodeService, audioProcessor)
+	adminHandler := handler.NewAdminHandler(
+		storageService,
+		episodeService,
+		audioProcessor,
+		settingsService,
+	)
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)
 

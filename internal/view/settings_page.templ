@@ -10,7 +10,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/shared"
 )
 
-templ SettingsPage(data *domain.AdminSharedData) {
+templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 	@AdminLayout("Settings", data, nil) {
 		<div
 			data-signals:title="''"
