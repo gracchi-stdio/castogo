@@ -48,22 +48,9 @@ func toDomainEpisode(e *db.Episode) *domain.Episode {
 	return ep
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
 func stringValue(s *string) string {
 	if s == nil {
 		return ""
 	}
 	return *s
-}
-
-func int32Ptr(i int) *int32 {
-	v := int32(i)
-	return &v
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }

@@ -85,22 +85,48 @@ func (r *EpisodeRepo) List(ctx context.Context, filter repository.EpisodeFilter)
 	return episodes, nil
 }
 
-func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
-	params := db.UpdateEpisodeParams{
-		ID:             ep.ID,
-		Title:          stringPtr(ep.Title),
-		Slug:           stringPtr(ep.Slug),
-		EpisodeNumber:  int32Ptr(ep.EpisodeNumber),
-		Description:    stringPtr(ep.Description),
-		Duration:       int32Ptr(ep.Duration),
-		Explicit:       boolPtr(ep.Explicit),
-		CoverImageUrl:  stringPtr(ep.CoverImageURL),
-		AudioSourceUrl: stringPtr(ep.AudioSourceURL),
-		Status:         db.NullEpisodeStatus{EpisodeStatus: db.EpisodeStatus(ep.Status), Valid: true},
+func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*domain.Episode, error) {
+	var episodeNumber *int32
+	if ep.EpisodeNumber != nil {
+		v := int32(*ep.EpisodeNumber)
+		episodeNumber = &v
 	}
 
+	var duration *int32
+	if ep.Duration != nil {
+		v := int32(*ep.Duration)
+		duration = &v
+	}
+
+	var audioMetadata []byte
+	if ep.AudioMetadata != nil {
+		audioMetadata, _ = json.Marshal(*ep.AudioMetadata)
+	}
+
+	var status *db.EpisodeStatus
+	if ep.Status != nil {
+		s := db.EpisodeStatus(*ep.Status)
+		status = &s
+	}
+
+	var publishedAt pgtype.Timestamptz
 	if ep.PublishAt != nil {
-		params.PublishedAt = pgtype.Timestamptz{Time: *ep.PublishAt, Valid: true}
+		publishedAt = pgtype.Timestamptz{Time: *ep.PublishAt, Valid: true}
+	}
+
+	params := db.UpdateEpisodeParams{
+		ID:             ep.ID,
+		Title:          ep.Title,
+		Slug:           ep.Slug,
+		EpisodeNumber:  episodeNumber,
+		Description:    ep.Description,
+		Duration:       duration,
+		Explicit:       ep.Explicit,
+		CoverImageUrl:  ep.CoverImageURL,
+		AudioSourceUrl: ep.AudioSourceURL,
+		AudioMetadata:  audioMetadata,
+		PublishedAt:    publishedAt,
+		Status:         status,
 	}
 
 	result, err := r.q.UpdateEpisode(ctx, params)

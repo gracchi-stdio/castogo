@@ -61,7 +61,7 @@ func (s *EpisodeService) List(ctx context.Context, filter repository.EpisodeFilt
 	return s.repo.List(ctx, filter)
 }
 
-func (s *EpisodeService) Update(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
+func (s *EpisodeService) Update(ctx context.Context, ep *domain.UpdateEpisode) (*domain.Episode, error) {
 	return s.repo.Update(ctx, ep)
 }
 

@@ -26,26 +26,25 @@ func (r *PodcastConfigRepository) Get(ctx context.Context) (*domain.PodcastConfi
 	return toDomainPodcastConfig(&res), nil
 }
 
-func (r *PodcastConfigRepository) Update(ctx context.Context, config *domain.PodcastConfig) (*domain.PodcastConfig, error) {
+func (r *PodcastConfigRepository) Update(ctx context.Context, config *domain.UpdatePodcastConfig) (*domain.PodcastConfig, error) {
 	params := db.UpdatePodcastConfigParams{
 		ID:            config.ID,
-		Title:         &config.Title,
-		Description:   &config.Description,
-		SiteUrl:       &config.SiteURL,
-		Language:      &config.Language,
-		Copyright:     &config.Copyright,
-		AuthorName:    &config.AuthorName,
-		AuthorEmail:   &config.AuthorEmail,
-		CoverImageUrl: &config.CoverImageURL,
-		Category:      &config.Category,
-		Subcategory:   &config.Subcategory,
-		OwnerName:     &config.OwnerName,
-		OwnerEmail:    &config.OwnerEmail,
+		Title:         config.Title,
+		Description:   config.Description,
+		SiteUrl:       config.SiteURL,
+		Language:      config.Language,
+		Copyright:     config.Copyright,
+		AuthorName:    config.AuthorName,
+		AuthorEmail:   config.AuthorEmail,
+		CoverImageUrl: config.CoverImageURL,
+		Category:      config.Category,
+		Subcategory:   config.Subcategory,
+		OwnerName:     config.OwnerName,
+		OwnerEmail:    config.OwnerEmail,
 	}
 	res, err := r.q.UpdatePodcastConfig(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	return toDomainPodcastConfig(&res), nil
-
 }

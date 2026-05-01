@@ -65,6 +65,9 @@ test:
 docker-up:
 	docker compose up -d --build
 
+podman-db-up:
+	podman compose up -d db
+
 docker-down:
 	docker compose down
 

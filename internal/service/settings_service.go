@@ -19,6 +19,6 @@ func (s *SettingsService) GetPodcastConfig(ctx context.Context) (*domain.Podcast
 	return s.configRepo.Get(ctx)
 }
 
-func (s *SettingsService) UpdatePodcastConfig(ctx context.Context, config *domain.PodcastConfig) (*domain.PodcastConfig, error) {
+func (s *SettingsService) UpdatePodcastConfig(ctx context.Context, config *domain.UpdatePodcastConfig) (*domain.PodcastConfig, error) {
 	return s.configRepo.Update(ctx, config)
 }

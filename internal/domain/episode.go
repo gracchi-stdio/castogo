@@ -37,3 +37,21 @@ type Episode struct {
 	CreatedAt      time.Time     `json:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at"`
 }
+
+// UpdateEpisode represents a partial update to an episode.
+// nil fields are ignored (COALESCE keeps existing DB value).
+// Only ID is required.
+type UpdateEpisode struct {
+	ID             int64          `json:"id"`
+	Title          *string        `json:"title,omitempty"`
+	Slug           *string        `json:"slug,omitempty"`
+	EpisodeNumber  *int           `json:"episode_number,omitempty"`
+	Description    *string        `json:"description,omitempty"`
+	Duration       *int           `json:"duration,omitempty"`
+	Explicit       *bool          `json:"explicit,omitempty"`
+	CoverImageURL  *string        `json:"cover_image_url,omitempty"`
+	AudioSourceURL *string        `json:"audio_source_url,omitempty"`
+	AudioMetadata  *AudioMetadata `json:"audio_metadata,omitempty"`
+	PublishAt      *time.Time     `json:"publish_at,omitempty"`
+	Status         *EpisodeStatus `json:"status,omitempty"`
+}
