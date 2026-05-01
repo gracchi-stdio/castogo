@@ -16,8 +16,8 @@ type AnalyticsRepository interface {
 
 	// Summary upserts
 	UpsertPodcastDaily(ctx context.Context, podcastID int64, date time.Time, bandwidth int64) error
-	UpsertByHour(ctx context.Context, podcastID, episodeID int64, date time.Time, hour int) error
-	UpsertByEpisode(ctx context.Context, episodeID int64, date time.Time) error
-	UpsertByPlayer(ctx context.Context, podcastID int64, date time.Time, playerType string) error
+	UpsertByHour(ctx context.Context, podcastID int64, date time.Time, hour int) error
+	UpsertByEpisode(ctx context.Context, podcastID, episodeID int64, date time.Time, age int) error
+	UpsertByPlayer(ctx context.Context, podcastID int64, date time.Time, service, app, device, os string, isBot bool) error
 	UpsertByCountry(ctx context.Context, podcastID int64, date time.Time, countryCode string) error
 }
