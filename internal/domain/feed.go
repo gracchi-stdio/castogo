@@ -123,3 +123,13 @@ func (r *RSS) Write(w io.Writer) error {
 	enc.Indent("", "  ")
 	return enc.Encode(r)
 }
+
+func NewRSSFeed(channels Channel) *RSS {
+	return &RSS{
+		Version:   "2.0",
+		NSItunes:  "http://www.itunes.com/dtds/podcast-1.0.dtd",
+		NSPodcast: "https://podcastindex.org/namespace/1.0",
+		NSContent: "http://purl.org/rss/1.0/modules/content/",
+		Channel:   channels,
+	}
+}

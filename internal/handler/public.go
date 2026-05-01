@@ -11,15 +11,20 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type AuthHandler struct {
-	auth *service.AuthService
+type PunlicHandler struct {
+	auth        *service.AuthService
+	feedService *service.FeedService
 }
 
-func NewAuthHandler(auth *service.AuthService) *AuthHandler {
-	return &AuthHandler{auth: auth}
+func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService) *PunlicHandler {
+	return &PunlicHandler{auth: auth, feedService: feedService}
 }
 
-func (h *AuthHandler) RegisterRoutes(e *echo.Echo) {
+func (h *PunlicHandler) RegisterRoutes(e *echo.Echo) {
+	// RSS Feed (public)
+	e.GET("/feed/podcast.xml", h.RSSFeed)
+
+	// Auth
 	e.GET("/login", echo.WrapHandler(templ.Handler(view.LoginPage())))
 	e.POST("/login", h.login)
 	e.POST("/logout", h.logout)
@@ -34,7 +39,7 @@ type LoginInput struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 
-func (h *AuthHandler) login(c echo.Context) error {
+func (h *PunlicHandler) login(c echo.Context) error {
 	input := new(LoginInput)
 	if err := readSignals(c, input); err != nil {
 		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid request"})
@@ -63,7 +68,7 @@ func (h *AuthHandler) login(c echo.Context) error {
 	return nil
 }
 
-func (h *AuthHandler) logout(c echo.Context) error {
+func (h *PunlicHandler) logout(c echo.Context) error {
 	sess, _ := session.Get("session", c)
 	sess.Options.MaxAge = -1
 	sess.Save(c.Request(), c.Response().Writer)

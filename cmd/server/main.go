@@ -56,17 +56,19 @@ func main() {
 	episodeService := service.NewEpisodeService(episodeRepo)
 	audioProcessor := service.NewFFmpegProcessor()
 	settingsService := service.NewSettingsService(podcastRepo)
+	feedService := service.NewFeedService(podcastRepo, episodeRepo)
 
-	// Handlers
-	authHandler := handler.NewAuthHandler(authService)
+	// Handlers Register routes
+	authHandler := handler.NewPublicHandler(authService, feedService)
 	authHandler.RegisterRoutes(e)
 
-	clockHandler := handler.NewClockHandler()
-	clockHandler.RegisterRoutes(e)
+	// clockHandler := handler.NewClockHandler()
+	// clockHandler.RegisterRoutes(e)
 
-	filterHandler := handler.NewFilterHandler()
-	filterHandler.RegisterRoutes(e)
+	// filterHandler := handler.NewFilterHandler()
+	// filterHandler.RegisterRoutes(e)
 
+	// Admin routes (protected by auth middleware)
 	adminHandler := handler.NewAdminHandler(
 		storageService,
 		episodeService,
