@@ -16,6 +16,8 @@ type Config struct {
 	RegistrationEnabled  bool   `env:"REGISTRATION_ENABLED" envDefault:"false"`
 	BunnyStoragePassword string `env:"BUNNY_STORAGE_PASSWORD"`
 	BunnyStorageEndpoint string `env:"BUNNY_STORAGE_ENDPOINT"`
+	BunnyAPIKey          string `env:"BUNNY_API_KEY"`
+	BunnyPullZoneID      string `env:"BUNNY_PULL_ZONE_ID"`
 	StorageCDN           string `env:"STORAGE_CDN"`
 }
 
