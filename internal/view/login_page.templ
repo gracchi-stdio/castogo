@@ -7,12 +7,17 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	"github.com/gracchi-stdio/castogo/internal/view/shared"
 )
 
 templ LoginPage() {
 	@BaseLayout() {
-		<main class="min-h-screen flex items-center justify-center p-4">
-			<div data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
+		<main class="min-h-screen grid sm:grid-cols-2 grid-cols-1 place-items-center p-4 gap-4">
+			<div class="flex justify-center items-center flex-wrap gap-4">
+		 		@shared.GoMascot("size-42 text-primary")
+				<h1 class="text-5xl font-bold">{ config.Cfg.AppName }</h1>
+			</div>
+			<div class="w-full max-w-sm" data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
 				<div data-show="$error != ''" data-text="$error"
 					class="text-destructive bg-destructive/15 border border-destructive p-3 rounded-md mb-4">
 				</div>
@@ -24,7 +29,9 @@ templ LoginPage() {
 					@card.Card(card.CardArgs{}) {
 						@card.CardHeader(card.CardHeaderArgs{Class: "text-center"}) {
 							@card.CardTitle(card.CardTitleArgs{}) {
-								<h1 class="text-2xl font-bold">{ config.Cfg.AppName }</h1>
+								<h2 class="text-xl font-bold">
+									Sign In
+								</h2>
 							}
 						}
 						@card.CardContent(card.CardContentArgs{}) {

@@ -6,6 +6,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
 	"github.com/gracchi-stdio/castogo/internal/view/components/sidebar"
 	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
+	"github.com/gracchi-stdio/castogo/internal/view/shared"
 )
 
 // sidebarSections returns the navigation sections for the admin sidebar.
@@ -33,7 +34,7 @@ func sidebarSections(currentPath string) []sidebar.SidebarSection {
 	}
 }
 
-templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Component) {
+templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Component) {
 	@BaseLayout() {
 		{{
 		sidebarID := "admin_sidebar"
@@ -66,7 +67,8 @@ templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Co
 					@sidebar.SidebarContent(sidebar.SidebarContentArgs{ID: sidebarID}) {
 						@sidebar.SidebarHeader(sidebar.SidebarHeaderArgs{}) {
 							<div class="flex items-center gap-2 px-2 py-1">
-								<img src="/logo.svg" alt="Logo" class="h-5 w-5"/>
+								// <img src="/logo.svg" alt="Logo" class="h-5 w-5"/>
+								@shared.GoMascot("size-12 text-primary")
 								<span class="font-semibold">{ config.Cfg.AppName }</span>
 							</div>
 						}
@@ -94,11 +96,11 @@ templ AdminLayout(title string, shared *domain.AdminSharedData, actions templ.Co
 									ID:    "user-menu",
 									Class: "h-8 w-8 rounded-full p-0 inline-flex items-center justify-center bg-primary text-primary-foreground cursor-pointer",
 								}) {
-									{ shared.User.Email[0:2] }
+									{ data.User.Email[0:2] }
 								}
 								@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{ID: "user-menu", Align: "end"}) {
 									@dropdown.DropdownMenuLabel(dropdown.DropdownMenuLabelArgs{ID: "user-menu"}) {
-										{ shared.User.Email }
+										{ data.User.Email }
 									}
 									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
 									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu"}) {
