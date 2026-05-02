@@ -2,6 +2,7 @@ package service
 
 import (
 	"compress/gzip"
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,29 +10,33 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 )
 
+type LogFetcher interface {
+	FetchEntries(ctx context.Context, t time.Time) ([]domain.RawLogEntry, error)
+}
+
 type BunnyLogFetcher struct {
+	baseURL    string // "https://logging.bunnycdn.com" in prod, test server URL in tests
 	accessKey  string
 	pullZoneID string
 	httpClient *http.Client
 }
 
-func NewBunnyLogFetcher(accessKey, pullZoneID string, httpClient *http.Client) (*BunnyLogFetcher, error) {
-
+func NewBunnyLogFetcher(baseURL, accessKey, pullZoneID string, httpClient *http.Client) *BunnyLogFetcher {
 	return &BunnyLogFetcher{
+		baseURL:    baseURL,
 		accessKey:  accessKey,
 		pullZoneID: pullZoneID,
-		httpClient: &client,
-	}, nil
+		httpClient: httpClient,
+	}
 }
 
-// FetcherEntries downloads a single gzip log file, parse it, returns entries.
-// The caller (analytics service) decides WHICH files to fetch.
-// use gzip
+func (f *BunnyLogFetcher) FetchEntries(ctx context.Context, t time.Time) ([]domain.RawLogEntry, error) {
+	timeStr := t.Format("01-02-06")
+	url := fmt.Sprintf("%s/%s/%s.log", f.baseURL, timeStr, f.pullZoneID)
 
-func (f *BunnyLogFetcher) FetcherEntries(filePath string) ([]domain.RawLogEntry, error) {
-	url := fmt.Sprintf("https://logging.bunnycdn.com/%s/%s", time.Now().Format("{MM}-{DD}-{YY}"), f.pullZoneID)
+	fmt.Printf("%s[analytics]%s fetching %s\n", cCyan, cReset, url)
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +50,7 @@ func (f *BunnyLogFetcher) FetcherEntries(filePath string) ([]domain.RawLogEntry,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch log file: %s", resp.Status)
+		return nil, fmt.Errorf("fetch logs %s: %s", url, resp.Status)
 	}
 
 	gzReader, err := gzip.NewReader(resp.Body)
@@ -54,5 +59,5 @@ func (f *BunnyLogFetcher) FetcherEntries(filePath string) ([]domain.RawLogEntry,
 	}
 	defer gzReader.Close()
 
-	return nil, nil
+	return ParseLogEntries(gzReader)
 }

@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -31,12 +33,6 @@ func ParseLogEntry(logLine string) (*domain.RawLogEntry, error) {
 		return nil, fmt.Errorf("invalid bytes sent: %v", err)
 	}
 
-	// parts[0] = CacheStatus (not needed)
-	// parts[4] = PullZoneID  (not needed)
-	// parts[6] = Referer     (not needed)
-	// parts[8] = EdgeLocation(not needed)
-	// parts[10]= RequestID   (not needed)
-
 	return &domain.RawLogEntry{
 		StatusCode:  statusCode,
 		Timestamp:   timestamp,
@@ -44,6 +40,20 @@ func ParseLogEntry(logLine string) (*domain.RawLogEntry, error) {
 		ClientIP:    parts[5],
 		URL:         parts[7],
 		UserAgent:   parts[9],
+		RequestID:   parts[10],
 		CountryCode: parts[11],
 	}, nil
+}
+
+func ParseLogEntries(reader io.Reader) ([]domain.RawLogEntry, error) {
+	scanner := bufio.NewScanner(reader)
+	var entries []domain.RawLogEntry
+	for scanner.Scan() {
+		entry, err := ParseLogEntry(scanner.Text())
+		if err != nil {
+			continue // skip malformed lines
+		}
+		entries = append(entries, *entry)
+	}
+	return entries, scanner.Err()
 }

@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	echosession "github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -62,6 +66,8 @@ func main() {
 	authHandler := handler.NewPublicHandler(authService, feedService)
 	authHandler.RegisterRoutes(e)
 
+	// --- sample pages ---
+	//
 	// clockHandler := handler.NewClockHandler()
 	// clockHandler.RegisterRoutes(e)
 
@@ -88,6 +94,41 @@ func main() {
 	// Static files — must be registered LAST so it doesn't swallow routes
 	e.Static("/", "public")
 
-	log.Printf("starting Castogo on: %s (%s)", config.Cfg.Port, config.Cfg.Env)
-	e.Logger.Fatal(e.Start(":" + config.Cfg.Port))
+	httpClient := &http.Client{Timeout: 60 * time.Second} // 60 Timeout
+	fetcher := service.NewBunnyLogFetcher(
+		"https://logging.bunnycdn.com", // see Bunny.net docs for log fetching
+		config.Cfg.BunnyAPIKey,
+		config.Cfg.BunnyPullZoneID,
+		httpClient, // use default HTTP client
+	)
+	analyticsRepo := postgres.NewAnalyticsPostgres(db)
+	analyticsService := service.NewAnalyticsService(fetcher, analyticsRepo, episodeRepo)
+	worker := service.NewAnalyticsWorker(analyticsService, 5*time.Hour)
+
+	// graceful shutdown on SIGINT/SIGTERM
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	worker.Start(ctx)
+
+	go func() {
+		if err := e.Start(":" + config.Cfg.Port); err != nil {
+			e.Logger.Error("failed to start server", "error", err)
+		}
+	}()
+
+	// Block until we receive a shutdown signal (e.g. Ctrl+C)
+	<-ctx.Done()
+	log.Println("Shutting down...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	e.Shutdown(shutdownCtx)
+
+	worker.Stop()
+
+	db.Close()
+
+	log.Println("Server gracefully stopped")
 }
