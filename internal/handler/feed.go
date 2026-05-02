@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *PunlicHandler) RSSFeed(c echo.Context) error {
+func (h *PublicHandler) RSSFeed(c echo.Context) error {
 	feed, err := h.feedService.BuildFeed(c.Request().Context())
 	if err != nil {
 		return err

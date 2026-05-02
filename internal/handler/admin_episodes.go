@@ -129,7 +129,7 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 		Duration:       audioMetadata.Duration,
 		AudioMetadata:  audioMetadata,
 		AudioSourceURL: cdnURL,
-		Status:         domain.EpisodeStatusDraft,
+		// No PublishAt → draft status (derived automatically)
 	}
 
 	_, err = h.episodeService.Create(c.Request().Context(), episode)

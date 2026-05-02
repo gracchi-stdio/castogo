@@ -11,16 +11,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type PunlicHandler struct {
+type PublicHandler struct {
 	auth        *service.AuthService
 	feedService *service.FeedService
 }
 
-func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService) *PunlicHandler {
-	return &PunlicHandler{auth: auth, feedService: feedService}
+func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService) *PublicHandler {
+	return &PublicHandler{auth: auth, feedService: feedService}
 }
 
-func (h *PunlicHandler) RegisterRoutes(e *echo.Echo) {
+func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	// RSS Feed (public)
 	e.GET("/feed/podcast.xml", h.RSSFeed)
 
@@ -39,7 +39,7 @@ type LoginInput struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 
-func (h *PunlicHandler) login(c echo.Context) error {
+func (h *PublicHandler) login(c echo.Context) error {
 	input := new(LoginInput)
 	if err := readSignals(c, input); err != nil {
 		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid request"})
@@ -68,7 +68,7 @@ func (h *PunlicHandler) login(c echo.Context) error {
 	return nil
 }
 
-func (h *PunlicHandler) logout(c echo.Context) error {
+func (h *PublicHandler) logout(c echo.Context) error {
 	sess, _ := session.Get("session", c)
 	sess.Options.MaxAge = -1
 	sess.Save(c.Request(), c.Response().Writer)

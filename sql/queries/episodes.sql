@@ -1,6 +1,6 @@
 -- name: CreateEpisode :one
-INSERT INTO episodes (title, slug, episode_number, description, duration, explicit, cover_image_url, audio_source_url, audio_metadata, published_at, status)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, sqlc.narg('audio_metadata'), $9, $10)
+INSERT INTO episodes (title, slug, episode_number, description, duration, explicit, cover_image_url, audio_source_url, audio_metadata, published_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, sqlc.narg('audio_metadata'), $9)
 RETURNING *;
 
 -- name: GetEpisodeByID :one
@@ -11,17 +11,25 @@ SELECT * FROM episodes WHERE slug = $1;
 
 -- name: ListEpisodes :many
 SELECT * FROM episodes
-WHERE (@status = '' OR status::text = @status)
-  AND (@search = '' OR title ILIKE '%' || @search || '%')
+WHERE (@search = '' OR title ILIKE '%' || @search || '%')
 ORDER BY episode_number DESC
 LIMIT @page_limit OFFSET @page_offset;
 
 -- name: CountEpisodesByStatus :one
-SELECT COUNT(*) AS count FROM episodes WHERE status = @status::episode_status;
+SELECT COUNT(*) AS count FROM episodes WHERE
+CASE @status::text
+    WHEN 'draft' THEN published_at IS NULL AND archived_at IS NULL
+    WHEN 'scheduled' THEN published_at IS NOT NULL AND published_at > NOW() AND archived_at IS NULL
+    WHEN 'published' THEN published_at IS NOT NULL AND published_at <= NOW() AND archived_at IS NULL
+    WHEN 'archived' THEN archived_at IS NOT NULL
+    ELSE false
+END;
 
 -- name: ListPublishedEpisodes :many
 SELECT * FROM episodes
-WHERE status = 'published'
+WHERE published_at IS NOT NULL
+  AND published_at <= NOW()
+  AND archived_at IS NULL
 ORDER BY published_at DESC
 LIMIT $1 OFFSET $2;
 
@@ -37,7 +45,7 @@ SET title = COALESCE(sqlc.narg('title'), title),
     audio_source_url = COALESCE(sqlc.narg('audio_source_url'), audio_source_url),
     audio_metadata = COALESCE(sqlc.narg('audio_metadata'), audio_metadata),
     published_at = COALESCE(sqlc.narg('published_at'), published_at),
-    status = COALESCE(sqlc.narg('status'), status),
+    archived_at = sqlc.narg('archived_at'),
     updated_at = NOW()
 WHERE id = sqlc.arg('id')
 RETURNING *;

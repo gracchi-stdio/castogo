@@ -34,7 +34,6 @@ func (r *EpisodeRepo) Create(ctx context.Context, ep *domain.Episode) (*domain.E
 		Explicit:       ep.Explicit,
 		CoverImageUrl:  (&ep.CoverImageURL),
 		AudioSourceUrl: (&ep.AudioSourceURL),
-		Status:         db.EpisodeStatus(ep.Status),
 		AudioMetadata:  metadataJSON,
 	}
 
@@ -68,7 +67,6 @@ func (r *EpisodeRepo) GetBySlug(ctx context.Context, slug string) (*domain.Episo
 
 func (r *EpisodeRepo) List(ctx context.Context, filter repository.EpisodeFilter) ([]*domain.Episode, error) {
 	params := db.ListEpisodesParams{
-		Status:     filter.Status,
 		Search:     filter.Search,
 		PageOffset: int32(filter.Offset),
 		PageLimit:  int32(filter.Limit),
@@ -103,15 +101,14 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*do
 		audioMetadata, _ = json.Marshal(*ep.AudioMetadata)
 	}
 
-	var status *db.EpisodeStatus
-	if ep.Status != nil {
-		s := db.EpisodeStatus(*ep.Status)
-		status = &s
-	}
-
 	var publishedAt pgtype.Timestamptz
 	if ep.PublishAt != nil {
 		publishedAt = pgtype.Timestamptz{Time: *ep.PublishAt, Valid: true}
+	}
+
+	var archivedAt pgtype.Timestamptz
+	if ep.ArchivedAt != nil {
+		archivedAt = pgtype.Timestamptz{Time: *ep.ArchivedAt, Valid: true}
 	}
 
 	params := db.UpdateEpisodeParams{
@@ -126,7 +123,7 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*do
 		AudioSourceUrl: ep.AudioSourceURL,
 		AudioMetadata:  audioMetadata,
 		PublishedAt:    publishedAt,
-		Status:         status,
+		ArchivedAt:     archivedAt,
 	}
 
 	result, err := r.q.UpdateEpisode(ctx, params)
@@ -142,7 +139,7 @@ func (r *EpisodeRepo) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *EpisodeRepo) CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error) {
-	count, err := r.q.CountEpisodesByStatus(ctx, db.EpisodeStatus(status))
+	count, err := r.q.CountEpisodesByStatus(ctx, string(status))
 	if err != nil {
 		return 0, fmt.Errorf("count episodes by status: %w", err)
 	}
@@ -152,7 +149,8 @@ func (r *EpisodeRepo) CountByStatus(ctx context.Context, status domain.EpisodeSt
 func (r *EpisodeRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error) {
 	params := db.ListPublishedEpisodesParams{
 		Limit:  int32(limit),
-		Offset: int32(offset)}
+		Offset: int32(offset),
+	}
 	results, err := r.q.ListPublishedEpisodes(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("list published episodes: %w", err)

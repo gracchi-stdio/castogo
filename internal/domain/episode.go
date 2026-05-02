@@ -2,6 +2,8 @@ package domain
 
 import "time"
 
+// EpisodeStatus represents the derived state of an episode.
+// It is NOT stored in the database — it is computed from publish_at and archived_at.
 type EpisodeStatus string
 
 const (
@@ -33,9 +35,29 @@ type Episode struct {
 	AudioSourceURL string        `json:"audio_source_url"`
 	EpisodeNumber  int           `json:"episode_number"`
 	PublishAt      *time.Time    `json:"publish_at,omitempty"`
-	Status         EpisodeStatus `json:"status"`
+	ArchivedAt     *time.Time    `json:"archived_at,omitempty"`
 	CreatedAt      time.Time     `json:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at"`
+}
+
+// Status derives the episode status from publish_at and archived_at.
+// No database column needed — the state machine is:
+//
+//	publish_at IS NULL       → draft
+//	publish_at > NOW()       → scheduled
+//	publish_at <= NOW()      → published
+//	archived_at IS NOT NULL  → archived (overrides all above)
+func (ep *Episode) Status() EpisodeStatus {
+	if ep.ArchivedAt != nil {
+		return EpisodeStatusArchived
+	}
+	if ep.PublishAt == nil {
+		return EpisodeStatusDraft
+	}
+	if ep.PublishAt.After(time.Now()) {
+		return EpisodeStatusScheduled
+	}
+	return EpisodeStatusPublished
 }
 
 // UpdateEpisode represents a partial update to an episode.
@@ -53,5 +75,5 @@ type UpdateEpisode struct {
 	AudioSourceURL *string        `json:"audio_source_url,omitempty"`
 	AudioMetadata  *AudioMetadata `json:"audio_metadata,omitempty"`
 	PublishAt      *time.Time     `json:"publish_at,omitempty"`
-	Status         *EpisodeStatus `json:"status,omitempty"`
+	ArchivedAt     *time.Time     `json:"archived_at,omitempty"`
 }

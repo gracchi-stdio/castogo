@@ -7,7 +7,6 @@ import (
 )
 
 type EpisodeFilter struct {
-	Status domain.EpisodeStatus
 	Search string
 	Limit  int
 	Offset int

@@ -38,12 +38,14 @@ func toDomainEpisode(e *db.Episode) *domain.Episode {
 		CoverImageURL:  stringValue(e.CoverImageUrl),
 		AudioSourceURL: stringValue(e.AudioSourceUrl),
 		AudioMetadata:  e.AudioMetadata,
-		Status:         domain.EpisodeStatus(e.Status),
 		CreatedAt:      e.CreatedAt.Time,
 		UpdatedAt:      e.UpdatedAt.Time,
 	}
 	if e.PublishedAt.Valid {
 		ep.PublishAt = &e.PublishedAt.Time
+	}
+	if e.ArchivedAt.Valid {
+		ep.ArchivedAt = &e.ArchivedAt.Time
 	}
 	return ep
 }
