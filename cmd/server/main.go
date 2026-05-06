@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	echosession "github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -19,6 +20,17 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/session"
 )
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i any) error {
+	if err := cv.validator.Struct(i); err != nil {
+		return err
+	}
+	return nil
+}
+
 func main() {
 	err := config.LoadConfig()
 	if err != nil {
@@ -26,6 +38,7 @@ func main() {
 	}
 
 	e := echo.New()
+	e.Validator = &CustomValidator{validator: validator.New()}
 	e.HideBanner = false
 
 	// Database

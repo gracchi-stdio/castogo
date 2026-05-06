@@ -20,8 +20,37 @@ func (h *AdminHandler) settingsPage(c echo.Context) error {
 	return echo.WrapHandler(templ.Handler(view.SettingsPage(getSharedData(c), config)))(c)
 }
 
+type SettingsForm struct {
+	Title       string `json:"title" form:"title" validate:"required"`
+	Description string `json:"description" form:"description"`
+	Author      string `json:"author" form:"author"`
+	Email       string `json:"email" form:"email"`
+	Language    string `json:"language" form:"language"`
+}
+
 func (h *AdminHandler) settingsSave(c echo.Context) error {
-	// Parse form data
+	settingInput := new(SettingsForm)
+	if err := c.Bind(settingInput); err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error":          "Invalid form data",
+			"loading_status": "",
+			"loading_msg":    "",
+		})
+		return nil
+	}
+	if err := c.Validate(settingInput); err != nil {
+		errorStruct := fieldValidationErrors(err)
+		errorStruct["loading_status"] = ""
+		errorStruct["loading_msg"] = ""
+		sse(c).MarshalAndPatchSignals(errorStruct)
+		return nil
+	}
+
+	log.Printf("Display %s", settingInput.Title)
+	sse(c).MarshalAndPatchSignals(map[string]string{
+		"loading_status": "",
+		"loading_msg":    "",
+	})
 	return nil
 }
 
