@@ -6,7 +6,7 @@ import "sort"
 // Categories with no subcategories have an empty slice (e.g. True Crime).
 // This is the single source of truth — the settings page, SSE endpoint,
 // and future RSS feed renderer all read from here.
-var iTunesCategories = map[string][]string{
+var ITunesCategories = map[string][]string{
 	"Arts":                    {"Books", "Design", "Fashion & Beauty", "Food", "Performing Arts", "Visual Arts"},
 	"Business":                {"Careers", "Entrepreneurship", "Investing", "Management", "Marketing", "Non-Profit"},
 	"Comedy":                  {"Comedy Interviews", "Improv", "Stand-Up"},
@@ -31,8 +31,8 @@ var iTunesCategories = map[string][]string{
 // CategoryNames returns all top-level iTunes category names in alphabetical order.
 // Used to populate the category select dropdown.
 func CategoryNames() []string {
-	names := make([]string, 0, len(iTunesCategories))
-	for name := range iTunesCategories {
+	names := make([]string, 0, len(ITunesCategories))
+	for name := range ITunesCategories {
 		names = append(names, name)
 	}
 	sort.Strings(names)
@@ -44,7 +44,7 @@ func CategoryNames() []string {
 // Returns an empty (non-nil) slice if the category exists but has no subcategories
 // (e.g. True Crime, Technology).
 func SubcategoriesFor(category string) []string {
-	subs, ok := iTunesCategories[category]
+	subs, ok := ITunesCategories[category]
 	if !ok {
 		return nil
 	}
@@ -57,5 +57,5 @@ func SubcategoriesFor(category string) []string {
 // HasSubcategories reports whether a category has any subcategories.
 // Returns false for unknown categories or categories with empty subcategory lists.
 func HasSubcategories(category string) bool {
-	return len(iTunesCategories[category]) > 0
+	return len(ITunesCategories[category]) > 0
 }

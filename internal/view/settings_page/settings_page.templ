@@ -1,4 +1,4 @@
-package view
+package settings_page
 
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
@@ -8,10 +8,12 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
 	"github.com/gracchi-stdio/castogo/internal/view/shared"
+	"github.com/gracchi-stdio/castogo/internal/view"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
 )
 
 templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
-	@AdminLayout("Settings", data, nil) {
+	@view.AdminLayout("Settings", data, nil) {
 		{{
 			title := ""
 			description := ""
@@ -49,8 +51,8 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 			data-signals:author_name={ "'" + authorName + "'" }
 			data-signals:author_email={ "'" + authorEmail + "'" }
 			data-signals:cover_image_url={ "'" + coverImageURL + "'" }
-			data-signals:category={ "'" + category + "'" }
-			data-signals:subcategory={ "'" + subcategory + "'" }
+			data-signals:_lastCategory={ "'" + category + "'" }
+			
 			data-signals:owner_name={ "'" + ownerName + "'" }
 			data-signals:owner_email={ "'" + ownerEmail + "'" }
 			data-signals:error="''"
@@ -280,30 +282,37 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 											@label.Label(label.LabelArgs{For: "category"}) {
 												Category
 											}
-											@input.Input(input.InputArgs{
-												Type:        "text",
-												ID:          "category",
+											@selectcomponent.Select(selectcomponent.SelectArgs{
+												ID:          "category_select",
 												Name:        "category",
-												Placeholder: "Technology",
+												Placeholder: "Select category...",
 												Class:       "w-full",
-												Attributes: map[string]any{
-													"data-bind:category": "",
-												},
+												Options:     categoryOptions,
+												ContentClass: "max-h-32",
+												Value:       category,
 											})
 										</div>
-										<div class="space-y-2">
+										// Subcategory
+										<div 
+											class="space-y-2"
+											id="subcategory_wrapper"
+											data-effect="if ($category_select.value && $category_select.value !== $_lastCategory) {
+											  $_lastCategory = $category_select.value;
+												@get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value));
+											}"
+										>
+											{{ subcategoryOptions := getSubcategoryOptions(category) }}
 											@label.Label(label.LabelArgs{For: "subcategory"}) {
 												Subcategory
 											}
-											@input.Input(input.InputArgs{
-												Type:        "text",
-												ID:          "subcategory",
+											@selectcomponent.Select(selectcomponent.SelectArgs{
+												ID:          "subcategory_select",
 												Name:        "subcategory",
-												Placeholder: "Podcasting",
-												Class:       "w-full",
-												Attributes: map[string]any{
-													"data-bind:subcategory": "",
-												},
+												Placeholder: "Select subcategory...",
+												Options:     subcategoryOptions,
+												ContentClass: "max-h-32",
+												Value: subcategory,
+												Disabled: len(subcategoryOptions) == 0,
 											})
 										</div>
 									</div>

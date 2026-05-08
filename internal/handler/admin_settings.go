@@ -10,14 +10,14 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view"
+	"github.com/gracchi-stdio/castogo/internal/view/settings_page"
 	"github.com/labstack/echo/v4"
 )
 
 func (h *AdminHandler) settingsPage(c echo.Context) error {
 	config, _ := h.settingsService.GetPodcastConfig(c.Request().Context())
 	// config might be nil (first run) — template handles nil gracefully
-	return echo.WrapHandler(templ.Handler(view.SettingsPage(getSharedData(c), config)))(c)
+	return echo.WrapHandler(templ.Handler(settings_page.SettingsPage(getSharedData(c), config)))(c)
 }
 
 type SettingsForm struct {

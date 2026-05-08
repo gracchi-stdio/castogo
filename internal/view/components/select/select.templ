@@ -105,7 +105,8 @@ templ Select(args SelectArgs) {
 				})
 			}
 			@SelectContent(SelectContentArgs{
-				ID: selectID,
+				ID:    selectID,
+				Class: args.ContentClass,
 			}) {
 				@renderSelectOptions(selectID, args.Options)
 			}

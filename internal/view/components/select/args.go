@@ -56,6 +56,9 @@ type SelectArgs struct {
 	// Class allows additional CSS classes to be added
 	Class string
 
+	// ContentClass allows additional CSS classes on the dropdown content
+	ContentClass string
+
 	// Attributes allows additional HTML attributes to be added
 	Attributes templ.Attributes
 }
