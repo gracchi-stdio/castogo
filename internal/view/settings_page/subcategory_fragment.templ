@@ -1,0 +1,20 @@
+package settings_page
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+)
+
+templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs) {
+	@label.Label(label.LabelArgs{For: "subcategory"}) {
+		Subcategory
+	}
+	@selectcomponent.Select(selectcomponent.SelectArgs{
+		ID:           "subcategory_select",
+		Name:         "subcategory",
+		Placeholder:  "Select subcategory...",
+		Options:      options,
+		ContentClass: "max-h-32",
+		Disabled:     len(options) == 0,
+	})
+}

@@ -37,6 +37,7 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("/settings", h.settingsPage)
 	g.POST("/settings", h.settingsSave)
 	g.POST("/settings/upload-cover", h.settingsUploadCoverImage)
+		g.GET("/settings/subcategories", h.subcategoriesSSE)
 
 }
 

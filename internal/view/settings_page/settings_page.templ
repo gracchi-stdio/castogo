@@ -51,8 +51,6 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 			data-signals:author_name={ "'" + authorName + "'" }
 			data-signals:author_email={ "'" + authorEmail + "'" }
 			data-signals:cover_image_url={ "'" + coverImageURL + "'" }
-			data-signals:_lastCategory={ "'" + category + "'" }
-			
 			data-signals:owner_name={ "'" + ownerName + "'" }
 			data-signals:owner_email={ "'" + ownerEmail + "'" }
 			data-signals:error="''"
@@ -283,36 +281,35 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 												Category
 											}
 											@selectcomponent.Select(selectcomponent.SelectArgs{
-												ID:          "category_select",
-												Name:        "category",
-												Placeholder: "Select category...",
-												Class:       "w-full",
-												Options:     categoryOptions,
+												ID:           "category_select",
+												Name:         "category",
+												Placeholder:  "Select category...",
+												Class:        "w-full",
+												Options:      categoryOptions,
 												ContentClass: "max-h-32",
-												Value:       category,
+												Value:        category,
+												OnChange:     "@get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))",
 											})
 										</div>
 										// Subcategory
-										<div 
-											class="space-y-2"
-											id="subcategory_wrapper"
-											data-effect="if ($category_select.value && $category_select.value !== $_lastCategory) {
-											  $_lastCategory = $category_select.value;
-												@get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value));
-											}"
-										>
-											{{ subcategoryOptions := getSubcategoryOptions(category) }}
-											@label.Label(label.LabelArgs{For: "subcategory"}) {
+										<div class="space-y-2" id="subcategory_wrapper">
+											{{ subcategoryOptions := GetSubcategoryOptions(category)
+											   subLabel := ""
+											   if len(subcategoryOptions) == 0 {
+												   subLabel = "hidden"
+											   }
+											 }}
+											@label.Label(label.LabelArgs{For: "subcategory", Class: subLabel}) {
 												Subcategory
 											}
 											@selectcomponent.Select(selectcomponent.SelectArgs{
-												ID:          "subcategory_select",
-												Name:        "subcategory",
-												Placeholder: "Select subcategory...",
-												Options:     subcategoryOptions,
+												ID:           "subcategory_select",
+												Name:         "subcategory",
+												Placeholder:  "Select subcategory...",
+												Options:      subcategoryOptions,
 												ContentClass: "max-h-32",
-												Value: subcategory,
-												Disabled: len(subcategoryOptions) == 0,
+												Value:        subcategory,
+												Disabled:     len(subcategoryOptions) == 0,
 											})
 										</div>
 									</div>

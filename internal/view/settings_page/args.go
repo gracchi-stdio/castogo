@@ -17,7 +17,7 @@ func init() {
 
 }
 
-func getSubcategoryOptions(category string) []selectcomponent.SelectOptionArgs {
+func GetSubcategoryOptions(category string) []selectcomponent.SelectOptionArgs {
 	subcategories := domain.SubcategoriesFor(category)
 	options := make([]selectcomponent.SelectOptionArgs, 0)
 	for _, sub := range subcategories {
