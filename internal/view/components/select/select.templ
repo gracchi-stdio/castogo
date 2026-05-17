@@ -67,24 +67,11 @@ templ Select(args SelectArgs) {
 
 		// Click outside handler - use conditional pattern from Datastar docs
 		clickOutsideHandler := signals.Signal("open") + " ? " + signals.Set("open", "false") + " : null"
-
-		// Create a data-effect handler that watches for value changes
-		effectHandler := ""
-		if args.OnChange != "" {
-			// Only execute OnChange when value actually changes (not on initial load or other signal changes)
-			effectHandler = fmt.Sprintf(
-				"if ($%s.value && $%s.value !== $%s._lastValue) { $%s._lastValue = $%s.value; %s }",
-				selectID, selectID, selectID, selectID, selectID, args.OnChange,
-			)
-		}
 	}}
 	<div
 		data-slot="select"
 		data-select-id={ selectID }
 		data-signals={ signals.DataSignals }
-		if effectHandler != "" {
-			data-effect={ effectHandler }
-		}
 		data-on:click__outside={ clickOutsideHandler }
 		data-on:resize__window={ signals.Set("open", "false") }
 		class={ selectVariants(args.Class) }
@@ -95,6 +82,7 @@ templ Select(args SelectArgs) {
 			<input
 				type="hidden"
 				name={ args.Name }
+				value={ initialValue }
 				data-bind={ signals.Signal("value") }
 				if args.Required {
 					required
@@ -116,7 +104,7 @@ templ Select(args SelectArgs) {
 				ID:    selectID,
 				Class: args.ContentClass,
 			}) {
-				@renderSelectOptions(selectID, args.Options)
+				@renderSelectOptions(selectID, args.Options, args.OnChange)
 			}
 		} else {
 			<!-- Manual composition when no options provided -->
@@ -126,7 +114,7 @@ templ Select(args SelectArgs) {
 }
 
 // renderSelectOptions renders a slice of SelectOptions with proper grouping
-templ renderSelectOptions(selectID string, options []SelectOptionArgs) {
+templ renderSelectOptions(selectID string, options []SelectOptionArgs, onChange string) {
 	{{
 		// Group options by their Group field
 		groupedOptions := make(map[string][]SelectOptionArgs)
@@ -151,6 +139,7 @@ templ renderSelectOptions(selectID string, options []SelectOptionArgs) {
 				Value:    option.Value,
 				Index:    globalIndex,
 				Disabled: option.Disabled,
+				OnChange: onChange,
 			}) {
 				{ option.Label }
 			}
@@ -174,6 +163,7 @@ templ renderSelectOptions(selectID string, options []SelectOptionArgs) {
 					Value:    option.Value,
 					Index:    globalIndex,
 					Disabled: option.Disabled,
+					OnChange: onChange,
 				}) {
 					{ option.Label }
 				}
@@ -303,7 +293,7 @@ templ SelectItem(args SelectItemArgs) {
 		classes := selectItemVariants(args.Class)
 
 		// Generate item selection handlers using expression builder
-		itemHandler := NewSelectItemHandler(args.ID, args.Value)
+		itemHandler := NewSelectItemHandler(args.ID, args.Value, args.OnChange)
 		selectExpr := itemHandler.BuildClickHandler()
 		itemKeyHandler := itemHandler.BuildKeyboardHandler()
 

@@ -15,14 +15,14 @@ var ITunesCategories = map[string][]string{
 	"Government":              {},
 	"History":                 {},
 	"Health & Fitness":        {"Alternative Health", "Fitness", "Medicine", "Mental Health", "Nutrition", "Sexuality"},
-	"Kids & Family":           {"Education for Kids", "Parenting", "Pets & Animals", "Stories for Kids"},
+	"Kids & Family":           {"Education for Kids", "Family", "Parenting", "Pets & Animals", "Stories for Kids"},
 	"Leisure":                 {"Animation & Manga", "Automotive", "Aviation", "Crafts", "Games", "Hobbies", "Home & Garden", "Video Games"},
 	"Music":                   {"Music Commentary", "Music History", "Music Interviews"},
 	"News":                    {"Business News", "Daily News", "Entertainment News", "News Commentary", "Politics", "Sports News", "Tech News"},
 	"Religion & Spirituality": {"Buddhism", "Christianity", "Hinduism", "Islam", "Judaism", "Religion", "Spirituality"},
 	"Science":                 {"Astronomy", "Chemistry", "Earth Sciences", "Life Sciences", "Mathematics", "Natural Sciences", "Nature", "Physics", "Social Sciences"},
-	"Society & Culture":       {"Documentary", "Personal Journals", "Philosophy", "Places & Travel", "Relationships"},
-	"Sports":                  {"Baseball", "Basketball", "Cricket", "Fantasy Sports", "Football", "Golf", "Hockey", "Rugby", "Soccer", "Swimming", "Tennis", "Volleyball", "Wilderness", "Wrestling"},
+	"Society & Culture":       {"Documentary", "Education", "History", "Personal Journals", "Philosophy", "Places & Travel", "Relationships"},
+	"Sports":                  {"Baseball", "Basketball", "Cricket", "Fantasy Sports", "Football", "Golf", "Hockey", "Rugby", "Running", "Soccer", "Swimming", "Tennis", "Volleyball", "Wrestling"},
 	"Technology":              {},
 	"True Crime":              {},
 	"TV & Film":               {"After Shows", "Film History", "Film Interviews", "Film Reviews", "TV Reviews"},
@@ -58,4 +58,22 @@ func SubcategoriesFor(category string) []string {
 // Returns false for unknown categories or categories with empty subcategory lists.
 func HasSubcategories(category string) bool {
 	return len(ITunesCategories[category]) > 0
+}
+
+// IsValidCategory reports whether the category exists and the subcategory is
+// valid for that category.
+func IsValidCategory(category, subcategory string) bool {
+	subcategories, ok := ITunesCategories[category]
+	if !ok {
+		return false
+	}
+	if subcategory == "" {
+		return len(subcategories) == 0
+	}
+	for _, candidate := range subcategories {
+		if candidate == subcategory {
+			return true
+		}
+	}
+	return false
 }

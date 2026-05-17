@@ -127,6 +127,10 @@ type SelectItemArgs struct {
 	// Disabled makes the item non-selectable
 	Disabled bool
 
+	// OnChange is an optional Datastar expression to execute when this item is clicked
+	// Example: "@get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))"
+	OnChange string
+
 	// Class allows additional CSS classes to be added
 	Class string
 

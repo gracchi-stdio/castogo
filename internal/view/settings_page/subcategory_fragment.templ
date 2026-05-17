@@ -5,8 +5,14 @@ import (
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
 )
 
-templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs) {
-	@label.Label(label.LabelArgs{For: "subcategory"}) {
+templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs, selected string) {
+	{{
+		labelClass := ""
+		if len(options) == 0 {
+			labelClass = "hidden"
+		}
+	}}
+	@label.Label(label.LabelArgs{For: "subcategory", Class: labelClass}) {
 		Subcategory
 	}
 	@selectcomponent.Select(selectcomponent.SelectArgs{
@@ -15,6 +21,7 @@ templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs) {
 		Placeholder:  "Select subcategory...",
 		Options:      options,
 		ContentClass: "max-h-32",
+		Value:        selected,
 		Disabled:     len(options) == 0,
 	})
 }

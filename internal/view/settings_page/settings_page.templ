@@ -4,6 +4,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
@@ -64,7 +65,14 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 				Signal: "loading_status",
 				Status: "loading_msg",
 			})
-			<form id="settings-form" enctype="multipart/form-data">
+			@form.Form(form.FormArgs{
+				ID:          "settings-form",
+				Action:      "/admin/settings",
+				ContentType: "form",
+				Attributes: map[string]any{
+					"enctype": "multipart/form-data",
+				},
+			}) {
 				@card.Card(card.CardArgs{}) {
 					@card.CardContent(card.CardContentArgs{}) {
 						<div class="space-y-6">
@@ -319,9 +327,6 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 							<div class="flex justify-end">
 								@button.Button(button.ButtonArgs{
 									Type: "submit",
-									Attributes: map[string]any{
-										"data-on:click": "$loading_msg = 'Saving settings...'; $loading_status = true; @post('/admin/settings', {contentType: 'form', form: '#settings-form'})",
-									},
 								}) {
 									Save Settings
 								}
@@ -334,7 +339,7 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 					name="id"
 					value={ config.ID }
 				/>
-			</form>
+			}
 		</div>
 	}
 }

@@ -166,13 +166,15 @@ func (s *SelectContentHandler) BuildKeyboardHandler() string {
 type SelectItemHandler struct {
 	selectID string
 	value    string
+	onChange string
 }
 
 // NewSelectItemHandler creates a select item handler
-func NewSelectItemHandler(selectID, value string) *SelectItemHandler {
+func NewSelectItemHandler(selectID, value, onChange string) *SelectItemHandler {
 	return &SelectItemHandler{
 		selectID: selectID,
 		value:    value,
+		onChange: onChange,
 	}
 }
 
@@ -180,12 +182,18 @@ func NewSelectItemHandler(selectID, value string) *SelectItemHandler {
 func (s *SelectItemHandler) BuildClickHandler() string {
 	// Extract label from clicked item
 	labelExpr := "evt.currentTarget.querySelector('.select-item-text')?.textContent.trim() || ''"
+	valueExpr := fmt.Sprintf("%q", s.value)
 
-	return fmt.Sprintf(`$%s.value = '%s'; $%s.label = %s; $%s.open = false`,
-		s.selectID, s.value,
-		s.selectID, labelExpr,
+	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = document.querySelector('[data-select-id="%[1]s"] input[name]'); if (input) { input.value = %[2]s; } })()`,
 		s.selectID,
+		valueExpr,
+		labelExpr,
 	)
+
+	if s.onChange != "" {
+		return base + "; " + s.onChange
+	}
+	return base
 }
 
 // BuildKeyboardHandler creates the item keyboard handler

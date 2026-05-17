@@ -14,6 +14,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func stringPtrIfNonEmpty(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func stringPtr(value string) *string {
+	return &value
+}
+
 func (h *AdminHandler) settingsPage(c echo.Context) error {
 	config, _ := h.settingsService.GetPodcastConfig(c.Request().Context())
 	// config might be nil (first run) — template handles nil gracefully
@@ -21,16 +32,38 @@ func (h *AdminHandler) settingsPage(c echo.Context) error {
 }
 
 type SettingsForm struct {
-	Title       string `json:"title" form:"title" validate:"required"`
-	Description string `json:"description" form:"description"`
-	Author      string `json:"author" form:"author"`
-	Email       string `json:"email" form:"email"`
-	Language    string `json:"language" form:"language"`
+	ID            int64  `form:"id" validate:"required"`
+	Title         string `form:"title" validate:"required"`
+	Description   string `form:"description"`
+	SiteURL       string `form:"site_url"`
+	Language      string `form:"language"`
+	Copyright     string `form:"copyright"`
+	AuthorName    string `form:"author_name"`
+	AuthorEmail   string `form:"author_email"`
+	CoverImageURL string `form:"cover_image_url"`
+	Category      string `form:"category"`
+	Subcategory   string `form:"subcategory"`
+	OwnerName     string `form:"owner_name"`
+	OwnerEmail    string `form:"owner_email"`
 }
 
 func (h *AdminHandler) settingsSave(c echo.Context) error {
-	settingInput := new(SettingsForm)
-	if err := c.Bind(settingInput); err != nil {
+	settingInput := &SettingsForm{
+		ID:            parseInt64(c.FormValue("id")),
+		Title:         c.FormValue("title"),
+		Description:   c.FormValue("description"),
+		SiteURL:       c.FormValue("site_url"),
+		Language:      c.FormValue("language"),
+		Copyright:     c.FormValue("copyright"),
+		AuthorName:    c.FormValue("author_name"),
+		AuthorEmail:   c.FormValue("author_email"),
+		CoverImageURL: c.FormValue("cover_image_url"),
+		Category:      c.FormValue("category"),
+		Subcategory:   c.FormValue("subcategory"),
+		OwnerName:     c.FormValue("owner_name"),
+		OwnerEmail:    c.FormValue("owner_email"),
+	}
+	if err := c.Validate(settingInput); err != nil {
 		sse(c).MarshalAndPatchSignals(map[string]string{
 			"error":          "Invalid form data",
 			"loading_status": "",
@@ -38,15 +71,48 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 		})
 		return nil
 	}
-	if err := c.Validate(settingInput); err != nil {
-		errorStruct := fieldValidationErrors(err)
-		errorStruct["loading_status"] = ""
-		errorStruct["loading_msg"] = ""
-		sse(c).MarshalAndPatchSignals(errorStruct)
+	if settingInput.Category != "" && !domain.IsValidCategory(settingInput.Category, settingInput.Subcategory) {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error":          "Please choose a valid category and subcategory",
+			"loading_status": "",
+			"loading_msg":    "",
+		})
 		return nil
 	}
 
-	log.Printf("Display %s", settingInput.Title)
+	var subcategory *string
+	if settingInput.Category == "" {
+		subcategory = nil
+	} else if domain.HasSubcategories(settingInput.Category) {
+		subcategory = stringPtrIfNonEmpty(settingInput.Subcategory)
+	} else {
+		subcategory = stringPtr("")
+	}
+
+	update := &domain.UpdatePodcastConfig{
+		ID:            settingInput.ID,
+		Title:         stringPtrIfNonEmpty(settingInput.Title),
+		Description:   stringPtrIfNonEmpty(settingInput.Description),
+		SiteURL:       stringPtrIfNonEmpty(settingInput.SiteURL),
+		Language:      stringPtrIfNonEmpty(settingInput.Language),
+		Copyright:     stringPtrIfNonEmpty(settingInput.Copyright),
+		AuthorName:    stringPtrIfNonEmpty(settingInput.AuthorName),
+		AuthorEmail:   stringPtrIfNonEmpty(settingInput.AuthorEmail),
+		CoverImageURL: stringPtrIfNonEmpty(settingInput.CoverImageURL),
+		Category:      stringPtrIfNonEmpty(settingInput.Category),
+		Subcategory:   subcategory,
+		OwnerName:     stringPtrIfNonEmpty(settingInput.OwnerName),
+		OwnerEmail:    stringPtrIfNonEmpty(settingInput.OwnerEmail),
+	}
+	if _, err := h.settingsService.UpdatePodcastConfig(c.Request().Context(), update); err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error":          "Failed to save settings. Please try again.",
+			"loading_status": "",
+			"loading_msg":    "",
+		})
+		return nil
+	}
+
 	sse(c).MarshalAndPatchSignals(map[string]string{
 		"loading_status": "",
 		"loading_msg":    "",

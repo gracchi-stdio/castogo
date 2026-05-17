@@ -1,10 +1,5 @@
 -- name: GetPodcastConfig :one
-SELECT * FROM podcast_config LIMIT 1;
-
--- name: CreatePodcastConfig :one
-INSERT INTO podcast_config (title, description, site_url, author_name, owner_name, owner_email)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING *;
+SELECT * FROM podcast_config ORDER BY id ASC LIMIT 1;
 
 -- name: UpdatePodcastConfig :one
 UPDATE podcast_config
