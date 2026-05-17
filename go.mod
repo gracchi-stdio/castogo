@@ -3,7 +3,7 @@ module github.com/gracchi-stdio/castogo
 go 1.26.2
 
 require (
-	github.com/a-h/templ v0.3.1001
+	github.com/a-h/templ v0.3.1020
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/google/uuid v1.6.0
