@@ -59,6 +59,10 @@ type SelectArgs struct {
 	// ContentClass allows additional CSS classes on the dropdown content
 	ContentClass string
 
+	// PreferredSide optionally sets the initial dropdown direction
+	// "top" or "bottom" (default: "bottom", auto-detected on each open)
+	PreferredSide string
+
 	// Attributes allows additional HTML attributes to be added
 	Attributes templ.Attributes
 }

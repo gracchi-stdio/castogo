@@ -13,6 +13,7 @@ type SelectSignals struct {
 	Value       string `json:"value"`
 	Label       string `json:"label"`
 	Highlighted int    `json:"highlighted"` // Index of currently highlighted item (-1 = none)
+	Side        string `json:"side"`        // Dropdown direction: "bottom" (below trigger) or "top" (above)
 }
 
 // Select renders the main select wrapper with Datastar state management
@@ -51,11 +52,17 @@ templ Select(args SelectArgs) {
 		}
 
 		// Create signals using the new structured system
+		initialSide := args.PreferredSide
+		if initialSide == "" {
+			initialSide = "bottom"
+		}
+
 		signals := utils.Signals(selectID, SelectSignals{
 			Open:        openState,
 			Value:       initialValue,
 			Label:       initialLabel, // Set initial label if found
 			Highlighted: -1,           // No item highlighted initially
+			Side:        initialSide,  // Auto-detected on each open
 		})
 
 		// Click outside handler - use conditional pattern from Datastar docs
@@ -79,6 +86,7 @@ templ Select(args SelectArgs) {
 			data-effect={ effectHandler }
 		}
 		data-on:click__outside={ clickOutsideHandler }
+		data-on:resize__window={ signals.Set("open", "false") }
 		class={ selectVariants(args.Class) }
 		{ args.Attributes... }
 	>
@@ -258,15 +266,25 @@ templ SelectContent(args SelectContentArgs) {
 
 		// Generate viewport classes
 		viewportClasses := selectViewportVariants(args.Position, "")
+
+		// Dynamic positioning based on side signal
+		sideClasses := utils.NewDataClass().
+			Add("top-full", signals.Equals("side", "bottom")).
+			Add("bottom-full", signals.Equals("side", "top")).
+			Add("mt-1", signals.Equals("side", "bottom")).
+			Add("mb-1", signals.Equals("side", "top")).
+			Build()
 	}}
 	<div
 		data-slot="select-content"
 		class={ classes }
+		data-class={ sideClasses }
 		data-show={ showExpr }
 		data-on:keydown__window={ keyHandler }
+		data-attr-data-side={ signals.Signal("side") }
 		role="listbox"
 		tabindex="-1"
-		style="position: absolute; top: 100%; left: 0; right: 0; z-index: 50; display: none;"
+		style="position: absolute; left: 0; right: 0; z-index: 50; display: none;"
 		{ args.Attributes... }
 	>
 		<div class={ viewportClasses }>

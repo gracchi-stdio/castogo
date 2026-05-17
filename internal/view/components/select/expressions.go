@@ -36,13 +36,22 @@ func NewSelectTriggerHandler(selectID string, signals *utils.SignalManager) *Sel
 	}
 }
 
+// detectSideExpr returns a JS expression that measures viewport space and sets the side signal.
+func (s *SelectTriggerHandler) detectSideExpr() string {
+	return fmt.Sprintf(
+		"(function(){var r=el.getBoundingClientRect();%s=(window.innerHeight-r.bottom<200&&r.top>window.innerHeight-r.bottom)?'top':'bottom'})()",
+		s.signals.Signal("side"),
+	)
+}
+
 // BuildClickHandler creates the trigger click handler
 func (s *SelectTriggerHandler) BuildClickHandler() string {
 	return fmt.Sprintf(
-		"%s ? (%s, %s) : (%s, %s)",
+		"%s ? (%s, %s) : (%s, %s, %s)",
 		s.signals.Signal("open"),
 		s.signals.Set("open", "false"),
 		s.signals.Set("highlighted", "-1"),
+		s.detectSideExpr(),
 		s.signals.Set("open", "true"),
 		s.signals.Set("highlighted", "-1"),
 	)
@@ -51,28 +60,33 @@ func (s *SelectTriggerHandler) BuildClickHandler() string {
 // BuildKeyboardHandler creates the trigger keyboard navigation handler
 func (s *SelectTriggerHandler) BuildKeyboardHandler() string {
 	expr := utils.NewExpression()
+	detect := s.detectSideExpr()
 
 	// ArrowDown: open dropdown and highlight first item
-	expr.Statement(fmt.Sprintf("evt.key === 'ArrowDown' && !%s ? (%s, %s, evt.preventDefault()) : null",
+	expr.Statement(fmt.Sprintf("evt.key === 'ArrowDown' && !%s ? (%s, %s, %s, evt.preventDefault()) : null",
 		s.signals.Signal("open"),
+		detect,
 		s.signals.Set("open", "true"),
 		s.signals.Set("highlighted", "0")))
 
 	// ArrowUp: open dropdown and highlight last item
-	expr.Statement(fmt.Sprintf("evt.key === 'ArrowUp' && !%s ? (%s, %s, evt.preventDefault()) : null",
+	expr.Statement(fmt.Sprintf("evt.key === 'ArrowUp' && !%s ? (%s, %s, %s, evt.preventDefault()) : null",
 		s.signals.Signal("open"),
+		detect,
 		s.signals.Set("open", "true"),
 		s.signals.Set("highlighted", "document.querySelector('[data-select-id=\""+s.selectID+"\"]').querySelectorAll('[data-select-item]:not([data-disabled])').length - 1")))
 
 	// Space: open dropdown without highlighting
-	expr.Statement(fmt.Sprintf("evt.key === ' ' && !%s ? (%s, %s, evt.preventDefault()) : null",
+	expr.Statement(fmt.Sprintf("evt.key === ' ' && !%s ? (%s, %s, %s, evt.preventDefault()) : null",
 		s.signals.Signal("open"),
+		detect,
 		s.signals.Set("open", "true"),
 		s.signals.Set("highlighted", "-1")))
 
 	// Enter: just open dropdown if closed, don't highlight anything
-	expr.Statement(fmt.Sprintf("evt.key === 'Enter' && !%s ? (%s, %s, evt.preventDefault()) : null",
+	expr.Statement(fmt.Sprintf("evt.key === 'Enter' && !%s ? (%s, %s, %s, evt.preventDefault()) : null",
 		s.signals.Signal("open"),
+		detect,
 		s.signals.Set("open", "true"),
 		s.signals.Set("highlighted", "-1")))
 
