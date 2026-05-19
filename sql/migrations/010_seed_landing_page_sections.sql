@@ -1,0 +1,12 @@
+INSERT INTO landing_page_sections (section_key, content, is_visible, sort_order) VALUES
+('hero', '{"headline":"Your Podcast, Perfectly Hosted","subheadline":"A simple, powerful platform to publish, manage, and grow your podcast. No complexity, just great audio.","cta_text":"Start Listening","cta_url":"#episodes","background_image":""}', true, 0),
+
+('features', '{"section_title":"Everything You Need to Podcast","section_description":"From uploading to publishing, we handle the technical details so you can focus on creating.","items":[{"icon":"mic","title":"Easy Publishing","description":"Upload your audio and publish to all major platforms with one click."},{"icon":"clock","title":"Schedule Episodes","description":"Draft now, publish later. Schedule episodes ahead of time and stay consistent."},{"icon":"rss","title":"Auto RSS Feed","description":"Standards-compliant RSS feeds for Apple Podcasts, Spotify, and Google Podcasts."},{"icon":"bar-chart-3","title":"Analytics","description":"Track downloads, listener trends, and episode performance with clear metrics."}]}', true, 1),
+
+('episodes_showcase', '{"section_title":"Latest Episodes","section_description":"Catch up on the most recent episodes.","max_episodes":6}', true, 2),
+
+('testimonials', '{"section_title":"What Podcasters Say","section_description":"Hear from creators who trust our platform.","items":[{"quote":"Switching to this platform cut my publishing workflow in half. I upload, click publish, and I''m done.","author":"Alex Rivera","role":"Tech Podcast Host","avatar_url":""},{"quote":"The RSS feed just works. My show appeared on Apple Podcasts and Spotify without any extra configuration.","author":"Sam Chen","role":"Storyteller & Producer","avatar_url":""},{"quote":"Finally, analytics that make sense. I can see which episodes resonate and plan accordingly.","author":"Jordan Taylor","role":"Education Podcaster","avatar_url":""}]}', true, 3),
+
+('cta', '{"headline":"Ready to Launch Your Podcast?","description":"Get started in minutes. Upload your first episode and reach listeners everywhere.","button_text":"Get Started","button_url":"/register"}', true, 4),
+
+('footer', '{"copyright":"2026 Podlog. All rights reserved.","links":[{"label":"Privacy Policy","url":"/privacy"},{"label":"Terms of Service","url":"/terms"},{"label":"Contact","url":"/contact"}],"social_links":[{"platform":"twitter","url":"https://twitter.com/podlog"},{"platform":"github","url":"https://github.com/podlog"}]}', true, 5);

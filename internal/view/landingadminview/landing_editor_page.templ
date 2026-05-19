@@ -1,0 +1,717 @@
+package landingadminview
+
+import (
+	"encoding/json"
+	"fmt"
+	"sort"
+
+	"github.com/a-h/templ"
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	"github.com/gracchi-stdio/castogo/internal/view/components/loading"
+	"github.com/gracchi-stdio/castogo/internal/view/components/tabs"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+templ LandingEditorPage(data *domain.AdminSharedData, sections []*domain.LandingPageSection) {
+	@layout.AdminLayout("Landing Page", data, landingActions()) {
+		{{ sectionMap := buildSectionMap(sections) }}
+		<div
+			data-signals:error="''"
+			data-signals:success="''"
+			data-signals:loading_status="false"
+			data-signals:loading_msg="''"
+			
+			data-signals:hero_id={ fmt.Sprintf("%d", sectionID(sectionMap, "hero")) }
+			data-signals:hero_visible={ fmt.Sprintf("%t", sectionVisible(sectionMap, "hero")) }
+			data-signals:hero_headline={ "'" + escapeJS(heroContent(sectionMap).Headline) + "'" }
+			data-signals:hero_subheadline={ "'" + escapeJS(heroContent(sectionMap).Subheadline) + "'" }
+			data-signals:hero_cta_text={ "'" + escapeJS(heroContent(sectionMap).CTAText) + "'" }
+			data-signals:hero_cta_url={ "'" + escapeJS(heroContent(sectionMap).CTAURL) + "'" }
+			data-signals:hero_bg_image={ "'" + escapeJS(heroContent(sectionMap).BackgroundImage) + "'" }
+		
+			data-signals:features_id={ fmt.Sprintf("%d", sectionID(sectionMap, "features")) }
+			data-signals:features_visible={ fmt.Sprintf("%t", sectionVisible(sectionMap, "features")) }
+			data-signals:features_title={ "'" + escapeJS(featuresContent(sectionMap).SectionTitle) + "'" }
+			data-signals:features_desc={ "'" + escapeJS(featuresContent(sectionMap).SectionDescription) + "'" }
+			
+			data-signals:episodes_id={ fmt.Sprintf("%d", sectionID(sectionMap, "episodes_showcase")) }
+			data-signals:episodes_visible={ fmt.Sprintf("%t", sectionVisible(sectionMap, "episodes_showcase")) }
+			data-signals:episodes_title={ "'" + escapeJS(episodesContent(sectionMap).SectionTitle) + "'" }
+			data-signals:episodes_desc={ "'" + escapeJS(episodesContent(sectionMap).SectionDescription) + "'" }
+			data-signals:episodes_max={ fmt.Sprintf("%d", episodesContent(sectionMap).MaxEpisodes) }
+			
+			data-signals:testimonials_id={ fmt.Sprintf("%d", sectionID(sectionMap, "testimonials")) }
+			data-signals:testimonials_visible={ fmt.Sprintf("%t", sectionVisible(sectionMap, "testimonials")) }
+			data-signals:testimonials_title={ "'" + escapeJS(testimonialsContent(sectionMap).SectionTitle) + "'" }
+			data-signals:testimonials_desc={ "'" + escapeJS(testimonialsContent(sectionMap).SectionDescription) + "'" }
+			
+			data-signals:cta_id={ fmt.Sprintf("%d", sectionID(sectionMap, "cta")) }
+			data-signals:cta_visible={ fmt.Sprintf("%t", sectionVisible(sectionMap, "cta")) }
+			data-signals:cta_headline={ "'" + escapeJS(ctaContent(sectionMap).Headline) + "'" }
+			data-signals:cta_desc={ "'" + escapeJS(ctaContent(sectionMap).Description) + "'" }
+			data-signals:cta_btn_text={ "'" + escapeJS(ctaContent(sectionMap).ButtonText) + "'" }
+			data-signals:cta_btn_url={ "'" + escapeJS(ctaContent(sectionMap).ButtonURL) + "'" }
+			
+			data-signals:footer_id={ fmt.Sprintf("%d", sectionID(sectionMap, "footer")) }
+			data-signals:footer_visible={ fmt.Sprintf("%t", sectionVisible(sectionMap, "footer")) }
+			data-signals:footer_copyright={ "'" + escapeJS(footerContent(sectionMap).Copyright) + "'" }
+		>
+			@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{ErrorSignal: "error"})
+			@loading.LoadingOverlay(loading.LoadingOverlayArgs{
+				Signal: "loading_status",
+				Status: "loading_msg",
+			})
+			<!-- Success toast -->
+			<div
+				data-show="$success !== ''"
+				class="fixed top-4 right-4 z-50 bg-green-100 text-green-800 border border-green-200 rounded-lg px-4 py-3 text-sm shadow-lg"
+				data-on:click="$success = ''"
+			>
+				<span data-text="$success"></span>
+			</div>
+			@tabs.Tabs(tabs.TabsArgs{
+				ID:           "landing-tabs",
+				DefaultValue: "hero",
+			}) {
+				@tabs.TabsList(tabs.TabsListArgs{}) {
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "landing-tabs", Value: "hero"}) {
+						Hero
+					}
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "landing-tabs", Value: "features"}) {
+						Features
+					}
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "landing-tabs", Value: "episodes"}) {
+						Episodes
+					}
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "landing-tabs", Value: "testimonials"}) {
+						Testimonials
+					}
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "landing-tabs", Value: "cta"}) {
+						CTA
+					}
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "landing-tabs", Value: "footer"}) {
+						Footer
+					}
+				}
+				@tabs.TabsContent(tabs.TabsContentArgs{ID: "landing-tabs", Value: "hero"}) {
+					@heroTab()
+				}
+				@tabs.TabsContent(tabs.TabsContentArgs{ID: "landing-tabs", Value: "features"}) {
+					@featuresTab(sectionMap)
+				}
+				@tabs.TabsContent(tabs.TabsContentArgs{ID: "landing-tabs", Value: "episodes"}) {
+					@episodesTab()
+				}
+				@tabs.TabsContent(tabs.TabsContentArgs{ID: "landing-tabs", Value: "testimonials"}) {
+					@testimonialsTab(sectionMap)
+				}
+				@tabs.TabsContent(tabs.TabsContentArgs{ID: "landing-tabs", Value: "cta"}) {
+					@ctaTab()
+				}
+				@tabs.TabsContent(tabs.TabsContentArgs{ID: "landing-tabs", Value: "footer"}) {
+					@footerTab(sectionMap)
+				}
+			}
+		</div>
+	}
+}
+
+templ heroTab() {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<div class="space-y-6">
+				<!-- Visibility -->
+				@visibilityToggle("hero")
+				<div class="space-y-4">
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "hero_headline"}) {
+							Headline
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "hero_headline",
+							Name:        "headline",
+							Placeholder: "Your Podcast, Perfectly Hosted",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:hero_headline": "",
+							},
+						})
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "hero_subheadline"}) {
+							Subheadline
+						}
+						@textarea.Textarea(textarea.TextareaArgs{
+							ID:          "hero_subheadline",
+							Name:        "subheadline",
+							Placeholder: "A short description of your platform...",
+							Class:       "w-full",
+							Rows:        3,
+							Attributes: map[string]any{
+								"data-bind:hero_subheadline": "",
+							},
+						})
+					</div>
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div class="space-y-2">
+							@label.Label(label.LabelArgs{For: "hero_cta_text"}) {
+								CTA Button Text
+							}
+							@input.Input(input.InputArgs{
+								Type:        "text",
+								ID:          "hero_cta_text",
+								Name:        "cta_text",
+								Placeholder: "Start Listening",
+								Class:       "w-full",
+								Attributes: map[string]any{
+									"data-bind:hero_cta_text": "",
+								},
+							})
+						</div>
+						<div class="space-y-2">
+							@label.Label(label.LabelArgs{For: "hero_cta_url"}) {
+								CTA Button URL
+							}
+							@input.Input(input.InputArgs{
+								Type:        "text",
+								ID:          "hero_cta_url",
+								Name:        "cta_url",
+								Placeholder: "#episodes",
+								Class:       "w-full",
+								Attributes: map[string]any{
+									"data-bind:hero_cta_url": "",
+								},
+							})
+						</div>
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "hero_bg_image"}) {
+							Background Image URL
+						}
+						@input.Input(input.InputArgs{
+							Type:        "url",
+							ID:          "hero_bg_image",
+							Name:        "background_image",
+							Placeholder: "https://example.com/hero-bg.jpg",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:hero_bg_image": "",
+							},
+						})
+					</div>
+				</div>
+				@saveButton("hero")
+			</div>
+		}
+	}
+}
+
+templ featuresTab(sectionMap map[string]*domain.LandingPageSection) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<div class="space-y-6">
+				@visibilityToggle("features")
+				<div class="space-y-4">
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "features_title"}) {
+							Section Title
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "features_title",
+							Name:        "section_title",
+							Placeholder: "Everything You Need to Podcast",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:features_title": "",
+							},
+						})
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "features_desc"}) {
+							Section Description
+						}
+						@textarea.Textarea(textarea.TextareaArgs{
+							ID:          "features_desc",
+							Name:        "section_description",
+							Placeholder: "A brief description of this section...",
+							Class:       "w-full",
+							Rows:        3,
+							Attributes: map[string]any{
+								"data-bind:features_desc": "",
+							},
+						})
+					</div>
+					<!-- Feature items -->
+					<div>
+						<div class="flex items-center justify-between mb-3">
+							<h4 class="text-sm font-medium text-foreground">Feature Items</h4>
+						</div>
+						<div class="space-y-3" id="features-items">
+							{{ items := featuresContent(sectionMap).Items }}
+							for i, item := range items {
+								@featureItemRow(i, item, len(items))
+							}
+						</div>
+					</div>
+				</div>
+				@saveButton("features")
+			</div>
+		}
+	}
+}
+
+templ featureItemRow(index int, item domain.FeatureItem, total int) {
+	<div class="rounded-lg border p-4 space-y-3" data-feature-index={ fmt.Sprintf("%d", index) }>
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+			<div class="space-y-1">
+				@label.Label(label.LabelArgs{For: fmt.Sprintf("fi_%d_icon", index)}) {
+					Icon Name
+				}
+				@input.Input(input.InputArgs{
+					Type:        "text",
+					ID:          fmt.Sprintf("fi_%d_icon", index),
+					Name:        fmt.Sprintf("items.%d.icon", index),
+					Placeholder: "mic",
+					Class:       "w-full",
+					Attributes: map[string]any{
+						"data-bind:fi_" + fmt.Sprintf("%d", index) + "_icon": "",
+						"value": item.Icon,
+					},
+				})
+			</div>
+			<div class="space-y-1">
+				@label.Label(label.LabelArgs{For: fmt.Sprintf("fi_%d_title", index)}) {
+					Title
+				}
+				@input.Input(input.InputArgs{
+					Type:        "text",
+					ID:          fmt.Sprintf("fi_%d_title", index),
+					Name:        fmt.Sprintf("items.%d.title", index),
+					Placeholder: "Feature title",
+					Class:       "w-full",
+					Attributes: map[string]any{
+						"data-bind:fi_" + fmt.Sprintf("%d", index) + "_title": "",
+						"value": item.Title,
+					},
+				})
+			</div>
+			<div class="space-y-1">
+				@label.Label(label.LabelArgs{For: fmt.Sprintf("fi_%d_desc", index)}) {
+					Description
+				}
+				@input.Input(input.InputArgs{
+					Type:        "text",
+					ID:          fmt.Sprintf("fi_%d_desc", index),
+					Name:        fmt.Sprintf("items.%d.description", index),
+					Placeholder: "Feature description",
+					Class:       "w-full",
+					Attributes: map[string]any{
+						"data-bind:fi_" + fmt.Sprintf("%d", index) + "_desc": "",
+						"value": item.Description,
+					},
+				})
+			</div>
+		</div>
+	</div>
+}
+
+templ episodesTab() {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<div class="space-y-6">
+				@visibilityToggle("episodes")
+				<div class="space-y-4">
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "episodes_title"}) {
+							Section Title
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "episodes_title",
+							Name:        "section_title",
+							Placeholder: "Latest Episodes",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:episodes_title": "",
+							},
+						})
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "episodes_desc"}) {
+							Section Description
+						}
+						@textarea.Textarea(textarea.TextareaArgs{
+							ID:          "episodes_desc",
+							Name:        "section_description",
+							Placeholder: "Catch up on the latest episodes.",
+							Class:       "w-full",
+							Rows:        3,
+							Attributes: map[string]any{
+								"data-bind:episodes_desc": "",
+							},
+						})
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "episodes_max"}) {
+							Max Episodes to Show
+						}
+						@input.Input(input.InputArgs{
+							Type:        "number",
+							ID:          "episodes_max",
+							Name:        "max_episodes",
+							Placeholder: "6",
+							Class:       "w-full max-w-xs",
+							Attributes: map[string]any{
+								"data-bind:episodes_max": "",
+								"min":                    "1",
+								"max":                    "20",
+							},
+						})
+					</div>
+				</div>
+				@saveButton("episodes_showcase")
+			</div>
+		}
+	}
+}
+
+templ testimonialsTab(sectionMap map[string]*domain.LandingPageSection) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<div class="space-y-6">
+				@visibilityToggle("testimonials")
+				<div class="space-y-4">
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "testimonials_title"}) {
+							Section Title
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "testimonials_title",
+							Name:        "section_title",
+							Placeholder: "What Podcasters Say",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:testimonials_title": "",
+							},
+						})
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "testimonials_desc"}) {
+							Section Description
+						}
+						@textarea.Textarea(textarea.TextareaArgs{
+							ID:          "testimonials_desc",
+							Name:        "section_description",
+							Placeholder: "Hear from creators...",
+							Class:       "w-full",
+							Rows:        3,
+							Attributes: map[string]any{
+								"data-bind:testimonials_desc": "",
+							},
+						})
+					</div>
+					<div>
+						<h4 class="text-sm font-medium text-foreground mb-3">Testimonial Items</h4>
+						<div class="space-y-3">
+							{{ items := testimonialsContent(sectionMap).Items }}
+							for i, item := range items {
+								@testimonialItemRow(i, item)
+							}
+						</div>
+					</div>
+				</div>
+				@saveButton("testimonials")
+			</div>
+		}
+	}
+}
+
+templ testimonialItemRow(index int, item domain.TestimonialItem) {
+	<div class="rounded-lg border p-4 space-y-3">
+		<div class="space-y-1">
+			@label.Label(label.LabelArgs{For: fmt.Sprintf("ti_%d_quote", index)}) {
+				Quote
+			}
+			@textarea.Textarea(textarea.TextareaArgs{
+				ID:          fmt.Sprintf("ti_%d_quote", index),
+				Name:        fmt.Sprintf("items.%d.quote", index),
+				Placeholder: "What they said...",
+				Class:       "w-full",
+				Rows:        2,
+				Attributes: map[string]any{
+					"data-bind:ti_" + fmt.Sprintf("%d", index) + "_quote": "",
+					"value": item.Quote,
+				},
+			})
+		</div>
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+			<div class="space-y-1">
+				@label.Label(label.LabelArgs{For: fmt.Sprintf("ti_%d_author", index)}) {
+					Author
+				}
+				@input.Input(input.InputArgs{
+					Type:        "text",
+					ID:          fmt.Sprintf("ti_%d_author", index),
+					Name:        fmt.Sprintf("items.%d.author", index),
+					Placeholder: "Jane Doe",
+					Class:       "w-full",
+					Attributes: map[string]any{
+						"data-bind:ti_" + fmt.Sprintf("%d", index) + "_author": "",
+						"value": item.Author,
+					},
+				})
+			</div>
+			<div class="space-y-1">
+				@label.Label(label.LabelArgs{For: fmt.Sprintf("ti_%d_role", index)}) {
+					Role
+				}
+				@input.Input(input.InputArgs{
+					Type:        "text",
+					ID:          fmt.Sprintf("ti_%d_role", index),
+					Name:        fmt.Sprintf("items.%d.role", index),
+					Placeholder: "Podcast Host",
+					Class:       "w-full",
+					Attributes: map[string]any{
+						"data-bind:ti_" + fmt.Sprintf("%d", index) + "_role": "",
+						"value": item.Role,
+					},
+				})
+			</div>
+			<div class="space-y-1">
+				@label.Label(label.LabelArgs{For: fmt.Sprintf("ti_%d_avatar", index)}) {
+					Avatar URL
+				}
+				@input.Input(input.InputArgs{
+					Type:        "url",
+					ID:          fmt.Sprintf("ti_%d_avatar", index),
+					Name:        fmt.Sprintf("items.%d.avatar_url", index),
+					Placeholder: "https://...",
+					Class:       "w-full",
+					Attributes: map[string]any{
+						"data-bind:ti_" + fmt.Sprintf("%d", index) + "_avatar": "",
+						"value": item.AvatarURL,
+					},
+				})
+			</div>
+		</div>
+	</div>
+}
+
+templ ctaTab() {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<div class="space-y-6">
+				@visibilityToggle("cta")
+				<div class="space-y-4">
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "cta_headline"}) {
+							Headline
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "cta_headline",
+							Name:        "headline",
+							Placeholder: "Ready to Launch Your Podcast?",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:cta_headline": "",
+							},
+						})
+					</div>
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "cta_desc"}) {
+							Description
+						}
+						@textarea.Textarea(textarea.TextareaArgs{
+							ID:          "cta_desc",
+							Name:        "description",
+							Placeholder: "Get started in minutes...",
+							Class:       "w-full",
+							Rows:        3,
+							Attributes: map[string]any{
+								"data-bind:cta_desc": "",
+							},
+						})
+					</div>
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div class="space-y-2">
+							@label.Label(label.LabelArgs{For: "cta_btn_text"}) {
+								Button Text
+							}
+							@input.Input(input.InputArgs{
+								Type:        "text",
+								ID:          "cta_btn_text",
+								Name:        "button_text",
+								Placeholder: "Get Started",
+								Class:       "w-full",
+								Attributes: map[string]any{
+									"data-bind:cta_btn_text": "",
+								},
+							})
+						</div>
+						<div class="space-y-2">
+							@label.Label(label.LabelArgs{For: "cta_btn_url"}) {
+								Button URL
+							}
+							@input.Input(input.InputArgs{
+								Type:        "text",
+								ID:          "cta_btn_url",
+								Name:        "button_url",
+								Placeholder: "/register",
+								Class:       "w-full",
+								Attributes: map[string]any{
+									"data-bind:cta_btn_url": "",
+								},
+							})
+						</div>
+					</div>
+				</div>
+				@saveButton("cta")
+			</div>
+		}
+	}
+}
+
+templ footerTab(sectionMap map[string]*domain.LandingPageSection) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<div class="space-y-6">
+				@visibilityToggle("footer")
+				<div class="space-y-4">
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "footer_copyright"}) {
+							Copyright Text
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "footer_copyright",
+							Name:        "copyright",
+							Placeholder: "2026 Podlog. All rights reserved.",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-bind:footer_copyright": "",
+							},
+						})
+					</div>
+					<!-- Footer links -->
+					<div>
+						<h4 class="text-sm font-medium text-foreground mb-3">Footer Links</h4>
+						<div class="space-y-2">
+							{{ links := footerContent(sectionMap).Links }}
+							for i, link := range links {
+								@footerLinkRow(i, link)
+							}
+						</div>
+					</div>
+					<!-- Social links -->
+					<div>
+						<h4 class="text-sm font-medium text-foreground mb-3">Social Links</h4>
+						<div class="space-y-2">
+							{{ socials := footerContent(sectionMap).SocialLinks }}
+							for i, social := range socials {
+								@socialLinkRow(i, social)
+							}
+						</div>
+					</div>
+				</div>
+				@saveButton("footer")
+			</div>
+		}
+	}
+}
+
+templ footerLinkRow(index int, link domain.FooterLink) {
+	<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+		@input.Input(input.InputArgs{
+			Type:        "text",
+			Name:        fmt.Sprintf("links.%d.label", index),
+			Placeholder: "Privacy Policy",
+			Class:       "w-full",
+			Attributes: map[string]any{
+				"data-bind:fl_" + fmt.Sprintf("%d", index) + "_label": "",
+				"value": link.Label,
+			},
+		})
+		@input.Input(input.InputArgs{
+			Type:        "text",
+			Name:        fmt.Sprintf("links.%d.url", index),
+			Placeholder: "/privacy",
+			Class:       "w-full",
+			Attributes: map[string]any{
+				"data-bind:fl_" + fmt.Sprintf("%d", index) + "_url": "",
+				"value": link.URL,
+			},
+		})
+	</div>
+}
+
+templ socialLinkRow(index int, social domain.SocialLink) {
+	<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+		@input.Input(input.InputArgs{
+			Type:        "text",
+			Name:        fmt.Sprintf("social_links.%d.platform", index),
+			Placeholder: "twitter",
+			Class:       "w-full",
+			Attributes: map[string]any{
+				"data-bind:sl_" + fmt.Sprintf("%d", index) + "_platform": "",
+				"value": social.Platform,
+			},
+		})
+		@input.Input(input.InputArgs{
+			Type:        "text",
+			Name:        fmt.Sprintf("social_links.%d.url", index),
+			Placeholder: "https://twitter.com/...",
+			Class:       "w-full",
+			Attributes: map[string]any{
+				"data-bind:sl_" + fmt.Sprintf("%d", index) + "_url": "",
+				"value": social.URL,
+			},
+		})
+	</div>
+}
+
+templ visibilityToggle(section string) {
+	<div class="flex items-center gap-2">
+		<input
+			type="checkbox"
+			id={ section + "_visible" }
+			class="h-4 w-4 rounded border-border"
+			data-bind={ section + "_visible" }
+		/>
+		@label.Label(label.LabelArgs{For: section + "_visible"}) {
+			Visible on landing page
+		}
+	</div>
+}
+
+templ saveButton(sectionKey string) {
+	<div class="flex justify-end pt-2">
+		@button.Button(button.ButtonArgs{
+			Type: "button",
+			Attributes: templ.Attributes{
+				"data-on:click": fmt.Sprintf("$loading_msg = 'Saving...'; $loading_status = true; @post('/admin/landing/%s', {contentType: 'form'})", sectionKey),
+			},
+		}) {
+			Save Section
+		}
+	</div>
+}
+
+templ landingActions() {
+	<a
+		href="/"
+		target="_blank"
+		class="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm hover:bg-muted transition-colors"
+	>
+		Preview
+	</a>
+}
