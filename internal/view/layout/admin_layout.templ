@@ -34,9 +34,6 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 							</div>
 						}
 						@sidebar.SidebarNavMobile(navArgs)
-						@sidebar.SidebarFooter(sidebar.SidebarFooterArgs{}) {
-							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
-						}
 					}
 				}
 				<!-- Desktop sidebar -->
@@ -45,16 +42,13 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 						@sidebar.SidebarHeader(sidebar.SidebarHeaderArgs{}) {
 							<div class="flex items-center gap-2 px-2 py-1">
 								// <img src="/logo.svg" alt="Logo" class="h-5 w-5"/>
-								@brand.Mascot("size-12 text-primary")
+								@brand.Mascot("size-12")
 								<span class="font-semibold">{ config.Cfg.AppName }</span>
 							</div>
 						}
 						<div class="pl-2">
 							@sidebar.SidebarNavDesktop(navArgs)
 						</div>
-						@sidebar.SidebarFooter(sidebar.SidebarFooterArgs{}) {
-							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
-						}
 					}
 				}
 				<!-- Main area -->
@@ -66,7 +60,8 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 							if actions != nil {
 								@actions
 							}
-							<!-- User dropdown -->
+							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+					<!-- User dropdown -->
 							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
 								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
 									ID:    "user-menu",

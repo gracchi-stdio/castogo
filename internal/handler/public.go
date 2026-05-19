@@ -7,20 +7,25 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view/authview"
+	"github.com/gracchi-stdio/castogo/internal/view/landingview"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
 type PublicHandler struct {
-	auth        *service.AuthService
-	feedService *service.FeedService
+	auth           *service.AuthService
+	feedService    *service.FeedService
+	landingService *service.LandingPageService
 }
 
-func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService) *PublicHandler {
-	return &PublicHandler{auth: auth, feedService: feedService}
+func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService, landingService *service.LandingPageService) *PublicHandler {
+	return &PublicHandler{auth: auth, feedService: feedService, landingService: landingService}
 }
 
 func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
+	// Landing page (public)
+	e.GET("/", h.landingPage)
+
 	// RSS Feed (public)
 	e.GET("/feed/podcast.xml", h.RSSFeed)
 
@@ -32,6 +37,14 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	if config.Cfg.RegistrationEnabled {
 		e.GET("/register", echo.WrapHandler(templ.Handler(authview.RegisterPage())))
 	}
+}
+
+func (h *PublicHandler) landingPage(c echo.Context) error {
+	data, err := h.landingService.GetLandingPageData(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(500, "Failed to load landing page")
+	}
+	return echo.WrapHandler(templ.Handler(landingview.LandingPage(data)))(c)
 }
 
 type LoginInput struct {

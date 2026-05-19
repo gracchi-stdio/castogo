@@ -1,11 +1,8 @@
 package landingadminview
 
 import (
-	"encoding/json"
 	"fmt"
-	"sort"
 
-	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
@@ -684,6 +681,8 @@ templ visibilityToggle(section string) {
 		<input
 			type="checkbox"
 			id={ section + "_visible" }
+			name="is_visible"
+			value="true"
 			class="h-4 w-4 rounded border-border"
 			data-bind={ section + "_visible" }
 		/>

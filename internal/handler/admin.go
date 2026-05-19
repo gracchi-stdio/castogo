@@ -14,18 +14,21 @@ type AdminHandler struct {
 	episodeService  *service.EpisodeService
 	audioProcessor  service.AudioProcessor
 	settingsService *service.SettingsService
+	landingService  *service.LandingPageService
 }
 
 func NewAdminHandler(
 	storageService service.StorageService,
 	episodeService *service.EpisodeService,
 	audioProcessor service.AudioProcessor,
-	settingsService *service.SettingsService) *AdminHandler {
+	settingsService *service.SettingsService,
+	landingService *service.LandingPageService) *AdminHandler {
 	return &AdminHandler{
 		storageService:  storageService,
 		episodeService:  episodeService,
 		audioProcessor:  audioProcessor,
 		settingsService: settingsService,
+		landingService:  landingService,
 	}
 }
 
@@ -44,6 +47,10 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.POST("/settings", h.settingsSave)
 	g.POST("/settings/upload-cover", h.settingsUploadCoverImage)
 	g.GET("/settings/subcategories", h.subcategoriesSSE)
+
+	// landing page
+	g.GET("/landing", h.landingEditor)
+	g.POST("/landing/:sectionKey", h.landingSaveSection)
 }
 
 func (h *AdminHandler) dashboard(c echo.Context) error {

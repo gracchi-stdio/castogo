@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "./theme.css";
 
+/* Use class strategy for dark mode (toggled via .dark on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* View Transitions — smooth cross-page navigation */
 @view-transition {
     navigation: auto;

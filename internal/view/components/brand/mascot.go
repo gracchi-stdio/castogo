@@ -8,5 +8,5 @@ import (
 
 func Mascot(class ...string) templ.Component {
 	cls := utils.TwMerge(append([]string{"size-12"}, class...)...)
-	return templ.Raw(`<img src="/mascot.svg" alt="Castogo mascot" class="` + cls + `" />`)
+	return templ.Raw(`<img src="/mascot_dark.svg" alt="Castogo mascot" class="hidden dark:block ` + cls + `" /><img src="/mascot_light.svg" alt="Castogo mascot" class="dark:hidden ` + cls + `" />`)
 }
