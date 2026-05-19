@@ -3,44 +3,63 @@
 
 /* View Transitions — smooth cross-page navigation */
 @view-transition {
-  navigation: auto;
+    navigation: auto;
 }
 
 /* Main content area cross-fades */
 ::view-transition-old(root) {
-  animation: 150ms ease-out both fade-out;
+    animation: 150ms ease-out both fade-out;
 }
 
 ::view-transition-new(root) {
-  animation: 150ms ease-in both fade-in;
+    animation: 150ms ease-in both fade-in;
 }
 
 /* Admin sidebar — no animation (looks identical across pages) */
 ::view-transition-group(admin-sidebar) {
-  animation-duration: 0s;
+    animation-duration: 0s;
 }
 
 ::view-transition-old(admin-sidebar) {
-  animation: none;
+    animation: none;
 }
 
 ::view-transition-new(admin-sidebar) {
-  animation: none;
+    animation: none;
 }
 
 /* Admin content — cross-fade */
 ::view-transition-old(admin-content) {
-  animation: 150ms ease-out both fade-out;
+    animation: 150ms ease-out both fade-out;
 }
 
 ::view-transition-new(admin-content) {
-  animation: 150ms ease-in both fade-in;
+    animation: 150ms ease-in both fade-in;
+}
+
+::view-transition-old(toast),
+::view-transition-new(toast) {
+    animation: none;
+    mix-blend-mode: normal;
 }
 
 @keyframes fade-out {
-  to { opacity: 0; }
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
+    from {
+        opacity: 0;
+    }
+}
+
+/* Sidebar nav link states */
+.sidebar-link-active {
+    @apply bg-accent text-accent-foreground font-medium border border-accent;
+}
+
+.sidebar-link-inactive {
+    @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:bg-sidebar-accent focus-visible:text-sidebar-accent-foreground;
 }

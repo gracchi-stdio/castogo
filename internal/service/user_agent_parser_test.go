@@ -91,6 +91,42 @@ func TestParseUserAgent_CastBox(t *testing.T) {
 	assertUA(t, parsed, "CastBox", "CastBox", "desktop", "Unknown", false)
 }
 
+func TestParseUserAgent_Bot_NoFalsePositive(t *testing.T) {
+	// "robot" contains "bot" but should NOT be flagged — \bbot\b requires word boundary
+	ua := "MyRobotPlayer/1.0"
+	parsed := ParseUserAgent(ua)
+
+	assertUA(t, parsed, "Unknown", "Unknown", "desktop", "Unknown", false)
+}
+
+func TestParseUserAgent_Bot_BaiduSpider(t *testing.T) {
+	ua := "Mozilla/5.0 (compatible; Baiduspider-crawler/2.0; +http://www.baidu.com/search/spider.html)"
+	parsed := ParseUserAgent(ua)
+
+	assertUA(t, parsed, "Bot", "Bot", "bot", "Unknown", true)
+}
+
+func TestParseUserAgent_Bot_FacebookCrawler(t *testing.T) {
+	ua := "facebookexternalhit/1.1"
+	parsed := ParseUserAgent(ua)
+
+	assertUA(t, parsed, "Bot", "Bot", "bot", "Unknown", true)
+}
+
+func TestParseUserAgent_Bot_Wget(t *testing.T) {
+	ua := "wget/1.21.3"
+	parsed := ParseUserAgent(ua)
+
+	assertUA(t, parsed, "Bot", "Bot", "bot", "Unknown", true)
+}
+
+func TestParseUserAgent_Bot_PythonRequests(t *testing.T) {
+	ua := "python-requests/2.31"
+	parsed := ParseUserAgent(ua)
+
+	assertUA(t, parsed, "Bot", "Bot", "bot", "Unknown", true)
+}
+
 // Helper to reduce repetition — checks all fields in one call
 func assertUA(t *testing.T, parsed ParsedUA, wantService, wantApp, wantDevice, wantOS string, wantBot bool) {
 	t.Helper() // marks this as a test helper — line numbers point to the caller

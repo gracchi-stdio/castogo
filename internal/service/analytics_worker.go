@@ -69,5 +69,5 @@ func (w *AnalyticsWorker) Stop() {
 
 func yesterday() time.Time {
 	now := time.Now().UTC()
-	return time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+	return time.Date(now.Year(), now.Month(), now.AddDate(0, 0, -1).Day(), 0, 0, 0, 0, now.Location())
 }

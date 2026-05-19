@@ -1,0 +1,10 @@
+package fielderror
+
+templ FieldError(args FieldErrorArgs) {
+	<p
+		data-show={ "$" + args.Signal + " != ''" }
+		data-text={ "$" + args.Signal }
+		class="text-sm text-destructive {args.Class}"
+		{ args.Attributes... }
+	></p>
+}

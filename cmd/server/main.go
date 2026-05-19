@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -37,8 +39,17 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	validate := validator.New()
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("form"), ",", 2)[0]
+		if name == "-" || name == "" {
+			return fld.Name
+		}
+		return name
+	})
+
 	e := echo.New()
-	e.Validator = &CustomValidator{validator: validator.New()}
+	e.Validator = &CustomValidator{validator: validate}
 	e.HideBanner = false
 
 	// Database
@@ -78,14 +89,6 @@ func main() {
 	// Handlers Register routes
 	authHandler := handler.NewPublicHandler(authService, feedService)
 	authHandler.RegisterRoutes(e)
-
-	// --- sample pages ---
-	//
-	// clockHandler := handler.NewClockHandler()
-	// clockHandler.RegisterRoutes(e)
-
-	// filterHandler := handler.NewFilterHandler()
-	// filterHandler.RegisterRoutes(e)
 
 	// Admin routes (protected by auth middleware)
 	adminHandler := handler.NewAdminHandler(

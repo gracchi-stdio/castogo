@@ -44,7 +44,7 @@ SET title = COALESCE(sqlc.narg('title'), title),
     cover_image_url = COALESCE(sqlc.narg('cover_image_url'), cover_image_url),
     audio_source_url = COALESCE(sqlc.narg('audio_source_url'), audio_source_url),
     audio_metadata = COALESCE(sqlc.narg('audio_metadata'), audio_metadata),
-    published_at = COALESCE(sqlc.narg('published_at'), published_at),
+    published_at = sqlc.narg('published_at'),
     archived_at = sqlc.narg('archived_at'),
     updated_at = NOW()
 WHERE id = sqlc.arg('id')
@@ -54,4 +54,4 @@ RETURNING *;
 DELETE FROM episodes WHERE id = $1;
 
 -- name: GetMaxEpisodeNumber :one
-SELECT COALESCE(MAX(episode_number), 1) FROM episodes;
+SELECT COALESCE(MAX(episode_number), 0)::bigint FROM episodes;

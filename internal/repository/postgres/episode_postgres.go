@@ -168,12 +168,5 @@ func (r *EpisodeRepo) GetMaxEpisodeNumber(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("get max episode number: %w", err)
 	}
-	switch v := max.(type) {
-	case int64:
-		return int(v), nil
-	case int32:
-		return int(v), nil
-	default:
-		return 0, nil
-	}
+	return int(max), nil
 }

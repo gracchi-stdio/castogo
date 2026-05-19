@@ -1,6 +1,13 @@
 package domain
 
 type AdminSharedData struct {
-	User *User
-	// Add more fields as needed for shared data across admin pages
+	User        *User
+	CurrentPath string
+}
+
+type DashboardStats struct {
+	Total     int
+	Published int
+	Drafts    int
+	Scheduled int
 }

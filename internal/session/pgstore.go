@@ -54,7 +54,7 @@ func (s *PGStore) New(r *http.Request, name string) (*sessions.Session, error) {
 
 	if c, err := r.Cookie(name); err == nil {
 		if err := securecookie.DecodeMulti(name, c.Value, &session.ID, s.Codecs...); err == nil {
-			if err := s.load(session); err == nil {
+			if err := s.load(r.Context(), session); err == nil {
 				session.IsNew = false
 			} else if !errors.Is(err, pgx.ErrNoRows) {
 				return session, err
@@ -68,8 +68,10 @@ func (s *PGStore) New(r *http.Request, name string) (*sessions.Session, error) {
 
 // Save persists the session to PostgreSQL and sets the cookie.
 func (s *PGStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
+	ctx := r.Context()
+
 	if session.Options.MaxAge < 0 {
-		if err := s.destroy(session); err != nil {
+		if err := s.destroy(ctx, session); err != nil {
 			return err
 		}
 		http.SetCookie(w, sessions.NewCookie(session.Name(), "", session.Options))
@@ -83,7 +85,7 @@ func (s *PGStore) Save(r *http.Request, w http.ResponseWriter, session *sessions
 			), "=")
 	}
 
-	if err := s.save(session); err != nil {
+	if err := s.save(ctx, session); err != nil {
 		return err
 	}
 
@@ -108,10 +110,10 @@ func (s *PGStore) MaxAge(age int) {
 
 // --- internal helpers ---
 
-func (s *PGStore) load(session *sessions.Session) error {
+func (s *PGStore) load(ctx context.Context, session *sessions.Session) error {
 	var data string
 	err := s.Pool.QueryRow(
-		context.Background(), "SELECT data FROM http_sessions WHERE key = $1", session.ID,
+		ctx, "SELECT data FROM http_sessions WHERE key = $1", session.ID,
 	).Scan(&data)
 	if err != nil {
 		return fmt.Errorf("session load: %w", err)
@@ -120,14 +122,13 @@ func (s *PGStore) load(session *sessions.Session) error {
 	return securecookie.DecodeMulti(session.Name(), data, &session.Values, s.Codecs...)
 }
 
-func (s *PGStore) save(session *sessions.Session) error {
+func (s *PGStore) save(ctx context.Context, session *sessions.Session) error {
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, s.Codecs...)
 	if err != nil {
 		return err
 	}
 
 	expiresOn := time.Now().Add(time.Second * time.Duration(session.Options.MaxAge))
-	ctx := context.Background()
 
 	if session.IsNew {
 		_, err = s.Pool.Exec(ctx,
@@ -144,8 +145,8 @@ func (s *PGStore) save(session *sessions.Session) error {
 	return err
 }
 
-func (s *PGStore) destroy(session *sessions.Session) error {
-	_, err := s.Pool.Exec(context.Background(), "DELETE FROM http_sessions WHERE key = $1", session.ID)
+func (s *PGStore) destroy(ctx context.Context, session *sessions.Session) error {
+	_, err := s.Pool.Exec(ctx, "DELETE FROM http_sessions WHERE key = $1", session.ID)
 	return err
 }
 

@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 
 	"github.com/gracchi-stdio/castogo/internal/config"
-	bunnystorage "github.com/l0wl3vel/bunny-storage-go-sdk"
 )
 
 type StorageService interface {
@@ -31,16 +32,25 @@ func (s *BunnyStorageService) UploadFile(ctx context.Context, file io.Reader, fi
 		return "", err
 	}
 
-	content, err := io.ReadAll(file)
+	uploadURL := endpoint.JoinPath(filename)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadURL.String(), file)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("create upload request: %w", err)
+	}
+	req.Header.Set("AccessKey", config.Cfg.BunnyStoragePassword)
+	req.Header.Set("Content-Type", "application/octet-stream")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("upload to bunny: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("upload failed: status %d", resp.StatusCode)
 	}
 
-	bunnyclient := bunnystorage.NewClient(*endpoint, config.Cfg.BunnyStoragePassword)
-
-	if err := bunnyclient.Upload(filename, content, true); err != nil {
-		return "", err
-	}
+	io.Copy(io.Discard, io.LimitReader(resp.Body, 1024))
 
 	return config.Cfg.StorageCDN + "/" + filename, nil
 }

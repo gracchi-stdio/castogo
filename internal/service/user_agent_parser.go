@@ -1,6 +1,9 @@
 package service
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 type ParsedUA struct {
 	Service string // e.g. "Apple Podcasts", "Spotify", "Browser"
@@ -44,6 +47,20 @@ var browserRules = []uaRule{
 	{"firefox/", "Browser", "Firefox"},
 	{"safari/", "Browser", "Safari"},
 	{"safari", "Browser", "Safari"}, // iPad UA: "...like Mac OS X" without versioned Safari
+}
+
+// botPatterns are compiled regexps for known bot/crawler user agents.
+// Uses word boundaries and specific patterns to avoid false positives
+// on innocent strings like device identifiers or app names.
+var botPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`\bbot\b`),        // Googlebot, Bingbot, etc. (word boundary)
+	regexp.MustCompile(`\bcrawl`),         // crawler, Googlebot-Mobile (word boundary)
+	regexp.MustCompile(`spider`),          // YandexBot, Baiduspider
+	regexp.MustCompile(`\bslurp\b`),       // Yahoo Slurp
+	regexp.MustCompile(`\bcurl/`),         // curl/8.1.2
+	regexp.MustCompile(`\bwget/`),         // wget/1.21
+	regexp.MustCompile(`python-requests`), // python-requests/2.31
+	regexp.MustCompile(`facebookexternalhit`), // Facebook crawler
 }
 
 func ParseUserAgent(ua string) ParsedUA {
@@ -130,18 +147,8 @@ func inferOS(ua string) string {
 }
 
 func isBot(ua string) bool {
-	botIndicators := []string{
-		"bot",
-		"crawl",
-		"spider",
-		"slurp",
-		"curl/",
-		"wget/",
-		"python-requests",
-		"facebookexternalhit",
-	}
-	for _, indicator := range botIndicators {
-		if strings.Contains(ua, indicator) {
+	for _, pattern := range botPatterns {
+		if pattern.MatchString(ua) {
 			return true
 		}
 	}

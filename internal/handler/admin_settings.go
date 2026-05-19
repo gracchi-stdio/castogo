@@ -10,7 +10,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view/settings_page"
+	"github.com/gracchi-stdio/castogo/internal/view/settingview"
 	"github.com/labstack/echo/v4"
 )
 
@@ -28,23 +28,23 @@ func stringPtr(value string) *string {
 func (h *AdminHandler) settingsPage(c echo.Context) error {
 	config, _ := h.settingsService.GetPodcastConfig(c.Request().Context())
 	// config might be nil (first run) — template handles nil gracefully
-	return echo.WrapHandler(templ.Handler(settings_page.SettingsPage(getSharedData(c), config)))(c)
+	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), config)))(c)
 }
 
 type SettingsForm struct {
 	ID            int64  `form:"id" validate:"required"`
 	Title         string `form:"title" validate:"required"`
 	Description   string `form:"description"`
-	SiteURL       string `form:"site_url"`
+	SiteURL       string `form:"site_url" validate:"omitempty,url"`
 	Language      string `form:"language"`
 	Copyright     string `form:"copyright"`
 	AuthorName    string `form:"author_name"`
-	AuthorEmail   string `form:"author_email"`
-	CoverImageURL string `form:"cover_image_url"`
+	AuthorEmail   string `form:"author_email" validate:"omitempty,email"`
+	CoverImageURL string `form:"cover_image_url" validate:"omitempty,url"`
 	Category      string `form:"category"`
 	Subcategory   string `form:"subcategory"`
 	OwnerName     string `form:"owner_name"`
-	OwnerEmail    string `form:"owner_email"`
+	OwnerEmail    string `form:"owner_email" validate:"omitempty,email"`
 }
 
 func (h *AdminHandler) settingsSave(c echo.Context) error {
@@ -64,11 +64,10 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 		OwnerEmail:    c.FormValue("owner_email"),
 	}
 	if err := c.Validate(settingInput); err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error":          "Invalid form data",
-			"loading_status": "",
-			"loading_msg":    "",
-		})
+		errorStruct := fieldValidationErrors(err)
+		errorStruct["loading_status"] = ""
+		errorStruct["loading_msg"] = ""
+		sse(c).MarshalAndPatchSignals(errorStruct)
 		return nil
 	}
 	if settingInput.Category != "" && !domain.IsValidCategory(settingInput.Category, settingInput.Subcategory) {
@@ -116,6 +115,7 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 	sse(c).MarshalAndPatchSignals(map[string]string{
 		"loading_status": "",
 		"loading_msg":    "",
+		"toast":          "Settings saved successfully",
 	})
 	return nil
 }

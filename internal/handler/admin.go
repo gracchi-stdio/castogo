@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	"github.com/gracchi-stdio/castogo/internal/view"
+	"github.com/gracchi-stdio/castogo/internal/view/dashboardview"
 	"github.com/labstack/echo/v4"
 )
 
@@ -29,18 +31,33 @@ func NewAdminHandler(
 
 func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("", h.dashboard)
+
+	// episodes
 	g.GET("/episodes", h.episodesList)
 	g.GET("/episodes/create", h.episodeCreatePage)
 	g.POST("/episodes/create", h.episodeCreateAction)
+	g.PATCH("/episodes/:id/publish-at", h.episodeUpdatePublishAt)
+	g.DELETE("/episodes/:id", h.episodeDelete)
 
 	// settings
 	g.GET("/settings", h.settingsPage)
 	g.POST("/settings", h.settingsSave)
 	g.POST("/settings/upload-cover", h.settingsUploadCoverImage)
-		g.GET("/settings/subcategories", h.subcategoriesSSE)
-
+	g.GET("/settings/subcategories", h.subcategoriesSSE)
 }
 
 func (h *AdminHandler) dashboard(c echo.Context) error {
-	return echo.WrapHandler(templ.Handler(view.DashboardPage(getSharedData(c))))(c)
+	stats, err := h.episodeService.GetDashboardStats(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load dashboard stats")
+	}
+
+	args := dashboardview.DashboardPageArgs{
+		Total:     stats.Total,
+		Published: stats.Published,
+		Drafts:    stats.Drafts,
+		Scheduled: stats.Scheduled,
+	}
+
+	return echo.WrapHandler(templ.Handler(dashboardview.DashboardPage(getSharedData(c), args)))(c)
 }

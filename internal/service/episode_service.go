@@ -80,3 +80,32 @@ func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) (
 
 	return s.repo.ListPublished(ctx, limit, offset)
 }
+
+func (s *EpisodeService) GetDashboardStats(ctx context.Context) (*domain.DashboardStats, error) {
+	published, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusPublished)
+	if err != nil {
+		return nil, fmt.Errorf("count published: %w", err)
+	}
+
+	drafts, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusDraft)
+	if err != nil {
+		return nil, fmt.Errorf("count drafts: %w", err)
+	}
+
+	scheduled, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusScheduled)
+	if err != nil {
+		return nil, fmt.Errorf("count scheduled: %w", err)
+	}
+
+	archived, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusArchived)
+	if err != nil {
+		return nil, fmt.Errorf("count archived: %w", err)
+	}
+
+	return &domain.DashboardStats{
+		Total:     published + drafts + scheduled + archived,
+		Published: published,
+		Drafts:    drafts,
+		Scheduled: scheduled,
+	}, nil
+}

@@ -43,15 +43,22 @@ func validationMsg(field, tag, param string) string {
 		return "Please enter a valid " + strings.ToLower(field)
 	case "min":
 		return field + " must be at least " + param + " characters"
+	case "url":
+		return "Please enter a valid URL for " + strings.ToLower(field)
 	default:
 		return field + " is invalid"
 	}
 }
 
 func getSharedData(c echo.Context) *domain.AdminSharedData {
-	user := c.Get("user").(*domain.User)
+	user, ok := c.Get("user").(*domain.User)
+	if !ok || user == nil {
+		return nil
+	}
+
 	return &domain.AdminSharedData{
-		User: user,
+		User:        user,
+		CurrentPath: c.Request().URL.Path,
 	}
 }
 
@@ -63,18 +70,4 @@ func parseInt(s string) int {
 func parseInt64(s string) int64 {
 	v, _ := strconv.ParseInt(s, 10, 64)
 	return v
-}
-
-func slugify(s string) string {
-	s = strings.ToLower(s)
-	s = strings.Map(func(r rune) rune {
-		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
-			return r
-		}
-		if r == ' ' || r == '-' || r == '_' {
-			return '-'
-		}
-		return -1
-	}, s)
-	return strings.Trim(s, "-")
 }

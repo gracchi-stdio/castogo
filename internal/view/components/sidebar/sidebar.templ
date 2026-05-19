@@ -13,27 +13,27 @@ type SidebarSignals struct {
 // SidebarMobile - Sheet wrapper for mobile sidebar
 templ SidebarMobile(args SidebarMobileArgs) {
 	{{
-	// Use parent sidebar signals directly - don't create separate sheet signals
-	parentSignals := utils.Signals(args.ID, SidebarSignals{})
-	sidebarHandler := NewSidebarHandler(parentSignals)
-	closeHandler := sidebarHandler.BuildMobileCloseHandler()
+		// Use parent sidebar signals directly - don't create separate sheet signals
+		parentSignals := utils.Signals(args.ID, SidebarSignals{})
+		sidebarHandler := NewSidebarHandler(parentSignals)
+		closeHandler := sidebarHandler.BuildMobileCloseHandler()
 
-	// Build sheet classes manually since we're not using the Sheet component
-	backdropClasses := "fixed inset-0 z-50 bg-black/50 transition-opacity duration-300"
-	sheetClasses := "fixed top-0 left-0 h-screen w-3/4 z-50 gap-4 bg-background shadow-lg border-r transition-opacity duration-300 sm:max-w-sm overflow-y-auto"
+		// Build sheet classes manually since we're not using the Sheet component
+		backdropClasses := "fixed inset-0 z-50 bg-black/50 transition-opacity duration-300"
+		sheetClasses := "fixed top-0 left-0 h-screen w-3/4 z-50 gap-4 bg-background shadow-lg border-r transition-opacity duration-300 sm:max-w-sm overflow-y-auto"
 
-	// Create data-class expressions for fade animations
-	backdropDataClass := utils.NewDataClass().
-		Add("opacity-0", "!"+parentSignals.Signal("mobileOpen")).
-		Add("opacity-100", parentSignals.Signal("mobileOpen")).
-		Build()
-	sheetDataClass := utils.NewDataClass().
-		Add("opacity-0", "!"+parentSignals.Signal("mobileOpen")).
-		Add("opacity-100", parentSignals.Signal("mobileOpen")).
-		Build()
+		// Create data-class expressions for fade animations
+		backdropDataClass := utils.NewDataClass().
+			Add("opacity-0", "!"+parentSignals.Signal("mobileOpen")).
+			Add("opacity-100", parentSignals.Signal("mobileOpen")).
+			Build()
+		sheetDataClass := utils.NewDataClass().
+			Add("opacity-0", "!"+parentSignals.Signal("mobileOpen")).
+			Add("opacity-100", parentSignals.Signal("mobileOpen")).
+			Build()
 
-	// Create escape handler
-	escapeHandler := "evt.key === 'Escape' ? (" + closeHandler + ") : null"
+		// Create escape handler
+		escapeHandler := "evt.key === 'Escape' ? (" + closeHandler + ") : null"
 	}}
 	<!-- Modal backdrop -->
 	<div
@@ -60,16 +60,13 @@ templ SidebarMobile(args SidebarMobileArgs) {
 
 // SidebarDesktop - Fixed desktop sidebar
 templ SidebarDesktop(args SidebarDesktopArgs) {
-	{{
-	classes := SidebarDesktopVariants(args)
-	}}
+	{{ classes := SidebarDesktopVariants(args) }}
 	<aside
-			id={ args.ID + "_desktop" }
-			class={ classes }
-			style="view-transition-name: admin-sidebar"
-			{ args.Attributes... }
+		id={ args.ID + "_desktop" }
+		class={ classes }
+		style="view-transition-name: admin-sidebar"
+		{ args.Attributes... }
 	>
-
 		<div class="no-scrollbar h-full overflow-auto">
 			{ children... }
 		</div>
@@ -79,10 +76,10 @@ templ SidebarDesktop(args SidebarDesktopArgs) {
 // SidebarTrigger - Mobile hamburger menu button
 templ SidebarTrigger(args SidebarTriggerArgs) {
 	{{
-	signals := utils.Signals(args.ID, SidebarSignals{})
-	sidebarHandler := NewSidebarHandler(signals)
-	clickHandler := sidebarHandler.BuildMobileToggleHandler()
-	classes := SidebarTriggerVariants(args)
+		signals := utils.Signals(args.ID, SidebarSignals{})
+		sidebarHandler := NewSidebarHandler(signals)
+		clickHandler := sidebarHandler.BuildMobileToggleHandler()
+		classes := SidebarTriggerVariants(args)
 	}}
 	<button
 		type="button"
@@ -104,11 +101,11 @@ templ SidebarTrigger(args SidebarTriggerArgs) {
 // SidebarCloseButton - Close button for mobile sidebar
 templ SidebarCloseButton(args SidebarCloseButtonArgs) {
 	{{
-	signals := utils.Signals(args.ID, SidebarSignals{})
-	sidebarHandler := NewSidebarHandler(signals)
-	clickHandler := sidebarHandler.BuildMobileCloseHandler()
+		signals := utils.Signals(args.ID, SidebarSignals{})
+		sidebarHandler := NewSidebarHandler(signals)
+		clickHandler := sidebarHandler.BuildMobileCloseHandler()
 
-	classes := SidebarCloseButtonVariants(args)
+		classes := SidebarCloseButtonVariants(args)
 	}}
 	<button
 		type="button"
@@ -127,9 +124,7 @@ templ SidebarCloseButton(args SidebarCloseButtonArgs) {
 
 // SidebarContent - Shared content structure
 templ SidebarContent(args SidebarContentArgs) {
-	{{
-	classes := SidebarContentVariants(args)
-	}}
+	{{ classes := SidebarContentVariants(args) }}
 	<div
 		class={ classes }
 		data-sidebar-id={ args.ID }
@@ -141,9 +136,7 @@ templ SidebarContent(args SidebarContentArgs) {
 
 // SidebarHeader - Header section of the sidebar
 templ SidebarHeader(args SidebarHeaderArgs) {
-	{{
-	classes := SidebarHeaderVariants(args)
-	}}
+	{{ classes := SidebarHeaderVariants(args) }}
 	<div
 		class={ classes }
 		{ args.Attributes... }
@@ -154,9 +147,7 @@ templ SidebarHeader(args SidebarHeaderArgs) {
 
 // SidebarFooter - Footer section of the sidebar
 templ SidebarFooter(args SidebarFooterArgs) {
-	{{
-	classes := SidebarFooterVariants(args)
-	}}
+	{{ classes := SidebarFooterVariants(args) }}
 	<div
 		class={ classes }
 		{ args.Attributes... }
@@ -181,9 +172,10 @@ templ SidebarNavMobile(args SidebarNavArgs) {
 						for _, item := range section.Items {
 							<li class="group/menu-item relative cursor-pointer">
 								@SidebarNavLinkMobile(SidebarNavLinkArgs{
-									SidebarID:   args.SidebarID,
-									Item:        item,
-									CurrentPath: args.CurrentPath,
+									SidebarID:      args.SidebarID,
+									Item:           item,
+									CurrentPath:    args.CurrentPath,
+									LinkAttributes: args.LinkAttributes,
 								})
 							</li>
 						}
@@ -210,9 +202,10 @@ templ SidebarNavDesktop(args SidebarNavArgs) {
 						for _, item := range section.Items {
 							<li class="group/menu-item relative cursor-pointer">
 								@SidebarNavLinkDesktop(SidebarNavLinkArgs{
-									SidebarID:   args.SidebarID,
-									Item:        item,
-									CurrentPath: args.CurrentPath,
+									SidebarID:      args.SidebarID,
+									Item:           item,
+									CurrentPath:    args.CurrentPath,
+									LinkAttributes: args.LinkAttributes,
 								})
 							</li>
 						}
@@ -226,23 +219,24 @@ templ SidebarNavDesktop(args SidebarNavArgs) {
 // SidebarNavLinkMobile - Mobile nav links that close sidebar when clicked
 templ SidebarNavLinkMobile(args SidebarNavLinkArgs) {
 	{{
-	// Nav links need to close mobile sidebar when clicked
-	signals := utils.Signals(args.SidebarID, SidebarSignals{})
-	sidebarHandler := NewSidebarHandler(signals)
+		// Nav links need to close mobile sidebar when clicked
+		signals := utils.Signals(args.SidebarID, SidebarSignals{})
+		sidebarHandler := NewSidebarHandler(signals)
 
-	// Close mobile sidebar after navigation
-	clickHandler := sidebarHandler.BuildMobileCloseHandler()
+		// Close mobile sidebar after navigation
+		clickHandler := sidebarHandler.BuildMobileCloseHandler()
 
-	classes := SidebarNavLinkMobileVariants(SidebarNavLinkArgs{
-		Item:        args.Item,
-		CurrentPath: args.CurrentPath,
-		SidebarID:   args.SidebarID,
-	})
+		classes := SidebarNavLinkMobileVariants(SidebarNavLinkArgs{
+			Item:        args.Item,
+			CurrentPath: args.CurrentPath,
+			SidebarID:   args.SidebarID,
+		})
 	}}
 	<a
 		class={ classes }
 		href={ templ.SafeURL(args.Item.Href) }
 		data-on:click={ clickHandler }
+		{ args.LinkAttributes... }
 	>
 		if args.Item.Icon != "" {
 			@templ.Raw(lucide.Icon(args.Item.Icon, map[string]any{"class": "size-4 mr-2 shrink-0"}))
@@ -257,15 +251,16 @@ templ SidebarNavLinkMobile(args SidebarNavLinkArgs) {
 // SidebarNavLinkDesktop - Desktop nav links (no click handler needed)
 templ SidebarNavLinkDesktop(args SidebarNavLinkArgs) {
 	{{
-	classes := SidebarNavLinkDesktopVariants(SidebarNavLinkArgs{
-		Item:        args.Item,
-		CurrentPath: args.CurrentPath,
-		SidebarID:   args.SidebarID,
-	})
+		classes := SidebarNavLinkDesktopVariants(SidebarNavLinkArgs{
+			Item:        args.Item,
+			CurrentPath: args.CurrentPath,
+			SidebarID:   args.SidebarID,
+		})
 	}}
 	<a
 		class={ classes }
 		href={ templ.SafeURL(args.Item.Href) }
+		{ args.LinkAttributes... }
 	>
 		if args.Item.Icon != "" {
 			@templ.Raw(lucide.Icon(args.Item.Icon, map[string]any{"class": "size-4 mr-2 shrink-0"}))

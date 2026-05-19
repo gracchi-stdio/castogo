@@ -15,26 +15,27 @@ type viteManifestEntry struct {
 }
 
 var (
-	viteManifestOnce sync.Once
-	viteManifestData map[string]viteManifestEntry
-	viteManifestErr  error
+	viteManifestMu     sync.RWMutex
+	viteManifestData   map[string]viteManifestEntry
+	viteManifestLoaded bool
 )
 
-func loadViteManifest() {
+func loadViteManifest() error {
 	manifestPath := filepath.Join("public", ".vite", "manifest.json")
 	content, err := os.ReadFile(manifestPath)
 	if err != nil {
-		viteManifestErr = err
-		return
+		return err
 	}
 
 	data := map[string]viteManifestEntry{}
 	if err := json.Unmarshal(content, &data); err != nil {
-		viteManifestErr = err
-		return
+		return err
 	}
 
 	viteManifestData = data
+
+	viteManifestLoaded = true
+	return nil
 }
 
 func normalizeAssetPath(path string) string {
@@ -50,11 +51,21 @@ func normalizeAssetPath(path string) string {
 	return "/" + trimmed
 }
 
-func viteAssets(entry string) ([]string, string) {
-	viteManifestOnce.Do(loadViteManifest)
-	if viteManifestErr != nil {
-		fmt.Printf("warn: vite manifest not found (%v); run 'just frontend-build'\n", viteManifestErr)
-		return nil, ""
+func ViteAssets(entry string) ([]string, string) {
+	viteManifestMu.RLock()
+	loaded := viteManifestLoaded
+	viteManifestMu.RUnlock()
+
+	if !loaded {
+		viteManifestMu.Lock()
+		if !viteManifestLoaded {
+			if err := loadViteManifest(); err != nil {
+				fmt.Printf("error loading vite manifest: %v\n", err)
+				viteManifestMu.Unlock()
+				return nil, ""
+			}
+		}
+		viteManifestMu.Unlock()
 	}
 
 	manifestEntry, ok := viteManifestData[entry]

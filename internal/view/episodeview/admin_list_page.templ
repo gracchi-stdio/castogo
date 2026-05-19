@@ -1,0 +1,226 @@
+package episodeview
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/calendar"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/sheet"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+	"github.com/gracchi-stdio/castogo/internal/view/utils"
+)
+
+templ EpisodesListPage(shared *domain.AdminSharedData, episodes []*domain.Episode) {
+	@layout.AdminLayout("Episodes", shared, episodesListActions()) {
+		if len(episodes) > 0 {
+			@episodesList(episodes)
+		} else {
+			@episodesListEmpty()
+		}
+	}
+}
+
+templ episodesList(episodes []*domain.Episode) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{Class: "overflow-x-auto"}) {
+			<table class="w-full table-auto">
+				<thead>
+					<tr class="border-b">
+						<th class="text-left font-medium py-3 px-2">#</th>
+						<th class="text-left font-medium py-3 px-2">Title</th>
+						<th class="text-left font-medium py-3 px-2">Status</th>
+						<th class="text-left font-medium py-3 px-2">Duration</th>
+						<th class="text-left font-medium py-3 px-2">Publish At</th>
+						<th class="text-right font-medium py-3 px-2">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, episode := range episodes {
+						@EpisodeRow(episode)
+					}
+				</tbody>
+			</table>
+		}
+	}
+}
+
+templ EpisodeRow(episode *domain.Episode) {
+	{{ rowID := fmt.Sprintf("episode-row-%d", episode.ID) }}
+	<tr class="border-t hover:bg-muted/50 transition-colors" id={ rowID }>
+		<td class="py-3 px-2 text-muted-foreground">
+			if episode.EpisodeNumber > 0 {
+				{ strconv.Itoa(episode.EpisodeNumber) }
+			}
+		</td>
+		<td class="py-3 px-2 font-medium">{ episode.Title }</td>
+		<td class="py-3 px-2">
+			@statusBadge(episode.Status())
+		</td>
+		<td class="py-3 px-2 text-muted-foreground">
+			{ formatDuration(episode.Duration) }
+		</td>
+		<td class="py-3 px-2">
+			@publishAtCell(episode)
+		</td>
+		<td class="py-3 px-2 text-right">
+			@episodeActionsDropdown(episode)
+		</td>
+	</tr>
+}
+
+templ publishAtCell(episode *domain.Episode) {
+	{{
+		sheetID := fmt.Sprintf("publish-sheet-%d", episode.ID)
+		calID := fmt.Sprintf("publish-cal-%d", episode.ID)
+
+		selectedDate := publishDateValue(episode.PublishAt)
+
+		now := time.Now()
+		todayStr := now.Format("2006-01-02")
+		displayMonth := now.Format("2006-01") + "-01"
+		if selectedDate != "" {
+			displayMonth = selectedDate[:7] + "-01"
+		}
+
+		signals := utils.Signals(calID, calendar.CalendarSignals{
+			CurrentDate: displayMonth,
+			Mode:        "single",
+			Today:       todayStr,
+			DateValue:   selectedDate,
+			InputValue:  "",
+		})
+	}}
+	<div data-signals={ signals.DataSignals }>
+		@sheet.SheetTrigger(sheet.SheetTriggerArgs{
+			SheetID: sheetID,
+			AsChild: true,
+			Class:   "cursor-pointer inline-flex items-center gap-1 text-sm rounded-md px-2 py-1 hover:bg-accent transition-colors",
+		}) {
+			if episode.PublishAt != nil {
+				{ episode.PublishAt.Format("Jan 2, 2006") }
+			} else {
+				<span class="text-muted-foreground/50">Set date</span>
+			}
+			@icon.Lucide("calendar", "size-3 text-muted-foreground")
+		}
+		@sheet.Sheet(sheet.SheetArgs{ID: sheetID, Modal: true, Side: "right"}) {
+			@sheet.SheetContent(sheet.SheetContentArgs{SheetID: sheetID}) {
+				@sheet.SheetHeader(sheet.SheetHeaderArgs{}) {
+					@sheet.SheetTitle(sheet.SheetTitleArgs{}) {
+						Set Publish Date
+					}
+				}
+				<div class="space-y-4">
+					<p class="text-sm text-muted-foreground">
+						<span class="font-medium text-foreground">{ episode.Title }</span>
+						— currently
+						@statusBadge(episode.Status())
+					</p>
+					<!-- Selected date display -->
+					<div class="flex items-center gap-2 text-sm">
+						<span class="text-muted-foreground">Selected:</span>
+						<span class="font-medium" data-text={ signals.Signal("dateValue") + " ? new Date(" + signals.Signal("dateValue") + " + 'T12:00:00Z').toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC'}) : 'None'" }></span>
+					</div>
+					<!-- Calendar inline — no popover needed inside a sheet -->
+					@calendar.Calendar(calendar.CalendarArgs{
+						ID:           calID,
+						Mode:         "single",
+						SelectedDate: selectedDate,
+						DefaultDate:  displayMonth,
+					})
+					<div class="flex items-center gap-2 pt-2">
+						@sheet.SheetClose(sheet.SheetCloseArgs{
+							SheetID: sheetID,
+							AsChild: true,
+						}) {
+							@button.Button(button.ButtonArgs{Variant: "default", Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("@patch('/admin/episodes/%d/publish-at')", episode.ID),
+							}}) {
+								Save
+							}
+						}
+						@sheet.SheetClose(sheet.SheetCloseArgs{
+							SheetID: sheetID,
+							AsChild: true,
+						}) {
+							@button.Button(button.ButtonArgs{Variant: "outline"}) {
+								Cancel
+							}
+						}
+					</div>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ episodeActionsDropdown(episode *domain.Episode) {
+	{{ ddID := fmt.Sprintf("ep-actions-%d", episode.ID) }}
+	@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: ddID}) {
+		@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
+			ID:      ddID,
+			AsChild: true,
+			Class:   "inline-flex items-center justify-center rounded-md p-1 hover:bg-accent cursor-pointer",
+		}) {
+			@icon.Lucide("ellipsis-vertical", "size-4")
+		}
+		@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{
+			ID:    ddID,
+			Align: "end",
+		}) {
+			@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: ddID}) {
+				<a href={ fmt.Sprintf("/admin/episodes/%d/edit", episode.ID) } class="flex items-center gap-2 w-full">
+					@icon.Lucide("pencil", "size-4")
+					Edit
+				</a>
+			}
+			@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: ddID})
+			@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
+				ID:      ddID,
+				Variant: "destructive",
+				OnClick: fmt.Sprintf("@delete('/admin/episodes/%d')", episode.ID),
+			}) {
+				@icon.Lucide("trash-2", "size-4 mr-2")
+				Delete
+			}
+		}
+	}
+}
+
+templ episodesListEmpty() {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{Class: "flex flex-col items-center gap-4 py-8"}) {
+			@icon.Lucide("headphones", "size-12 text-muted-foreground/30")
+			<p class="text-muted-foreground">No episodes yet. Create your first episode to get started.</p>
+			<a href="/admin/episodes/create">
+				@button.Button(button.ButtonArgs{Variant: "default"}) {
+					@icon.Lucide("circle-plus", "size-4 mr-1")
+					New Episode
+				}
+			</a>
+		}
+	}
+}
+
+templ episodesListActions() {
+	<a href="/admin/episodes/create">
+		@button.Button(button.ButtonArgs{Variant: "default", Size: "sm"}) {
+			@icon.Lucide("circle-plus", "size-4 mr-1")
+			New Episode
+		}
+	</a>
+}
+
+templ statusBadge(status domain.EpisodeStatus) {
+	{{ colorClass := statusColor(status) }}
+	<span class={ "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", colorClass }>
+		{ string(status) }
+	</span>
+}

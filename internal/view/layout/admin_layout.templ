@@ -1,0 +1,121 @@
+package layout
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/config"
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/brand"
+	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/sidebar"
+	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
+)
+
+templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Component) {
+	@BaseLayout() {
+		{{
+			sidebarID := "admin_sidebar"
+			sections := sidebarSections(data.CurrentPath)
+			navArgs := sidebar.SidebarNavArgs{
+				SidebarID:      sidebarID,
+				Sections:       sections,
+				CurrentPath:    data.CurrentPath,
+				LinkAttributes: templ.Attributes{"data-nav-link": ""},
+			}
+		}}
+		<div class="relative flex min-h-screen flex-col bg-background">
+			<div class="flex flex-1">
+				<!-- Mobile sidebar (sheet overlay) -->
+				@sidebar.SidebarMobile(sidebar.SidebarMobileArgs{ID: sidebarID}) {
+					@sidebar.SidebarContent(sidebar.SidebarContentArgs{ID: sidebarID}) {
+						@sidebar.SidebarHeader(sidebar.SidebarHeaderArgs{}) {
+							<div class="flex flex-row gap-3 items-center w-full">
+								@sidebar.SidebarCloseButton(sidebar.SidebarCloseButtonArgs{ID: sidebarID})
+								<span class="font-semibold">{ config.Cfg.AppName }</span>
+							</div>
+						}
+						@sidebar.SidebarNavMobile(navArgs)
+						@sidebar.SidebarFooter(sidebar.SidebarFooterArgs{}) {
+							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+						}
+					}
+				}
+				<!-- Desktop sidebar -->
+				@sidebar.SidebarDesktop(sidebar.SidebarDesktopArgs{ID: sidebarID}) {
+					@sidebar.SidebarContent(sidebar.SidebarContentArgs{ID: sidebarID}) {
+						@sidebar.SidebarHeader(sidebar.SidebarHeaderArgs{}) {
+							<div class="flex items-center gap-2 px-2 py-1">
+								// <img src="/logo.svg" alt="Logo" class="h-5 w-5"/>
+								@brand.Mascot("size-12 text-primary")
+								<span class="font-semibold">{ config.Cfg.AppName }</span>
+							</div>
+						}
+						<div class="pl-2">
+							@sidebar.SidebarNavDesktop(navArgs)
+						</div>
+						@sidebar.SidebarFooter(sidebar.SidebarFooterArgs{}) {
+							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+						}
+					}
+				}
+				<!-- Main area -->
+				<div class="flex-1 flex flex-col min-w-0" data-admin-content style="view-transition-name: admin-content">
+					<header class="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+						@sidebar.SidebarTrigger(sidebar.SidebarTriggerArgs{ID: sidebarID, Class: "md:hidden"})
+						<h2 class="text-lg font-semibold flex-1">{ title }</h2>
+						<div class="flex items-center gap-2">
+							if actions != nil {
+								@actions
+							}
+							<!-- User dropdown -->
+							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
+								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
+									ID:    "user-menu",
+									Class: "h-8 w-8 rounded-full p-0 inline-flex items-center justify-center bg-primary text-primary-foreground cursor-pointer",
+								}) {
+									{ data.User.Email[0:2] }
+								}
+								@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{ID: "user-menu", Align: "end"}) {
+									@dropdown.DropdownMenuLabel(dropdown.DropdownMenuLabelArgs{ID: "user-menu"}) {
+										{ data.User.Email }
+									}
+									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
+									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu"}) {
+										<a href="/admin/settings" class="flex items-center gap-2">
+											@icon.Lucide("settings")
+											Settings
+										</a>
+									}
+									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
+									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
+										ID:      "user-menu",
+										Variant: "destructive",
+										OnClick: "@post('/logout')",
+									}) {
+										@icon.Lucide("log-out", "mr-2")
+										Sign Out
+									}
+								}
+							}
+						</div>
+					</header>
+					<main class="flex-1 p-4">
+						{ children... }
+					</main>
+				</div>
+				<!-- Toast notification — outside data-admin-content so it survives SPA nav -->
+				<div
+					data-show="$toast !== ''"
+					class="fixed bottom-4 right-4 z-50 bg-card border rounded-lg px-4 py-3 shadow-lg flex items-center gap-3 transition-all"
+					style="view-transition-name: toast"
+				>
+					<span class="text-sm font-medium" data-text="$toast"></span>
+					<button
+						type="button"
+						class="text-muted-foreground hover:text-foreground"
+						data-on:click="$toast = ''"
+					>&times;</button>
+				</div>
+			</div>
+		</div>
+	}
+}

@@ -1,0 +1,42 @@
+package dashboardview
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+	"strconv"
+)
+
+templ DashboardPage(shared *domain.AdminSharedData, args DashboardPageArgs) {
+	@layout.AdminLayout("Dashboard", shared, dashboardActions()) {
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			@statCard("headphones", strconv.Itoa(args.Total), "Total Episodes")
+			@statCard("send", strconv.Itoa(args.Published), "Published")
+			@statCard("pencil", strconv.Itoa(args.Drafts), "Drafts")
+			@statCard("clock", strconv.Itoa(args.Scheduled), "Scheduled")
+		</div>
+	}
+}
+
+templ statCard(iconName string, value string, label string) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{Class: "flex items-center gap-4"}) {
+			<div class="flex items-center justify-center size-12 rounded-lg bg-primary/10 text-primary">
+				@icon.Lucide(iconName, "size-6")
+			</div>
+			<div class="flex flex-col">
+				<span class="text-3xl font-bold leading-none">{ value }</span>
+				<span class="text-sm text-muted-foreground">{ label }</span>
+			</div>
+		}
+	}
+}
+
+templ dashboardActions() {
+	@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+		@icon.Lucide("external-link", "size-4 mr-1")
+		View Public Site
+	}
+}

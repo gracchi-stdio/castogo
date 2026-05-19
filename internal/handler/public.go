@@ -6,7 +6,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	"github.com/gracchi-stdio/castogo/internal/view"
+	"github.com/gracchi-stdio/castogo/internal/view/authview"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
@@ -25,12 +25,12 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	e.GET("/feed/podcast.xml", h.RSSFeed)
 
 	// Auth
-	e.GET("/login", echo.WrapHandler(templ.Handler(view.LoginPage())))
+	e.GET("/login", echo.WrapHandler(templ.Handler(authview.LoginPage())))
 	e.POST("/login", h.login)
 	e.POST("/logout", h.logout)
 
 	if config.Cfg.RegistrationEnabled {
-		e.GET("/register", echo.WrapHandler(templ.Handler(view.RegisterPage())))
+		e.GET("/register", echo.WrapHandler(templ.Handler(authview.RegisterPage())))
 	}
 }
 

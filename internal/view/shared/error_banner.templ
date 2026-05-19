@@ -1,9 +1,0 @@
-package shared 
-
-templ ErrorBanner(args ErrorBannerArgs) {
-	<div
-		data-show={ "$" + args.ErrorSignal + " != ''" }
-		data-text={ "$" + args.ErrorSignal }
-		class="text-destructive bg-destructive/15 border border-destructive p-3 rounded-md mb-4"
-	></div>
-}

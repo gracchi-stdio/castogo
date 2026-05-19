@@ -11,8 +11,14 @@ dev:
 	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-dev.ps1
 
 [unix]
-dev:
+dev: check-deps
 	bash -lc "echo 'Starting dev environment...'; just dev-vite & just dev-templ & just dev-server & wait"
+
+# Check that required dev dependencies are installed
+[unix]
+check-deps:
+	@# ffmpeg
+	@if ! command -v ffmpeg > /dev/null 2>&1; then echo "Missing dependency: ffmpeg\nInstall with: sudo apt install ffmpeg"; exit 1; fi
 
 # Vite dev server (HMR on localhost:3000)
 dev-vite:

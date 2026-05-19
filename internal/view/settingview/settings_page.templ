@@ -1,0 +1,374 @@
+package settingview
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
+	"github.com/gracchi-stdio/castogo/internal/view/components/fielderror"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	"github.com/gracchi-stdio/castogo/internal/view/components/loading"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
+	@layout.AdminLayout("Settings", data, nil) {
+		{{
+			title := ""
+			description := ""
+			siteURL := ""
+			language := "en"
+			copyright := ""
+			authorName := ""
+			authorEmail := ""
+			coverImageURL := ""
+			category := ""
+			subcategory := ""
+			ownerName := ""
+			ownerEmail := ""
+			if config != nil {
+				title = config.Title
+				description = config.Description
+				siteURL = config.SiteURL
+				language = config.Language
+				copyright = config.Copyright
+				authorName = config.AuthorName
+				authorEmail = config.AuthorEmail
+				coverImageURL = config.CoverImageURL
+				category = config.Category
+				subcategory = config.Subcategory
+				ownerName = config.OwnerName
+				ownerEmail = config.OwnerEmail
+			}
+		}}
+		<div
+			data-signals:title={ "'" + title + "'" }
+			data-signals:description={ "'" + description + "'" }
+			data-signals:site_url={ "'" + siteURL + "'" }
+			data-signals:language={ "'" + language + "'" }
+			data-signals:copyright={ "'" + copyright + "'" }
+			data-signals:author_name={ "'" + authorName + "'" }
+			data-signals:author_email={ "'" + authorEmail + "'" }
+			data-signals:cover_image_url={ "'" + coverImageURL + "'" }
+			data-signals:owner_name={ "'" + ownerName + "'" }
+			data-signals:owner_email={ "'" + ownerEmail + "'" }
+			data-signals:error="''"
+			data-signals:loading_status="false"
+			data-signals:loading_msg="''"
+			data-signals:title_error="''"
+			data-signals:site_url_error="''"
+			data-signals:author_email_error="''"
+			data-signals:owner_email_error="''"
+			data-signals:cover_image_url_error="''"
+		>
+			@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{
+				ErrorSignal: "error",
+			})
+			@loading.LoadingOverlay(loading.LoadingOverlayArgs{
+				Signal: "loading_status",
+				Status: "loading_msg",
+			})
+			@form.Form(form.FormArgs{
+				ID:          "settings-form",
+				Action:      "/admin/settings",
+				ContentType: "form",
+				Attributes: map[string]any{
+					"enctype": "multipart/form-data",
+				},
+			}) {
+				@card.Card(card.CardArgs{}) {
+					@card.CardContent(card.CardContentArgs{}) {
+						<div class="space-y-6">
+							<!-- Podcast Info -->
+							<div>
+								<h3 class="text-lg font-medium mb-4">Podcast Info</h3>
+								<div class="space-y-4">
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "title"}) {
+											Title
+										}
+										@input.Input(input.InputArgs{
+											Type:        "text",
+											ID:          "title",
+											Name:        "title",
+											Placeholder: "My Awesome Podcast",
+											Class:       "w-full",
+											Attributes: map[string]any{
+												"data-bind:title": "",
+												"data-on:input":   "$title_error = ''",
+											},
+										})
+										@fielderror.FieldError(fielderror.FieldErrorArgs{
+											Signal: "title_error",
+										})
+									</div>
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "description"}) {
+											Description
+										}
+										@textarea.Textarea(textarea.TextareaArgs{
+											ID:          "description",
+											Name:        "description",
+											Placeholder: "What's your podcast about?",
+											Class:       "w-full",
+											Rows:        4,
+											Attributes: map[string]any{
+												"data-bind:description": "",
+											},
+										})
+									</div>
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "cover_image_url"}) {
+											Cover Image URL
+										}
+										@input.Input(input.InputArgs{
+											Type:        "hidden",
+											ID:          "cover_image_url",
+											Name:        "cover_image_url",
+											Placeholder: "https://cdn.example.com/cover.jpg",
+											Class:       "w-full",
+											Attributes: map[string]any{
+												"data-bind:cover_image_url": "",
+											},
+										})
+										@fielderror.FieldError(fielderror.FieldErrorArgs{
+											Signal: "cover_image_url_error",
+										})
+										// Image preview and upload button
+										<!-- No image: dashed upload area -->
+										<div
+											data-show="$cover_image_url === ''"
+											class="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+											data-on:click="document.getElementById('cover_image').click()"
+										>
+											<div class="text-muted-foreground">
+												<p class="font-medium">Click to upload cover image</p>
+												<p class="text-sm mt-1">Recommended: 3000x3000px, JPG or PNG</p>
+											</div>
+										</div>
+										<!-- Has image: preview + change button -->
+										<div data-show="$cover_image_url !== ''" class="space-y-3">
+											<button
+												type="button"
+												class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+												data-on:click="document.getElementById('cover_image').click()"
+											>
+												<img
+													data-attr:src="$cover_image_url"
+													alt="Cover image preview"
+													class="w-48 h-48 object-cover rounded-lg border"
+												/>
+											</button>
+										</div>
+										<!-- Hidden file input (shared by both states) -->
+										<input
+											type="file"
+											id="cover_image"
+											name="cover_image"
+											accept="image/jpeg,image/png,image/webp"
+											class="hidden"
+											data-on:change="$loading_msg = 'Uploading cover image...'; $loading_status = true; @post('/admin/settings/upload-cover', {contentType: 'form', form: '#settings-form'})"
+										/>
+									</div>
+									<div class="space-y-2">
+										@label.Label(label.LabelArgs{For: "site_url"}) {
+											Site URL
+										}
+										@input.Input(input.InputArgs{
+											Type:        "url",
+											ID:          "site_url",
+											Name:        "site_url",
+											Placeholder: "https://example.com",
+											Class:       "w-full",
+											Attributes: map[string]any{
+												"data-bind:site_url": "",
+											},
+										})
+										@fielderror.FieldError(fielderror.FieldErrorArgs{
+											Signal: "site_url_error",
+										})
+									</div>
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "language"}) {
+												Language
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "language",
+												Name:        "language",
+												Placeholder: "en",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-bind:language": "",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "copyright"}) {
+												Copyright
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "copyright",
+												Name:        "copyright",
+												Placeholder: "2026 My Podcast",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-bind:copyright": "",
+												},
+											})
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- Author & Owner -->
+							<div>
+								<h3 class="text-lg font-medium mb-4">Author & Owner</h3>
+								<div class="space-y-4">
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "author_name"}) {
+												Author Name
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "author_name",
+												Name:        "author_name",
+												Placeholder: "John Doe",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-bind:author_name": "",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "author_email"}) {
+												Author Email
+											}
+											@input.Input(input.InputArgs{
+												Type:        "email",
+												ID:          "author_email",
+												Name:        "author_email",
+												Placeholder: "john@example.com",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-bind:author_email": "",
+												},
+											})
+											@fielderror.FieldError(fielderror.FieldErrorArgs{
+												Signal: "author_email_error",
+											})
+										</div>
+									</div>
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "owner_name"}) {
+												Owner Name
+											}
+											@input.Input(input.InputArgs{
+												Type:        "text",
+												ID:          "owner_name",
+												Name:        "owner_name",
+												Placeholder: "John Doe",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-bind:owner_name": "",
+												},
+											})
+										</div>
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "owner_email"}) {
+												Owner Email
+											}
+											@input.Input(input.InputArgs{
+												Type:        "email",
+												ID:          "owner_email",
+												Name:        "owner_email",
+												Placeholder: "john@example.com",
+												Class:       "w-full",
+												Attributes: map[string]any{
+													"data-bind:owner_email": "",
+												},
+											})
+											@fielderror.FieldError(fielderror.FieldErrorArgs{
+												Signal: "owner_email_error",
+											})
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- Category -->
+							<div>
+								<h3 class="text-lg font-medium mb-4">Category</h3>
+								<div class="space-y-4">
+									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div class="space-y-2">
+											@label.Label(label.LabelArgs{For: "category"}) {
+												Category
+											}
+											@selectcomponent.Select(selectcomponent.SelectArgs{
+												ID:           "category_select",
+												Name:         "category",
+												Placeholder:  "Select category...",
+												Class:        "w-full",
+												Options:      categoryOptions,
+												ContentClass: "max-h-32",
+												Value:        category,
+												OnChange:     "@get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))",
+											})
+										</div>
+										// Subcategory
+										<div class="space-y-2" id="subcategory_wrapper">
+											{{
+												subcategoryOptions := GetSubcategoryOptions(category)
+												subLabel := ""
+												if len(subcategoryOptions) == 0 {
+													subLabel = "hidden"
+												}
+											}}
+											@label.Label(label.LabelArgs{For: "subcategory", Class: subLabel}) {
+												Subcategory
+											}
+											@selectcomponent.Select(selectcomponent.SelectArgs{
+												ID:           "subcategory_select",
+												Name:         "subcategory",
+												Placeholder:  "Select subcategory...",
+												Options:      subcategoryOptions,
+												ContentClass: "max-h-32",
+												Value:        subcategory,
+												Disabled:     len(subcategoryOptions) == 0,
+											})
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+				}
+				<input
+					type="hidden"
+					name="id"
+					value={ config.ID }
+				/>
+			}
+			<!-- Submit -->
+			<div class="sticky bottom-0 bg-background/95 backdrop-blur border-t py-3 px-4 -mx-4 mb-[-1rem]">
+				<div class="flex justify-end">
+					@button.Button(button.ButtonArgs{
+						Type: "submit",
+						Attributes: templ.Attributes{
+							"form": "settings-form",
+						},
+					}) {
+						Save Settings
+					}
+				</div>
+			</div>
+		</div>
+	}
+}

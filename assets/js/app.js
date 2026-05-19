@@ -2,10 +2,10 @@
 import "./audio-metadata.js";
 
 // Import CSS (Vite resolves @import and bundles)
-import '../css/app.css';
+import "../css/app.css";
 
-const SKIPPED_TRANSITION_MESSAGE = 'Transition was skipped';
-const ADMIN_CONTENT_SELECTOR = '[data-admin-content]';
+const SKIPPED_TRANSITION_MESSAGE = "Transition was skipped";
+const ADMIN_CONTENT_SELECTOR = "[data-admin-content]";
 
 let adminNavigationController;
 
@@ -14,10 +14,12 @@ function hasAdminContent(doc = document) {
 }
 
 function isSkippedTransitionAbortError(error) {
-  return error instanceof DOMException &&
-    error.name === 'AbortError' &&
-    typeof error.message === 'string' &&
-    error.message.includes(SKIPPED_TRANSITION_MESSAGE);
+  return (
+    error instanceof DOMException &&
+    error.name === "AbortError" &&
+    typeof error.message === "string" &&
+    error.message.includes(SKIPPED_TRANSITION_MESSAGE)
+  );
 }
 
 function shouldHandleAdminNavigation(event, anchor) {
@@ -25,15 +27,24 @@ function shouldHandleAdminNavigation(event, anchor) {
     return false;
   }
 
-  if (anchor.target && anchor.target !== '_self') {
+  if (anchor.target && anchor.target !== "_self") {
     return false;
   }
 
-  if (anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') {
+  if (
+    anchor.hasAttribute("download") ||
+    anchor.getAttribute("rel") === "external"
+  ) {
     return false;
   }
 
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+  if (
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.button !== 0
+  ) {
     return false;
   }
 
@@ -42,11 +53,14 @@ function shouldHandleAdminNavigation(event, anchor) {
     return false;
   }
 
-  if (url.pathname === window.location.pathname && url.search === window.location.search) {
+  if (
+    url.pathname === window.location.pathname &&
+    url.search === window.location.search
+  ) {
     return false;
   }
 
-  return url.pathname.startsWith('/admin') && hasAdminContent();
+  return url.pathname.startsWith("/admin") && hasAdminContent();
 }
 
 async function runWithOptionalViewTransition(callback) {
@@ -69,7 +83,7 @@ async function runWithOptionalViewTransition(callback) {
 }
 
 async function navigateAdmin(url, options = {}) {
-  const { historyMode = 'push', scrollToTop = true } = options;
+  const { historyMode = "push", scrollToTop = true } = options;
 
   if (adminNavigationController) {
     adminNavigationController.abort();
@@ -99,7 +113,7 @@ async function navigateAdmin(url, options = {}) {
   }
 
   const parser = new DOMParser();
-  const nextDocument = parser.parseFromString(html, 'text/html');
+  const nextDocument = parser.parseFromString(html, "text/html");
   const nextContent = nextDocument.querySelector(ADMIN_CONTENT_SELECTOR);
   const currentContent = document.querySelector(ADMIN_CONTENT_SELECTOR);
 
@@ -115,10 +129,12 @@ async function navigateAdmin(url, options = {}) {
     }
   });
 
-  if (historyMode === 'push') {
-    window.history.pushState({ adminNav: true }, '', url);
-  } else if (historyMode === 'replace') {
-    window.history.replaceState({ adminNav: true }, '', url);
+  updateActiveNavLink(new URL(url).pathname); // Note: we use `new URL(url).pathname` here (not `window.location.pathname`) because `pushState` hasn't happened yet — `url` is the argument passed to `navigateAdmin`.
+
+  if (historyMode === "push") {
+    window.history.pushState({ adminNav: true }, "", url);
+  } else if (historyMode === "replace") {
+    window.history.replaceState({ adminNav: true }, "", url);
   }
 
   if (scrollToTop) {
@@ -126,13 +142,27 @@ async function navigateAdmin(url, options = {}) {
   }
 }
 
-document.addEventListener('click', (event) => {
+function updateActiveNavLink(pathname) {
+  const links = document.querySelectorAll("[data-nav-link]");
+  for (const link of links) {
+    const isActive = link.getAttribute("href") === pathname;
+    if (isActive) {
+      link.classList.remove("sidebar-link-inactive");
+      link.classList.add("sidebar-link-active");
+    } else {
+      link.classList.remove("sidebar-link-active");
+      link.classList.add("sidebar-link-inactive");
+    }
+  }
+}
+
+document.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof Element)) {
     return;
   }
 
-  const anchor = target.closest('a[href]');
+  const anchor = target.closest("a[href]");
   if (!(anchor instanceof HTMLAnchorElement)) {
     return;
   }
@@ -150,12 +180,15 @@ document.addEventListener('click', (event) => {
 // Expose for server-side SSE redirect (ExecuteScript)
 window.navigateAdmin = navigateAdmin;
 
-window.addEventListener('popstate', () => {
-  if (!window.location.pathname.startsWith('/admin') || !hasAdminContent()) {
+window.addEventListener("popstate", () => {
+  if (!window.location.pathname.startsWith("/admin") || !hasAdminContent()) {
     return;
   }
 
-  void navigateAdmin(window.location.href, { historyMode: 'none', scrollToTop: false }).catch(() => {
+  void navigateAdmin(window.location.href, {
+    historyMode: "none",
+    scrollToTop: false,
+  }).catch(() => {
     window.location.reload();
   });
 });
