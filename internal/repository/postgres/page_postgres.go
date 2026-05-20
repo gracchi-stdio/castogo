@@ -159,14 +159,6 @@ func (r *PageRepo) DeleteBlock(ctx context.Context, id int64) error {
 	return r.q.DeleteBlock(ctx, id)
 }
 
-func (r *PageRepo) GetPathWithChildrenCount(ctx context.Context, id int64) (string, int, error) {
-	res, err := r.q.GetPagePathAndChildrenCountByID(ctx, id)
-	if err != nil {
-		return "", 0, err
-	}
-	return res.Path, int(res.ChildrenCount), nil
-}
-
 // Converters
 
 func toDomainPage(p *db.Page) *domain.Page {
