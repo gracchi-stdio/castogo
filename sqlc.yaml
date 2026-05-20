@@ -12,7 +12,15 @@ sql:
         emit_empty_slices: true
         emit_pointers_for_null_types: true
         overrides:
-          - db_type: "jsonb"
+          - column: "episodes.audio_metadata"
             go_type:
               import: "github.com/gracchi-stdio/castogo/internal/domain"
               type: "AudioMetadata"
+          - column: "pages.metadata"
+            go_type:
+              import: "github.com/gracchi-stdio/castogo/internal/domain"
+              type: "PageMetadata"
+          - column: "page_blocks.content"
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"

@@ -77,7 +77,6 @@ func main() {
 	userRepo := postgres.NewUserRepo(db)
 	episodeRepo := postgres.NewEpisodeRepo(db)
 	podcastRepo := postgres.NewPodcastConfigRepository(db)
-	landingRepo := postgres.NewLandingPageRepository(db)
 
 	// Services
 	authService := service.NewAuthService(userRepo)
@@ -86,10 +85,9 @@ func main() {
 	audioProcessor := service.NewFFmpegProcessor()
 	settingsService := service.NewSettingsService(podcastRepo)
 	feedService := service.NewFeedService(podcastRepo, episodeRepo)
-	landingService := service.NewLandingPageService(landingRepo, episodeRepo)
 
 	// Handlers Register routes
-	authHandler := handler.NewPublicHandler(authService, feedService, landingService)
+	authHandler := handler.NewPublicHandler(authService, feedService)
 	authHandler.RegisterRoutes(e)
 
 	// Admin routes (protected by auth middleware)
@@ -98,7 +96,6 @@ func main() {
 		episodeService,
 		audioProcessor,
 		settingsService,
-		landingService,
 	)
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)

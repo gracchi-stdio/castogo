@@ -18,8 +18,8 @@ type PublicHandler struct {
 	landingService *service.LandingPageService
 }
 
-func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService, landingService *service.LandingPageService) *PublicHandler {
-	return &PublicHandler{auth: auth, feedService: feedService, landingService: landingService}
+func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService) *PublicHandler {
+	return &PublicHandler{auth: auth, feedService: feedService}
 }
 
 func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {

@@ -134,6 +134,44 @@ Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postg
 - Use `<sl-drawer>` for mobile slide-in navigation (handles overlay, escape key, backdrop click)
 - Static assets served from `public/` directory via Echo's static middleware (registered LAST in route order)
 
+## Shared Components (`internal/view/components/`)
+
+All UI elements across both admin and public views MUST use the shared component library. Never write raw `<button>`, `<input>`, `<select>`, etc. in templates. This ensures theme scope changes propagate correctly and maintains visual consistency.
+
+Available components:
+- `button` — all buttons (variants: default, destructive, outline, secondary, ghost, link; sizes: sm, lg, icon)
+- `card` — content cards
+- `icon` — Lucide icons via `icon.Lucide(name, class)`
+- `input`, `textarea`, `select` — form inputs
+- `dialog` — modals
+- `dropdown` — dropdown menus
+- `tabs` — tab navigation
+- `breadcrumb` — navigation breadcrumbs
+- `sidebar` — sidebar navigation (admin)
+- `sheet` — slide-in panels
+- `popover`, `tooltip` — contextual overlays
+- `label`, `checkbox` — form elements
+- `loading` — loading indicators
+- `errorbanner`, `fielderror` — error display
+- `form` — form wrappers
+- `avatar` — user avatars
+- `brand` — brand/mascot assets
+- `themetoggle` — dark/light mode switch
+- `dateinput`, `datepicker`, `calendar` — date selection
+
+Usage pattern — each component has:
+- `args.go` — typed struct for component properties (e.g., `ButtonArgs`)
+- `component.templ` — Templ template
+- `variants.go` (optional) — variant/size class maps
+- `component_templ.go` — generated (gitignored)
+
+Import and call in templates:
+```go
+@button.Button(button.ButtonArgs{Variant: "default", Size: "sm"}) {
+    { "Click me" }
+}
+```
+
 ## CSS Architecture
 
 - Source files live in `assets/css/` — `app.css` (entry point, imports Tailwind) and `theme.css` (design tokens)
@@ -141,6 +179,16 @@ Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postg
 - Production: Vite builds to `public/assets/app-[hash].css` (resolved via manifest)
 - Dev: Vite dev server serves CSS with HMR on `localhost:3000`
 - shadcn/ui design tokens in `theme.css` — CSS custom properties mapped via `@theme` block
+
+## Theme Scopes (Admin vs Public)
+
+Admin and public pages share the same component library but have distinct visual identity via CSS custom property scopes:
+
+- `theme.css` — default shadcn/ui tokens (used by admin)
+- `theme-public.css` — overrides under `.theme-public` class (used by public pages)
+- `public.css` — public-specific styles
+
+Public layout wraps content in `<div class="theme-public">`. All Tailwind utilities (`bg-primary`, `text-foreground`, etc.) automatically resolve to the public theme's token values inside this scope. No component duplication needed.
 
 ## Vite + Asset Pipeline
 
@@ -160,6 +208,19 @@ Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postg
 - SDK convenience methods: `sse(c).Redirect(url)`, `sse(c).MarshalAndPatchSignals(map)`, `sse(c).PatchElements(html)`
 - Full Datastar reference: `docs/datastar-reference.md`
 
+## Pages CMS
+
+Block-based multi-page system. Pages are entities with slug, materialized path, layout type, and parent/child nesting. Blocks (renamed from "sections") are ordered content units belonging to a page.
+
+Key rules:
+- Home page: `slug = 'home'`, `path = 'home'`, served at `GET /` (hardcoded, never `/home`)
+- Reserved slugs (`home`, `admin`, `login`, `logout`, `register`, `feed`, `healthcheck`, `assets`) — cannot be used for page creation, blocked in `pageResolver`
+- Materialized `path` column — single indexed lookup for public resolver, recomputed on slug/parent change
+- Layout types: `landing` (block-based), `text` (simple body) — extensible
+- Max nesting depth: 2 levels
+
+Full plan: `docs/pages-cms-plan.md`
+
 ## CSRF
 
 Not needed yet. `SameSite: Lax` + JSON-only `fetch()` via Datastar provides adequate protection. Add when introducing traditional form endpoints or cross-origin API access.
@@ -175,6 +236,7 @@ Keep mutable admin model separate from read-only feed model. Test the serializat
 
 ## Reference Docs
 
+- `docs/pages-cms-plan.md` — Pages CMS full plan, schema, steps, architecture
 - `docs/datastar-reference.md` — Datastar SDK, attributes, expressions, patching, animations
 - `docs/shoelace-drawer-menu-details.md` — Drawer, Menu, Menu Item, Details component reference
 - `docs/open-props-reference.md` — Open Props design tokens, colors, spacing, typography, Shoelace integration

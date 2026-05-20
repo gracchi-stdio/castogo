@@ -22,13 +22,12 @@ func NewAdminHandler(
 	episodeService *service.EpisodeService,
 	audioProcessor service.AudioProcessor,
 	settingsService *service.SettingsService,
-	landingService *service.LandingPageService) *AdminHandler {
+) *AdminHandler {
 	return &AdminHandler{
 		storageService:  storageService,
 		episodeService:  episodeService,
 		audioProcessor:  audioProcessor,
 		settingsService: settingsService,
-		landingService:  landingService,
 	}
 }
 

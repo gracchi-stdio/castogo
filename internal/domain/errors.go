@@ -3,8 +3,17 @@ package domain
 import "errors"
 
 var (
-	ErrNotFound      = errors.New("not found")
-	ErrUnauthorized  = errors.New("unauthorized")
+	// Shared
+	ErrNotFound     = errors.New("not found")
+	ErrUnauthorized = errors.New("unauthorized")
+	ErrInvalidInput = errors.New("invalid input")
+
+	// Episode
 	ErrDuplicateSlug = errors.New("episode slug already exists")
-	ErrInvalidInput  = errors.New("invalid input")
+
+	// Page
+	ErrReservedSlug  = errors.New("slug is reserved")
+	ErrDuplicatePath = errors.New("page path already exists")
+	ErrMaxDepth      = errors.New("maximum nesting depth exceeded")
+	ErrInvalidParent = errors.New("invalid parent page")
 )

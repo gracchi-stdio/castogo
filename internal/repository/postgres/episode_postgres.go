@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/gracchi-stdio/castogo/internal/db"
@@ -23,8 +22,6 @@ func NewEpisodeRepo(pool *pgxpool.Pool) *EpisodeRepo {
 }
 
 func (r *EpisodeRepo) Create(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
-	metadataJSON, _ := json.Marshal(ep.AudioMetadata)
-
 	params := db.CreateEpisodeParams{
 		Title:          ep.Title,
 		Slug:           ep.Slug,
@@ -32,9 +29,9 @@ func (r *EpisodeRepo) Create(ctx context.Context, ep *domain.Episode) (*domain.E
 		Description:    ep.Description,
 		Duration:       int32(ep.Duration),
 		Explicit:       ep.Explicit,
-		CoverImageUrl:  (&ep.CoverImageURL),
-		AudioSourceUrl: (&ep.AudioSourceURL),
-		AudioMetadata:  metadataJSON,
+		CoverImageUrl:  &ep.CoverImageURL,
+		AudioSourceUrl: &ep.AudioSourceURL,
+		AudioMetadata:  ep.AudioMetadata,
 	}
 
 	if ep.PublishAt != nil {
@@ -96,9 +93,9 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*do
 		duration = &v
 	}
 
-	var audioMetadata []byte
+	var audioMetadata domain.AudioMetadata
 	if ep.AudioMetadata != nil {
-		audioMetadata, _ = json.Marshal(*ep.AudioMetadata)
+		audioMetadata = *ep.AudioMetadata
 	}
 
 	var publishedAt pgtype.Timestamptz
