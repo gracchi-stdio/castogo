@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/go-playground/validator/v10"
 	echosession "github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/session"
+	"github.com/gracchi-stdio/castogo/internal/view/notfoundview"
 )
 
 type CustomValidator struct {
@@ -77,6 +79,7 @@ func main() {
 	userRepo := postgres.NewUserRepo(db)
 	episodeRepo := postgres.NewEpisodeRepo(db)
 	podcastRepo := postgres.NewPodcastConfigRepository(db)
+	pageRepo := postgres.NewPageRepo(db)
 
 	// Services
 	authService := service.NewAuthService(userRepo)
@@ -85,10 +88,11 @@ func main() {
 	audioProcessor := service.NewFFmpegProcessor()
 	settingsService := service.NewSettingsService(podcastRepo)
 	feedService := service.NewFeedService(podcastRepo, episodeRepo)
+	pageService := service.NewPageService(pageRepo, episodeRepo)
 
-	// Handlers Register routes
-	authHandler := handler.NewPublicHandler(authService, feedService)
-	authHandler.RegisterRoutes(e)
+	// Handlers
+	publicHandler := handler.NewPublicHandler(authService, feedService, pageService, episodeService, settingsService)
+	publicHandler.RegisterRoutes(e)
 
 	// Admin routes (protected by auth middleware)
 	adminHandler := handler.NewAdminHandler(
@@ -96,6 +100,7 @@ func main() {
 		episodeService,
 		audioProcessor,
 		settingsService,
+		pageService,
 	)
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)
@@ -106,6 +111,17 @@ func main() {
 		}
 		return c.JSON(200, map[string]string{"db": "ok"})
 	})
+
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		if he, ok := err.(*echo.HTTPError); ok && he.Code == 404 {
+			// render your custom 404 templ template
+			c.Response().Status = http.StatusNotFound
+			echo.WrapHandler(templ.Handler(notfoundview.NotFoundView()))(c)
+			return
+		}
+		// fall through to Echo's default error handler
+		e.DefaultHTTPErrorHandler(err, c)
+	}
 
 	// Static files — must be registered LAST so it doesn't swallow routes
 	e.Static("/", "public")

@@ -1,0 +1,40 @@
+package blocks
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+)
+
+templ FeaturesBlock(content *domain.FeaturesContent) {
+	<section class="py-20 bg-muted/30">
+		<div class="mx-auto max-w-6xl px-6">
+			<div class="text-center mb-12">
+				if content.SectionTitle != "" {
+					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.SectionTitle }</h2>
+				}
+				if content.SectionDescription != "" {
+					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{ content.SectionDescription }</p>
+				}
+			</div>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+				for _, item := range content.Items {
+					@featureCard(item)
+				}
+			</div>
+		</div>
+	</section>
+}
+
+templ featureCard(item domain.FeatureItem) {
+	<div class="rounded-xl border bg-background p-6 hover:shadow-md transition-shadow">
+		if item.Icon != "" {
+			<div class="mb-4 text-primary">
+				@icon.Lucide(item.Icon, "size-8")
+			</div>
+		}
+		<h3 class="text-lg font-semibold text-foreground">{ item.Title }</h3>
+		if item.Description != "" {
+			<p class="mt-2 text-sm text-muted-foreground leading-relaxed">{ item.Description }</p>
+		}
+	</div>
+}

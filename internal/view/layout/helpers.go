@@ -20,7 +20,7 @@ func sidebarSections(currentPath string) []sidebar.SidebarSection {
 		{
 			Title: "Site",
 			Items: []sidebar.SidebarItem{
-				{Title: "Landing Page", Href: "/admin/landing", Icon: "layout-panel-top"},
+				{Title: "Pages", Href: "/admin/pages", Icon: "file-text"},
 			},
 		},
 		{

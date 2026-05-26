@@ -213,8 +213,8 @@ Public layout wraps content in `<div class="theme-public">`. All Tailwind utilit
 Block-based multi-page system. Pages are entities with slug, materialized path, layout type, and parent/child nesting. Blocks (renamed from "sections") are ordered content units belonging to a page.
 
 Key rules:
-- Home page: `slug = 'home'`, `path = 'home'`, served at `GET /` (hardcoded, never `/home`)
-- Reserved slugs (`home`, `admin`, `login`, `logout`, `register`, `feed`, `healthcheck`, `assets`) — cannot be used for page creation, blocked in `pageResolver`
+- Home page: configurable via `homepage_id` in `podcast_config` table; admin picks a page in Settings; `GET /` reads this setting (returns 404 if not set)
+- Reserved slugs (`admin`, `login`, `logout`, `register`, `feed`, `healthcheck`, `assets`) — cannot be used for page creation, blocked in `pageResolver`
 - Materialized `path` column — single indexed lookup for public resolver, recomputed on slug/parent change
 - Layout types: `landing` (block-based), `text` (simple body) — extensible
 - Max nesting depth: 2 levels

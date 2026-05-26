@@ -3,6 +3,8 @@ import "./audio-metadata.js";
 
 // Import CSS (Vite resolves @import and bundles)
 import "../css/app.css";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/playfair-display";
 
 const SKIPPED_TRANSITION_MESSAGE = "Transition was skipped";
 const ADMIN_CONTENT_SELECTOR = "[data-admin-content]";
@@ -129,7 +131,7 @@ async function navigateAdmin(url, options = {}) {
     }
   });
 
-  updateActiveNavLink(new URL(url).pathname); // Note: we use `new URL(url).pathname` here (not `window.location.pathname`) because `pushState` hasn't happened yet — `url` is the argument passed to `navigateAdmin`.
+  updateActiveNavLink(new URL(url, window.location.href).pathname); // Note: we use `new URL(url, window.location.href).pathname` here (not `window.location.pathname`) because `pushState` hasn't happened yet — `url` is the argument passed to `navigateAdmin`.
 
   if (historyMode === "push") {
     window.history.pushState({ adminNav: true }, "", url);

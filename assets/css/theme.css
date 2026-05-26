@@ -38,9 +38,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-serif: 'Playfair Display Variable', 'Playfair Display', Georgia, serif;
+
+  --font-heading: 'Inter Variable', 'Inter', system-ui, sans-serif;
 }
 
 @layer base {
+
   /* Scrollbar */
   html {
     scrollbar-gutter: stable;

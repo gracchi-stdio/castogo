@@ -1,4 +1,4 @@
-package selectcomponent 
+package selectcomponent
 
 import (
 	"crypto/rand"
@@ -220,8 +220,9 @@ templ SelectTrigger(args SelectTriggerArgs) {
 // SelectValue displays the currently selected value or placeholder
 templ SelectValue(args SelectValueArgs) {
 	{{
-		// Build the label signal reference manually
-		labelSignal := "$" + args.ID + ".label"
+		// Use SignalManager to get properly sanitized signal reference
+		signals := utils.Signals(args.ID, SelectSignals{})
+		labelSignal := signals.Signal("label")
 
 		escapedDefault := strings.ReplaceAll(args.Placeholder, "'", "\\'")
 		displayText := fmt.Sprintf("%s || '%s'", labelSignal, escapedDefault)
@@ -344,9 +345,7 @@ templ SelectItem(args SelectItemArgs) {
 
 // SelectLabel renders a label for a group of items
 templ SelectLabel(args SelectLabelArgs) {
-	{{
-		classes := selectLabelVariants(args.Class)
-	}}
+	{{ classes := selectLabelVariants(args.Class) }}
 	<div
 		data-slot="select-label"
 		class={ classes }
@@ -358,9 +357,7 @@ templ SelectLabel(args SelectLabelArgs) {
 
 // SelectSeparator renders a visual separator between groups
 templ SelectSeparator(args SelectSeparatorArgs) {
-	{{
-		classes := selectSeparatorVariants(args.Class)
-	}}
+	{{ classes := selectSeparatorVariants(args.Class) }}
 	<div
 		data-slot="select-separator"
 		class={ classes }

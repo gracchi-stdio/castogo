@@ -1,0 +1,369 @@
+package pageadminview
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+)
+
+templ BlockEditor(pageID int64, blocks []*domain.PageBlock) {
+	<div class="space-y-4">
+		<div class="flex items-center justify-between">
+			<h3 class="text-lg font-medium">Blocks</h3>
+			@addBlockControls(pageID)
+		</div>
+		if len(blocks) > 0 {
+			@blockList(pageID, blocks)
+		} else {
+			@blockListEmpty()
+		}
+	</div>
+}
+
+templ blockList(pageID int64, blocks []*domain.PageBlock) {
+	<div class="space-y-2">
+		for i, block := range blocks {
+			@blockCard(pageID, block, i)
+		}
+	</div>
+}
+
+templ blockCard(pageID int64, block *domain.PageBlock, index int) {
+	<div class="rounded-lg border bg-card text-card-foreground shadow-sm group">
+		<div data-slot="card-content" class="">
+			<div
+				{ blockSignalAttrs(block)... }
+			>
+				<!-- View mode -->
+				<div data-show={ fmt.Sprintf("!$%s", blockEditPrefix(block, "editing")) } class="flex items-center justify-between py-3">
+					<div class="flex items-center gap-3">
+						<span class="flex items-center justify-center w-7 h-7 rounded-md bg-muted text-xs font-medium text-muted-foreground">
+							{ fmt.Sprintf("%d", index+1) }
+						</span>
+						<div>
+							<p class="font-medium text-sm">{ blockTypeLabel(block.BlockType) }</p>
+							<p class="text-xs text-muted-foreground">{ blockSummary(block) }</p>
+						</div>
+					</div>
+					<div class="flex items-center gap-2">
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost",
+							Size:    "sm",
+							Type:    "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("$%s = true", blockEditPrefix(block, "editing")),
+							},
+						}) {
+							@icon.Lucide("pencil", "size-4 mr-1")
+							Edit
+						}
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost",
+							Size:    "icon",
+							Type:    "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+							},
+						}) {
+							@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+						}
+					</div>
+				</div>
+				<!-- Edit mode -->
+				<div data-show={ fmt.Sprintf("$%s", blockEditPrefix(block, "editing")) } class="py-3 space-y-3">
+					<div class="flex items-center justify-between">
+						<span class="font-medium text-sm">{ blockTypeLabel(block.BlockType) }</span>
+						<span class="text-xs text-muted-foreground">#{ index+1 }</span>
+					</div>
+					@blockEditFields(pageID, block)
+					<div class="flex justify-end gap-2 pt-1">
+						@button.Button(button.ButtonArgs{
+							Variant: "outline",
+							Size:    "sm",
+							Type:    "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("$%s = false", blockEditPrefix(block, "editing")),
+							},
+						}) {
+							Cancel
+						}
+						@button.Button(button.ButtonArgs{
+							Size: "sm",
+							Type: "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+							},
+						}) {
+							Save
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+func bindAttr(pfx, field string) templ.Attributes {
+	return templ.Attributes{
+		"data-bind-" + pfx + field: "",
+	}
+}
+
+templ blockEditFields(pageID int64, block *domain.PageBlock) {
+	{{ pfx := blockEditPrefix(block, "") }}
+	switch block.BlockType {
+		case "hero", "cta":
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Headline
+					}
+					@input.Input(input.InputArgs{
+						Type:        "text",
+						Placeholder: "Enter headline…",
+						Class:       "w-full",
+						Attributes:  bindAttr(pfx, "headline"),
+					})
+				</div>
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Subheadline
+					}
+					@input.Input(input.InputArgs{
+						Type:        "text",
+						Placeholder: "Enter subheadline…",
+						Class:       "w-full",
+						Attributes:  bindAttr(pfx, "subheadline"),
+					})
+				</div>
+				if block.BlockType == "hero" {
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							CTA Text
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							Placeholder: "e.g. Listen Now",
+							Class:       "w-full",
+							Attributes:  bindAttr(pfx, "cta_text"),
+						})
+					</div>
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							CTA URL
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							Placeholder: "/episodes",
+							Class:       "w-full",
+							Attributes:  bindAttr(pfx, "cta_url"),
+						})
+					</div>
+				} else {
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							Button Text
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							Placeholder: "e.g. Get Started",
+							Class:       "w-full",
+							Attributes:  bindAttr(pfx, "button_text"),
+						})
+					</div>
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							Button URL
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							Placeholder: "/signup",
+							Class:       "w-full",
+							Attributes:  bindAttr(pfx, "button_url"),
+						})
+					</div>
+				}
+			</div>
+		case "features", "testimonials", "episodes_showcase":
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Section Title
+					}
+					@input.Input(input.InputArgs{
+						Type:        "text",
+						Placeholder: "Enter section title…",
+						Class:       "w-full",
+						Attributes:  bindAttr(pfx, "section_title"),
+					})
+				</div>
+			</div>
+		case "footer":
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Footer Text
+					}
+					@textarea.Textarea(textarea.TextareaArgs{
+						Placeholder: "Footer content…",
+						Class:       "w-full min-h-16",
+						Attributes:  bindAttr(pfx, "text"),
+					})
+				</div>
+			</div>
+	}
+}
+
+templ addBlockControls(pageID int64) {
+	<div
+		class="flex items-center gap-2"
+		data-signals:new_block_type="'hero'"
+	>
+		@selectcomponent.Select(selectcomponent.SelectArgs{
+			ID:           "add-block-select",
+			DefaultValue: "hero",
+			Options: []selectcomponent.SelectOptionArgs{
+				{Value: "hero", Label: "Hero"},
+				{Value: "features", Label: "Features"},
+				{Value: "episodes_showcase", Label: "Episodes"},
+				{Value: "testimonials", Label: "Testimonials"},
+				{Value: "cta", Label: "Call to Action"},
+				{Value: "footer", Label: "Footer"},
+			},
+			Placeholder: "Block type",
+			Class:       "w-40",
+			OnChange:    "$new_block_type = $add_block_select.value",
+		})
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+			Type:    "button",
+			Attributes: map[string]any{
+				"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks')", pageID),
+			},
+		}) {
+			@icon.Lucide("plus", "size-4 mr-1")
+			Add Block
+		}
+	</div>
+}
+
+templ blockListEmpty() {
+	<div class="flex flex-col items-center gap-2 py-6 text-center">
+		@icon.Lucide("layers", "size-8 text-muted-foreground/30")
+		<p class="text-sm text-muted-foreground">No blocks yet. Add blocks to build your page layout.</p>
+	</div>
+}
+
+func blockTypeLabel(blockType string) string {
+	labels := map[string]string{
+		"hero":              "Hero",
+		"features":          "Features",
+		"episodes_showcase": "Episodes",
+		"testimonials":      "Testimonials",
+		"cta":               "Call to Action",
+		"footer":            "Footer",
+	}
+	if label, ok := labels[blockType]; ok {
+		return label
+	}
+	return blockType
+}
+
+func blockSummary(block *domain.PageBlock) string {
+	var raw map[string]any
+	if err := json.Unmarshal(block.Content, &raw); err != nil {
+		return "Empty block"
+	}
+	switch block.BlockType {
+	case "hero":
+		if headline, ok := raw["headline"].(string); ok && headline != "" {
+			return headline
+		}
+	case "features":
+		if title, ok := raw["section_title"].(string); ok && title != "" {
+			return title
+		}
+	case "cta":
+		if headline, ok := raw["headline"].(string); ok && headline != "" {
+			return headline
+		}
+	case "testimonials":
+		if title, ok := raw["section_title"].(string); ok && title != "" {
+			return title
+		}
+	}
+	return "Empty block"
+}
+
+// parseBlockContent returns the block's JSON content as a map, or an empty map.
+func parseBlockContent(block *domain.PageBlock) map[string]any {
+	var raw map[string]any
+	if err := json.Unmarshal(block.Content, &raw); err != nil {
+		return map[string]any{}
+	}
+	return raw
+}
+
+// blockEditPrefix returns the signal prefix for a block e.g. "block_5_" or "block_5_editing".
+func blockEditPrefix(block *domain.PageBlock, suffix string) string {
+	base := fmt.Sprintf("block_%d_", block.ID)
+	if suffix == "" {
+		return base
+	}
+	return base + suffix
+}
+
+// blockSignalAttrs returns the data-signals-* HTML attributes for a block's editable fields.
+func blockSignalAttrs(block *domain.PageBlock) templ.Attributes {
+	content := parseBlockContent(block)
+	pfx := blockEditPrefix(block, "")
+
+	// Datastar signal attributes use "data-signals-" prefix in the HTML attribute name
+	sig := func(name string) string { return "data-signals-" + pfx + name }
+
+	attrs := templ.Attributes{
+		sig("editing"):    "false",
+		sig("block_type"): fmt.Sprintf("'%s'", block.BlockType),
+	}
+
+	switch block.BlockType {
+	case "hero", "cta":
+		attrs[sig("headline")] = jsSignalVal(content["headline"])
+		attrs[sig("subheadline")] = jsSignalVal(content["subheadline"])
+		if block.BlockType == "hero" {
+			attrs[sig("cta_text")] = jsSignalVal(content["cta_text"])
+			attrs[sig("cta_url")] = jsSignalVal(content["cta_url"])
+		} else {
+			attrs[sig("button_text")] = jsSignalVal(content["button_text"])
+			attrs[sig("button_url")] = jsSignalVal(content["button_url"])
+		}
+	case "features", "testimonials", "episodes_showcase":
+		attrs[sig("section_title")] = jsSignalVal(content["section_title"])
+	case "footer":
+		attrs[sig("text")] = jsSignalVal(content["text"])
+	}
+
+	return attrs
+}
+
+// jsSignalVal converts a Go value to a JS signal string literal.
+// Strings are wrapped in single quotes with internal quotes escaped.
+// nil/empty returns "”".
+func jsSignalVal(v any) string {
+	if v == nil {
+		return "''"
+	}
+	s, ok := v.(string)
+	if !ok || s == "" {
+		return "''"
+	}
+	return fmt.Sprintf("'%s'", jsEscape(s))
+}

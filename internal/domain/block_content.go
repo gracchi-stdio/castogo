@@ -1,26 +1,5 @@
 package domain
 
-import (
-	"encoding/json"
-	"time"
-)
-
-type LandingPageSection struct {
-	ID         int64
-	SectionKey string
-	Content    json.RawMessage
-	IsVisible  bool
-	SortOrder  int
-	UpdatedAt  time.Time
-}
-
-type UpdateLandingSection struct {
-	ID        int64
-	Content   *json.RawMessage
-	IsVisible *bool
-	SortOrder *int
-}
-
 type HeroContent struct {
 	Headline        string `json:"headline"`
 	Subheadline     string `json:"subheadline"`
@@ -81,15 +60,4 @@ type FooterLink struct {
 type SocialLink struct {
 	Platform string `json:"platform"`
 	URL      string `json:"url"`
-}
-
-type LandingPageData struct {
-	Hero             *HeroContent
-	Features         *FeaturesContent
-	EpisodesShowcase *EpisodesShowcaseContent
-	Testimonials     *TestimonialsContent
-	CTA              *CTAContent
-	Footer           *FooterContent
-	LatestEpisodes   []*Episode
-	SectionOrder     []string
 }

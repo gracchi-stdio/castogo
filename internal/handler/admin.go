@@ -14,7 +14,7 @@ type AdminHandler struct {
 	episodeService  *service.EpisodeService
 	audioProcessor  service.AudioProcessor
 	settingsService *service.SettingsService
-	landingService  *service.LandingPageService
+	pageService     *service.PageService
 }
 
 func NewAdminHandler(
@@ -22,12 +22,14 @@ func NewAdminHandler(
 	episodeService *service.EpisodeService,
 	audioProcessor service.AudioProcessor,
 	settingsService *service.SettingsService,
+	pageService *service.PageService,
 ) *AdminHandler {
 	return &AdminHandler{
 		storageService:  storageService,
 		episodeService:  episodeService,
 		audioProcessor:  audioProcessor,
 		settingsService: settingsService,
+		pageService:     pageService,
 	}
 }
 
@@ -47,9 +49,16 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.POST("/settings/upload-cover", h.settingsUploadCoverImage)
 	g.GET("/settings/subcategories", h.subcategoriesSSE)
 
-	// landing page
-	g.GET("/landing", h.landingEditor)
-	g.POST("/landing/:sectionKey", h.landingSaveSection)
+	// pages
+	g.GET("/pages", h.pageList)
+	g.GET("/pages/create", h.pageCreatePage)
+	g.POST("/pages/create", h.pageCreateAction)
+	g.GET("/pages/:id/edit", h.pageEditPage)
+	g.PATCH("/pages/:id", h.pageUpdateAction)
+	g.DELETE("/pages/:id", h.pageDeleteAction)
+	g.POST("/pages/:id/blocks", h.blockCreateAction)
+	g.PATCH("/pages/:id/blocks/:blockId", h.blockUpdateAction)
+	g.DELETE("/pages/:id/blocks/:blockId", h.blockDeleteAction)
 }
 
 func (h *AdminHandler) dashboard(c echo.Context) error {

@@ -67,6 +67,19 @@ run: build
 test:
 	go test -v ./... -count=1
 
+# Run a specific migration by prefix (e.g. "just migrate 013")
+[unix]
+migrate file="":
+	@if [ -z "{{file}}" ]; then echo "Usage: just migrate <prefix>\n\nAvailable migrations:"; ls sql/migrations/*.sql | sed 's/sql\/migrations\//  /'; exit 0; fi
+	@matching=$$(ls sql/migrations/{{file}}*.sql 2>/dev/null); \
+	if [ -z "$$matching" ]; then echo "No migration found matching '{{file}}'"; exit 1; fi; \
+	echo "Running: $$matching"; \
+	podman exec -i castogo_db_1 psql -U castogo -d castogo -f /dev/stdin < $$matching
+
+[windows]
+migrate file="":
+	@powershell -NoProfile -Command "if ('{{file}}' -eq '') { Write-Host 'Usage: just migrate <prefix>'; Write-Host; Write-Host 'Available migrations:'; Get-ChildItem sql/migrations/*.sql | ForEach-Object { Write-Host ('  ' + $_.Name) } } else { $$m = Get-Item sql/migrations/{{file}}*.sql -ErrorAction SilentlyContinue; if (-not $$m) { Write-Host 'No migration found'; exit 1 }; Write-Host ('Running: ' + $$m.FullName); Get-Content $$m.FullName | docker exec -i castogo-db-1 psql -U castogo -d castogo }"
+
 # Docker
 docker-up:
 	docker compose up -d --build

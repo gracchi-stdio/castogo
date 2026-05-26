@@ -2,6 +2,7 @@ package selectcomponent
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gracchi-stdio/castogo/internal/view/utils"
 )
@@ -169,10 +170,12 @@ type SelectItemHandler struct {
 	onChange string
 }
 
-// NewSelectItemHandler creates a select item handler
+// NewSelectItemHandler creates a select item handler.
+// The selectID is sanitized (hyphens → underscores) to match SignalManager's naming.
 func NewSelectItemHandler(selectID, value, onChange string) *SelectItemHandler {
+	sanitizedID := strings.ReplaceAll(selectID, "-", "_")
 	return &SelectItemHandler{
-		selectID: selectID,
+		selectID: sanitizedID,
 		value:    value,
 		onChange: onChange,
 	}
@@ -184,10 +187,13 @@ func (s *SelectItemHandler) BuildClickHandler() string {
 	labelExpr := "evt.currentTarget.querySelector('.select-item-text')?.textContent.trim() || ''"
 	valueExpr := fmt.Sprintf("%q", s.value)
 
-	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = document.querySelector('[data-select-id="%[1]s"] input[name]'); if (input) { input.value = %[2]s; } })()`,
+	// DOM uses original ID (with hyphens) for data-select-id, but signals use sanitized ID (underscores)
+	domID := strings.ReplaceAll(s.selectID, "_", "-")
+	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = document.querySelector('[data-select-id="%[4]s"] input[name]'); if (input) { input.value = %[2]s; } })()`,
 		s.selectID,
 		valueExpr,
 		labelExpr,
+		domID,
 	)
 
 	if s.onChange != "" {

@@ -22,7 +22,6 @@ func NewPageService(pageRepo repository.PageRepository, episodeRepo repository.E
 }
 
 var reservedSlugs = map[string]bool{
-	"home":        true,
 	"admin":       true,
 	"api":         true,
 	"login":       true,

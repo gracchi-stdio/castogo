@@ -1,5 +1,11 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@source "../../internal/view/";
+
 @import "./theme.css";
+@import "./theme-public.css";
+@import "./public.css";
 
 /* Use class strategy for dark mode (toggled via .dark on <html>) */
 @custom-variant dark (&:where(.dark, .dark *));

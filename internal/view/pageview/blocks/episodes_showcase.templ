@@ -1,0 +1,59 @@
+package blocks
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+)
+
+templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []*domain.Episode) {
+	if content == nil {
+		return
+	}
+	<section id="episodes" class="py-20">
+		<div class="mx-auto max-w-6xl px-6">
+			<div class="text-center mb-12">
+				if content.SectionTitle != "" {
+					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.SectionTitle }</h2>
+				}
+				if content.SectionDescription != "" {
+					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{ content.SectionDescription }</p>
+				}
+			</div>
+			if len(episodes) > 0 {
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+					for _, ep := range episodes {
+						@episodeCard(ep)
+					}
+				</div>
+			} else {
+				<div class="text-center py-12 rounded-xl border border-dashed">
+					<p class="text-muted-foreground">No episodes yet. Check back soon!</p>
+				</div>
+			}
+		</div>
+	</section>
+}
+
+templ episodeCard(ep *domain.Episode) {
+	<div class="rounded-xl border overflow-hidden hover:shadow-md transition-shadow">
+		<div class="aspect-video bg-muted flex items-center justify-center">
+			if ep.CoverImageURL != "" {
+				<img src={ ep.CoverImageURL } alt={ ep.Title } class="w-full h-full object-cover"/>
+			} else {
+				@icon.Lucide("mic", "size-12 text-muted-foreground/50")
+			}
+		</div>
+		<div class="p-4">
+			<p class="text-xs text-muted-foreground mb-1">Episode { fmt.Sprintf("%d", ep.EpisodeNumber) }</p>
+			<h3 class="font-semibold text-foreground line-clamp-2">{ ep.Title }</h3>
+			if ep.Description != "" {
+				<p class="mt-2 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
+			}
+			if ep.Duration > 0 {
+				<p class="mt-3 text-xs text-muted-foreground">{ formatDuration(ep.Duration) }</p>
+			}
+		</div>
+	</div>
+}

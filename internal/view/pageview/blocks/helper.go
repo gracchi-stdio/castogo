@@ -1,4 +1,4 @@
-package landingview
+package blocks
 
 import "fmt"
 

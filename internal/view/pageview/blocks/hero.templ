@@ -1,0 +1,41 @@
+package blocks
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+)
+
+templ HeroBlock(content *domain.HeroContent) {
+	<section class="relative overflow-hidden">
+		if content.BackgroundImage != "" {
+			<div class="absolute inset-0 bg-cover bg-center" style={ fmt.Sprintf("background-image: url('%s')", content.BackgroundImage) }>
+				<div class="absolute inset-0 bg-black/50"></div>
+			</div>
+		}
+		<div class={ "relative mx-auto max-w-4xl px-6 py-24 text-center", ternary(content.BackgroundImage == "", "bg-gradient-to-br from-primary/5 via-background to-primary/10", "") }>
+			<h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground font-heading">
+				{ content.Headline }
+			</h1>
+			if content.Subheadline != "" {
+				<p class="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+					{ content.Subheadline }
+				</p>
+			}
+			if content.CTAText != "" {
+				<div class="mt-10">
+					@button.Button(button.ButtonArgs{
+						Size: "lg",
+						Class: "text-base px-8",
+						Attributes: map[string]any{
+							"onclick": fmt.Sprintf("window.location.href='%s'", content.CTAURL),
+						},
+					}) {
+						{ content.CTAText }
+					}
+				</div>
+			}
+		</div>
+	</section>
+}

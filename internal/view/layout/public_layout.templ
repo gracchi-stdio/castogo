@@ -1,0 +1,21 @@
+package layout
+
+import "github.com/gracchi-stdio/castogo/internal/config"
+
+type PublicLayoutData struct {
+	NavData *PublicNavbarData
+}
+
+templ PublicLayout(data *PublicLayoutData) {
+	@BaseLayout() {
+		<div class="theme-public min-h-screen flex flex-col">
+			@PublicNavbar(data.NavData)
+			<main class="flex-1">
+				{ children... }
+			</main>
+			<footer class="border-t py-6 text-center text-sm text-muted-foreground">
+				<p>{ config.Cfg.AppName }. All rights reserved.</p>
+			</footer>
+		</div>
+	}
+}

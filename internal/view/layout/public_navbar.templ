@@ -1,0 +1,45 @@
+package layout
+
+import (
+	"fmt"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+
+	"github.com/gracchi-stdio/castogo/internal/config"
+)
+
+type PublicNavbarData struct {
+	CTAhref  string
+	CTAtext  string
+	NavLinks []NavLink
+}
+
+type NavLink struct {
+	Label string
+	URL   string
+}
+
+templ PublicNavbar(data *PublicNavbarData) {
+	<nav class="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+		<div class="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
+			<a href="/" class="text-xl font-bold text-foreground font-heading">{ config.Cfg.AppName }</a>
+			<div class="hidden md:flex items-center gap-6">
+				for _, link := range data.NavLinks {
+					<a href={ templ.SafeURL(link.URL) } class="text-sm text-muted-foreground hover:text-foreground transition-colors">{ link.Label }</a>
+				}
+			</div>
+			<div class="flex items-center gap-4">
+				<a href="/login" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Sign in</a>
+				if data.CTAhref != "" && data.CTAtext != "" {
+					@button.Button(button.ButtonArgs{
+						Size: "sm",
+						Attributes: map[string]any{
+							"onclick": fmt.Sprintf("window.location.href='%s'", data.CTAhref),
+						},
+					}) {
+						{ data.CTAtext }
+					}
+				}
+			</div>
+		</div>
+	</nav>
+}

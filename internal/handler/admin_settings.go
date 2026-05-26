@@ -25,10 +25,19 @@ func stringPtr(value string) *string {
 	return &value
 }
 
+func int64PtrIfNonEmpty(value string) *int64 {
+	if value == "" {
+		return nil
+	}
+	n := parseInt64(value)
+	return &n
+}
+
 func (h *AdminHandler) settingsPage(c echo.Context) error {
 	config, _ := h.settingsService.GetPodcastConfig(c.Request().Context())
+	pages, _ := h.pageService.ListPages(c.Request().Context())
 	// config might be nil (first run) — template handles nil gracefully
-	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), config)))(c)
+	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), config, pages)))(c)
 }
 
 type SettingsForm struct {
@@ -45,6 +54,7 @@ type SettingsForm struct {
 	Subcategory   string `form:"subcategory"`
 	OwnerName     string `form:"owner_name"`
 	OwnerEmail    string `form:"owner_email" validate:"omitempty,email"`
+	HomepageID    string `form:"homepage_id"`
 }
 
 func (h *AdminHandler) settingsSave(c echo.Context) error {
@@ -62,6 +72,7 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 		Subcategory:   c.FormValue("subcategory"),
 		OwnerName:     c.FormValue("owner_name"),
 		OwnerEmail:    c.FormValue("owner_email"),
+		HomepageID:    c.FormValue("homepage_id"),
 	}
 	if err := c.Validate(settingInput); err != nil {
 		errorStruct := fieldValidationErrors(err)
@@ -102,6 +113,7 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 		Subcategory:   subcategory,
 		OwnerName:     stringPtrIfNonEmpty(settingInput.OwnerName),
 		OwnerEmail:    stringPtrIfNonEmpty(settingInput.OwnerEmail),
+		HomepageID:    int64PtrIfNonEmpty(settingInput.HomepageID),
 	}
 	if _, err := h.settingsService.UpdatePodcastConfig(c.Request().Context(), update); err != nil {
 		sse(c).MarshalAndPatchSignals(map[string]string{

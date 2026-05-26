@@ -1,0 +1,199 @@
+package pageadminview
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
+	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPages []*domain.Page, blocks []*domain.PageBlock, isEdit bool) {
+	{{ fd := newPageFormData(page) }}
+	if isEdit {
+		@layout.AdminLayout("Edit Page", shared, pageEditActions()) {
+			<div class="space-y-6">
+				@pageFormContent(fd, parentPages)
+				@BlockEditor(fd.PageID, blocks)
+			</div>
+		}
+	} else {
+		@layout.AdminLayout("New Page", shared, pageCreateActions()) {
+			@pageFormContent(fd, parentPages)
+		}
+	}
+}
+
+templ pageFormContent(fd pageFormData, parentPages []*domain.Page) {
+	<div
+		data-signals:title={ fd.TitleSignal() }
+		data-signals:slug={ fd.SlugSignal() }
+		data-signals:page_layout={ fd.LayoutSignal() }
+		data-signals:parent_id={ fd.ParentIDSignal() }
+		data-signals:is_published={ fd.PublishedSignal() }
+		data-signals:error="''"
+		data-signals:title_error="''"
+		data-signals:slug_error="''"
+	>
+		@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{ErrorSignal: "error"})
+		@card.Card(card.CardArgs{}) {
+			@card.CardContent(card.CardContentArgs{}) {
+				<div class="space-y-6">
+					<!-- Title -->
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "title", Attributes: map[string]any{
+							"data-class:text-destructive": "$title_error != ''",
+						}}) {
+							Title
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "title",
+							Name:        "title",
+							Placeholder: "About Us",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-on:input":          "$title = el.value; $title_error = ''",
+								"data-bind:title":        "",
+								"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
+							},
+						})
+						<p
+							data-show="$title_error != ''"
+							data-text="$title_error"
+							class="text-sm text-destructive"
+						></p>
+					</div>
+					<!-- Slug -->
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "slug", Attributes: map[string]any{
+							"data-class:text-destructive": "$slug_error != ''",
+						}}) {
+							Slug
+						}
+						@input.Input(input.InputArgs{
+							Type:        "text",
+							ID:          "slug",
+							Name:        "slug",
+							Placeholder: "about-us",
+							Class:       "w-full",
+							Attributes: map[string]any{
+								"data-on:input":          "$slug = el.value; $slug_error = ''",
+								"data-bind:slug":         "",
+								"data-attr:aria-invalid": "$slug_error != '' ? 'true' : ''",
+							},
+						})
+						<p class="text-xs text-muted-foreground">Used in the URL: /<span data-text="$slug"></span></p>
+						<p
+							data-show="$slug_error != ''"
+							data-text="$slug_error"
+							class="text-sm text-destructive"
+						></p>
+					</div>
+					<!-- Layout Type -->
+					<div class="space-y-2">
+						@label.Label(label.LabelArgs{For: "layout-select"}) {
+							Layout
+						}
+						@selectcomponent.Select(selectcomponent.SelectArgs{
+							ID:           "layout-select",
+							Name:         "layout",
+							DefaultValue: fd.Layout,
+							Options: []selectcomponent.SelectOptionArgs{
+								{Value: "landing", Label: "Landing"},
+								{Value: "text", Label: "Text"},
+							},
+							Placeholder: "Select layout",
+							Class:       "w-full",
+							OnChange:    "$page_layout = $layout_select.value",
+						})
+					</div>
+					<!-- Parent Page -->
+					if !fd.IsHome {
+						<div class="space-y-2">
+							@label.Label(label.LabelArgs{For: "parent-select"}) {
+								Parent Page
+							}
+							@selectcomponent.Select(selectcomponent.SelectArgs{
+								ID:           "parent-select",
+								Name:         "parent_id",
+								DefaultValue: fd.ParentID,
+								Options:      parentPageOptions(parentPages),
+								Placeholder:  "None (top-level)",
+								Class:        "w-full",
+								OnChange:     "$parent_id = $parent_select.value ? parseInt($parent_select.value) : 0",
+							})
+							<p class="text-xs text-muted-foreground">Child pages create nested URLs like /about/team</p>
+						</div>
+					}
+					<!-- Published -->
+					<div class="flex items-center gap-3">
+						@checkbox.Checkbox(checkbox.CheckboxArgs{
+							ID:        "is_published",
+							Name:      "is_published",
+							ClassName: "data-[state=checked]:bg-primary data-[state=checked]:border-primary",
+							Attributes: map[string]any{
+								"data-on:change": "$is_published = el.checked",
+							},
+						})
+						@label.Label(label.LabelArgs{For: "is_published"}) {
+							Published
+						}
+					</div>
+					<!-- Submit -->
+					<div class="flex justify-end gap-2">
+						<a href="/admin/pages">
+							@button.Button(button.ButtonArgs{Variant: "outline"}) {
+								Cancel
+							}
+						</a>
+						if fd.IsEdit {
+							@button.Button(button.ButtonArgs{
+								Type: "button",
+								Attributes: map[string]any{
+									"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d')", fd.PageID),
+								},
+							}) {
+								Save Changes
+							}
+						} else {
+							@button.Button(button.ButtonArgs{
+								Type: "button",
+								Attributes: map[string]any{
+									"data-on:click": "@post('/admin/pages/create')",
+								},
+							}) {
+								Create Page
+							}
+						}
+					</div>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ pageCreateActions() {
+	<a href="/admin/pages">
+		@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Pages
+		}
+	</a>
+}
+
+templ pageEditActions() {
+	<a href="/admin/pages">
+		@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Pages
+		}
+	</a>
+}

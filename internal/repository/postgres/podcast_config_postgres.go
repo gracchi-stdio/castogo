@@ -41,6 +41,7 @@ func (r *PodcastConfigRepository) Update(ctx context.Context, config *domain.Upd
 		Subcategory:   config.Subcategory,
 		OwnerName:     config.OwnerName,
 		OwnerEmail:    config.OwnerEmail,
+		HomepageID:    config.HomepageID,
 	}
 	res, err := r.q.UpdatePodcastConfig(ctx, params)
 	if err != nil {

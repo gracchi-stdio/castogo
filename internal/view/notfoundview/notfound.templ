@@ -1,0 +1,21 @@
+package notfoundview
+
+import "github.com/gracchi-stdio/castogo/internal/view/layout"
+
+templ NotFoundView() {
+	@layout.PublicLayout(&layout.PublicLayoutData{
+		NavData: &layout.PublicNavbarData{
+			NavLinks: []layout.NavLink{
+				{Label: "Home", URL: "/"},
+			},
+		},
+	}) {
+		<div class="flex flex-col items-center justify-center py-32">
+			<h1 class="text-8xl font-heading font-bold text-primary">404</h1>
+			<p class="mt-4 text-xl text-muted-foreground">Page Not Found</p>
+			<a href="/" class="mt-8 inline-block px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity">
+				Go Home
+			</a>
+		</div>
+	}
+}

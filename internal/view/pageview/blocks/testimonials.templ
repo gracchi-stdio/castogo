@@ -1,0 +1,48 @@
+package blocks
+
+import (
+	"strings"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+)
+
+templ TestimonialsBlock(content *domain.TestimonialsContent) {
+	<section class="py-20 bg-muted/30">
+		<div class="mx-auto max-w-6xl px-6">
+			<div class="text-center mb-12">
+				if content.SectionTitle != "" {
+					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.SectionTitle }</h2>
+				}
+				if content.SectionDescription != "" {
+					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{ content.SectionDescription }</p>
+				}
+			</div>
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+				for _, item := range content.Items {
+					@testimonialCard(item)
+				}
+			</div>
+		</div>
+	</section>
+}
+
+templ testimonialCard(item domain.TestimonialItem) {
+	<div class="rounded-xl border bg-background p-6">
+		<p class="text-foreground leading-relaxed italic">"{ item.Quote }"</p>
+		<div class="mt-4 flex items-center gap-3">
+			if item.AvatarURL != "" {
+				<img src={ item.AvatarURL } alt={ item.Author } class="w-10 h-10 rounded-full object-cover"/>
+			} else {
+				<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+					{ strings.ToUpper(string(item.Author[0])) }
+				</div>
+			}
+			<div>
+				<p class="text-sm font-medium text-foreground">{ item.Author }</p>
+				if item.Role != "" {
+					<p class="text-xs text-muted-foreground">{ item.Role }</p>
+				}
+			</div>
+		</div>
+	</div>
+}

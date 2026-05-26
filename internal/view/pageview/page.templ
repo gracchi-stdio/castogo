@@ -1,0 +1,52 @@
+package pageview
+
+import (
+	"log"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+	"github.com/gracchi-stdio/castogo/internal/view/pageview/blocks"
+)
+
+// Forward declaration so templ can reference the local parseBlockContent.
+var _ = parseBlockContent[string]
+
+type PageData struct {
+	Page     *domain.Page
+	Blocks   []domain.PageBlock
+	Episodes []*domain.Episode
+	Nav      *layout.PublicLayoutData
+}
+
+templ PageView(data *PageData) {
+	@layout.PublicLayout(data.Nav) {
+		for _, block := range data.Blocks {
+			switch block.BlockType {
+			case "hero":
+				{{ content, err := parseBlockContent[domain.HeroContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse hero block: %v", err); continue } }}
+				@blocks.HeroBlock(content)
+			case "features":
+				{{ content, err := parseBlockContent[domain.FeaturesContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse features block: %v", err); continue } }}
+				@blocks.FeaturesBlock(content)
+			case "episodes_showcase":
+				{{ content, err := parseBlockContent[domain.EpisodesShowcaseContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse episodes_showcase block: %v", err); continue } }}
+				@blocks.EpisodesShowcaseBlock(content, data.Episodes)
+			case "testimonials":
+				{{ content, err := parseBlockContent[domain.TestimonialsContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse testimonials block: %v", err); continue } }}
+				@blocks.TestimonialsBlock(content)
+			case "cta":
+				{{ content, err := parseBlockContent[domain.CTAContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse cta block: %v", err); continue } }}
+				@blocks.CtaBlock(content)
+			case "footer":
+				{{ content, err := parseBlockContent[domain.FooterContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse footer block: %v", err); continue } }}
+				@blocks.FooterBlock(content)
+			}
+		}
+	}
+}

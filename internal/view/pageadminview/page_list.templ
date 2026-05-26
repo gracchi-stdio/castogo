@@ -1,0 +1,140 @@
+package pageadminview
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+templ PageListPage(shared *domain.AdminSharedData, pages []*domain.Page) {
+	@layout.AdminLayout("Pages", shared, pageListActions()) {
+		if len(pages) > 0 {
+			@pageList(pages)
+		} else {
+			@pageListEmpty()
+		}
+	}
+}
+
+templ pageList(pages []*domain.Page) {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{Class: "overflow-x-auto"}) {
+			<table class="w-full table-auto">
+				<thead>
+					<tr class="border-b">
+						<th class="text-left font-medium py-3 px-2">Title</th>
+						<th class="text-left font-medium py-3 px-2">Path</th>
+						<th class="text-left font-medium py-3 px-2">Layout</th>
+						<th class="text-left font-medium py-3 px-2">Status</th>
+						<th class="text-right font-medium py-3 px-2">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, page := range pages {
+						@pageRow(page)
+					}
+				</tbody>
+			</table>
+		}
+	}
+}
+
+templ pageRow(page *domain.Page) {
+	<tr class="border-t hover:bg-muted/50 transition-colors">
+		<td class="py-3 px-2 font-medium">
+			<a href={ fmt.Sprintf("/admin/pages/%d/edit", page.ID) } class="hover:underline">
+				{ page.Title }
+			</a>
+		</td>
+		<td class="py-3 px-2 text-muted-foreground font-mono text-sm">
+			/{ page.Path }
+		</td>
+		<td class="py-3 px-2">
+			<span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
+				{ page.Layout }
+			</span>
+		</td>
+		<td class="py-3 px-2">
+			@publishStatusBadge(page.IsPublished)
+		</td>
+		<td class="py-3 px-2 text-right">
+			@pageActionsDropdown(page)
+		</td>
+	</tr>
+}
+
+templ publishStatusBadge(published bool) {
+	if published {
+		<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+			Published
+		</span>
+	} else {
+		<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+			Draft
+		</span>
+	}
+}
+
+templ pageActionsDropdown(page *domain.Page) {
+	{{ ddID := fmt.Sprintf("page-actions-%d", page.ID) }}
+	@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: ddID}) {
+		@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
+			ID:      ddID,
+			AsChild: true,
+			Class:   "inline-flex items-center justify-center rounded-md p-1 hover:bg-accent cursor-pointer",
+		}) {
+			@icon.Lucide("ellipsis-vertical", "size-4")
+		}
+		@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{
+			ID:    ddID,
+			Align: "end",
+		}) {
+			@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: ddID}) {
+				<a href={ fmt.Sprintf("/admin/pages/%d/edit", page.ID) } class="flex items-center gap-2 w-full">
+					@icon.Lucide("pencil", "size-4")
+					Edit
+				</a>
+			}
+			if page.Path != "home" {
+				@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: ddID})
+				@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
+					ID:      ddID,
+					Variant: "destructive",
+					OnClick: fmt.Sprintf("@delete('/admin/pages/%d')", page.ID),
+				}) {
+					@icon.Lucide("trash-2", "size-4 mr-2")
+					Delete
+				}
+			}
+		}
+	}
+}
+
+templ pageListEmpty() {
+	@card.Card(card.CardArgs{}) {
+		@card.CardContent(card.CardContentArgs{Class: "flex flex-col items-center gap-4 py-8"}) {
+			@icon.Lucide("file-text", "size-12 text-muted-foreground/30")
+			<p class="text-muted-foreground">No pages yet. Create your first page to get started.</p>
+			<a href="/admin/pages/create">
+				@button.Button(button.ButtonArgs{Variant: "default"}) {
+					@icon.Lucide("circle-plus", "size-4 mr-1")
+					New Page
+				}
+			</a>
+		}
+	}
+}
+
+templ pageListActions() {
+	<a href="/admin/pages/create">
+		@button.Button(button.ButtonArgs{Variant: "default", Size: "sm"}) {
+			@icon.Lucide("circle-plus", "size-4 mr-1")
+			New Page
+		}
+	</a>
+}

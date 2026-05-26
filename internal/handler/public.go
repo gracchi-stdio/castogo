@@ -2,29 +2,47 @@ package handler
 
 import (
 	"log"
+	"net/http"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/config"
+	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view/authview"
-	"github.com/gracchi-stdio/castogo/internal/view/landingview"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+	"github.com/gracchi-stdio/castogo/internal/view/pageview"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
 
 type PublicHandler struct {
-	auth           *service.AuthService
-	feedService    *service.FeedService
-	landingService *service.LandingPageService
+	auth            *service.AuthService
+	feedService     *service.FeedService
+	pageService     *service.PageService
+	episodesService *service.EpisodeService
+	settingsService *service.SettingsService
 }
 
-func NewPublicHandler(auth *service.AuthService, feedService *service.FeedService) *PublicHandler {
-	return &PublicHandler{auth: auth, feedService: feedService}
+func NewPublicHandler(
+	auth *service.AuthService,
+	feedService *service.FeedService,
+	pageService *service.PageService,
+	episodesService *service.EpisodeService,
+	settingsService *service.SettingsService,
+) *PublicHandler {
+	return &PublicHandler{
+		auth:            auth,
+		feedService:     feedService,
+		pageService:     pageService,
+		episodesService: episodesService,
+		settingsService: settingsService,
+	}
 }
 
 func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
-	// Landing page (public)
-	e.GET("/", h.landingPage)
+	// Public home page
+	e.GET("/", h.homePage)
 
 	// RSS Feed (public)
 	e.GET("/feed/podcast.xml", h.RSSFeed)
@@ -37,14 +55,69 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	if config.Cfg.RegistrationEnabled {
 		e.GET("/register", echo.WrapHandler(templ.Handler(authview.RegisterPage())))
 	}
+
+	e.GET("/*pageSlug", h.pageResolver)
 }
 
-func (h *PublicHandler) landingPage(c echo.Context) error {
-	data, err := h.landingService.GetLandingPageData(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(500, "Failed to load landing page")
+func (h *PublicHandler) homePage(c echo.Context) error {
+	cfg, err := h.settingsService.GetPodcastConfig(c.Request().Context())
+	if err != nil || cfg.HomepageID == nil {
+		log.Printf("no homepage configured: %v", err)
+		return echo.ErrNotFound
 	}
-	return echo.WrapHandler(templ.Handler(landingview.LandingPage(data)))(c)
+
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), *cfg.HomepageID)
+	if err != nil {
+		log.Printf("error fetching home page: %v", err)
+		return echo.ErrNotFound
+	}
+
+	episodes, err := h.episodesService.ListPublished(c.Request().Context(), 5, 0)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
+	}
+
+	data := &pageview.PageData{
+		Page:     pwb.Page,
+		Blocks:   toBlocks(pwb.Blocks),
+		Episodes: episodes,
+		Nav:      buildPublicNav(c),
+	}
+
+	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
+}
+
+func (h *PublicHandler) pageResolver(c echo.Context) error {
+	slug := c.Param("pageSlug")
+	slug = strings.Trim(slug, "/")
+
+	page, err := h.pageService.GetPageByPath(c.Request().Context(), slug)
+	if err != nil {
+		return echo.ErrNotFound
+	}
+
+	if !page.IsPublished {
+		return echo.ErrNotFound
+	}
+
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), page.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching page content")
+	}
+
+	episodes, err := h.episodesService.ListPublished(c.Request().Context(), 20, 0)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
+	}
+
+	data := &pageview.PageData{
+		Page:     pwb.Page,
+		Blocks:   toBlocks(pwb.Blocks),
+		Episodes: episodes,
+		Nav:      buildPublicNav(c),
+	}
+
+	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
 }
 
 type LoginInput struct {
@@ -87,4 +160,23 @@ func (h *PublicHandler) logout(c echo.Context) error {
 	sess.Save(c.Request(), c.Response().Writer)
 	sse(c).Redirect("/login")
 	return nil
+}
+
+func buildPublicNav(c echo.Context) *layout.PublicLayoutData {
+	return &layout.PublicLayoutData{
+		NavData: &layout.PublicNavbarData{
+			NavLinks: []layout.NavLink{
+				{Label: "Home", URL: "/"},
+				{Label: "Episodes", URL: "/episodes"},
+			},
+		},
+	}
+}
+
+func toBlocks(blocks []*domain.PageBlock) []domain.PageBlock {
+	result := make([]domain.PageBlock, len(blocks))
+	for i, b := range blocks {
+		result[i] = *b
+	}
+	return result
 }

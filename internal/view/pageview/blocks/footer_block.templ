@@ -1,0 +1,32 @@
+package blocks
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+)
+
+templ FooterBlock(content *domain.FooterContent) {
+	<footer class="border-t py-12 bg-muted/30">
+		<div class="mx-auto max-w-6xl px-6">
+			<div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+				<p class="text-sm text-muted-foreground">{ content.Copyright }</p>
+				if len(content.Links) > 0 {
+					<div class="flex items-center gap-6">
+						for _, link := range content.Links {
+							<a href={ templ.SafeURL(link.URL) } class="text-sm text-muted-foreground hover:text-foreground transition-colors">{ link.Label }</a>
+						}
+					</div>
+				}
+				if len(content.SocialLinks) > 0 {
+					<div class="flex items-center gap-4">
+						for _, social := range content.SocialLinks {
+							<a href={ templ.SafeURL(social.URL) } class="text-muted-foreground hover:text-foreground transition-colors" aria-label={ social.Platform }>
+								@icon.Lucide(socialPlatformIcon(social.Platform), "size-5")
+							</a>
+						}
+					</div>
+				}
+			</div>
+		</div>
+	</footer>
+}
