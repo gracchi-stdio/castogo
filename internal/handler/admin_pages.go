@@ -1,13 +1,17 @@
 package handler
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/a-h/templ"
+	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view/pageadminview"
@@ -395,9 +399,19 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 	content := map[string]any{}
 	prefix := fmt.Sprintf("block_%d_", blockID)
 
+	cleanSignalString := func(v string) string {
+		v = strings.TrimSpace(v)
+		if len(v) >= 2 {
+			if (v[0] == '\'' && v[len(v)-1] == '\'') || (v[0] == '"' && v[len(v)-1] == '"') {
+				v = v[1 : len(v)-1]
+			}
+		}
+		return v
+	}
+
 	get := func(name string) string {
 		if v, ok := signals[prefix+name].(string); ok {
-			return v
+			return cleanSignalString(v)
 		}
 		return ""
 	}
@@ -499,6 +513,57 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 	}
 
 	return content
+}
+
+func (h *AdminHandler) blockUploadImage(c echo.Context) error {
+	if err := c.Request().ParseMultipartForm(10 << 20); err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Failed to parse form data",
+		})
+		return nil
+	}
+
+	signalName := c.FormValue("signal_name")
+	if signalName == "" {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Missing signal name",
+		})
+		return nil
+	}
+
+	file, header, err := c.Request().FormFile("image_file")
+	if err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Please select a file to upload",
+		})
+		return nil
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Invalid file type. Please upload a JPG, PNG, or WebP image.",
+		})
+		return nil
+	}
+
+	b := make([]byte, 4)
+	rand.Read(b)
+	filename := fmt.Sprintf("%s/block_img_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), b, ext)
+
+	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
+	if err != nil {
+		sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Failed to upload image. Please try again.",
+		})
+		return nil
+	}
+
+	sse(c).MarshalAndPatchSignals(map[string]string{
+		signalName: url,
+	})
+	return nil
 }
 
 func (h *AdminHandler) blockAddItemAction(c echo.Context) error {

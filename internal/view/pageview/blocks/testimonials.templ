@@ -7,7 +7,7 @@ import (
 )
 
 templ TestimonialsBlock(content *domain.TestimonialsContent) {
-	<section class="py-20 bg-muted/30">
+	<section class="py-20 border-y-2 border-border">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="text-center mb-12">
 				if content.SectionTitle != "" {
@@ -27,13 +27,13 @@ templ TestimonialsBlock(content *domain.TestimonialsContent) {
 }
 
 templ testimonialCard(item domain.TestimonialItem) {
-	<div class="rounded-xl border bg-background p-6">
+	<div class="border-2 border-border bg-background p-6">
 		<p class="text-foreground leading-relaxed italic">"{ item.Quote }"</p>
 		<div class="mt-4 flex items-center gap-3">
 			if item.AvatarURL != "" {
-				<img src={ item.AvatarURL } alt={ item.Author } class="w-10 h-10 rounded-full object-cover"/>
+				<img src={ item.AvatarURL } alt={ item.Author } class="w-10 h-10 object-cover"/>
 			} else {
-				<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+				<div class="w-10 h-10 bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
 					{ strings.ToUpper(string(item.Author[0])) }
 				</div>
 			}

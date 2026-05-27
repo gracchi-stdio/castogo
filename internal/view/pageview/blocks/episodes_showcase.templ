@@ -36,7 +36,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 					</div>
 				}
 			} else {
-				<div class="text-center py-12 border border-dashed">
+				<div class="text-center py-12 border-2 border-dashed border-border">
 					<p class="text-muted-foreground">No episodes yet. Check back soon!</p>
 				</div>
 			}
@@ -45,7 +45,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 }
 
 templ episodeCard(ep *domain.Episode) {
-	<div class="border overflow-hidden hover:shadow-md transition-shadow">
+	<div class="border-2 border-border overflow-hidden hover:border-primary transition-colors">
 		<div class="aspect-video bg-muted flex items-center justify-center">
 			if ep.CoverImageURL != "" {
 				<img src={ ep.CoverImageURL } alt={ ep.Title } class="w-full h-full object-cover"/>
@@ -67,15 +67,19 @@ templ episodeCard(ep *domain.Episode) {
 }
 
 templ episodeListItem(ep *domain.Episode) {
-	<div class="border-b border-border/40 py-5 group"
+	<div
+		class="border-b-2 border-border py-5 group"
 		data-episode-player
-		data-audio-src={ ep.AudioSourceURL }>
+		data-audio-src={ ep.AudioSourceURL }
+	>
 		<div class="flex items-center gap-4">
 			if ep.AudioSourceURL != "" {
-				<button data-episode-play
+				<button
+					data-episode-play
 					type="button"
 					class="shrink-0 w-6 h-6 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer"
-					aria-label="Play episode">
+					aria-label="Play episode"
+				>
 					@icon.Lucide("play", "size-4")
 				</button>
 			}

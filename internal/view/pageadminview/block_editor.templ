@@ -6,7 +6,9 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/imageupload"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
@@ -110,52 +112,73 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 		case "hero":
 			<div class="space-y-3">
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Headline }
+					@label.Label(label.LabelArgs{}) {
+						Headline
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "Enter headline…",
 						Class: "w-full", Attributes: bindAttr(pfx, "headline"),
 					})
 				</div>
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Subheadline }
+					@label.Label(label.LabelArgs{}) {
+						Subheadline
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "Enter subheadline…",
 						Class: "w-full", Attributes: bindAttr(pfx, "subheadline"),
 					})
 				</div>
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { CTA Text }
+					@label.Label(label.LabelArgs{}) {
+						CTA Text
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "e.g. Listen Now",
 						Class: "w-full", Attributes: bindAttr(pfx, "cta_text"),
 					})
 				</div>
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { CTA URL }
+					@label.Label(label.LabelArgs{}) {
+						CTA URL
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "/episodes",
 						Class: "w-full", Attributes: bindAttr(pfx, "cta_url"),
 					})
 				</div>
-				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Background Image URL }
-					@input.Input(input.InputArgs{
-						Type: "text", Placeholder: "https://...",
-						Class: "w-full", Attributes: bindAttr(pfx, "background_image"),
+				@form.Form(form.FormArgs{
+					ID:    fmt.Sprintf("block-form-%d", block.ID),
+					Class: "space-y-2",
+					Attributes: map[string]any{
+						"enctype": "multipart/form-data",
+					},
+				}) {
+					@imageupload.ImageUpload(imageupload.ImageUploadArgs{
+						SignalName: pfx + "background_image",
+						UploadURL:  "/admin/pages/blocks/upload-image",
+						FormID:     fmt.Sprintf("block-form-%d", block.ID),
+						Label:      "Background Image",
+						ID:         fmt.Sprintf("bg-image-%d", block.ID),
+						Hint:       "Recommended: 1920x1080px, JPG or PNG",
 					})
-				</div>
+				}
 			</div>
 		case "cta":
 			<div class="space-y-3">
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Headline }
+					@label.Label(label.LabelArgs{}) {
+						Headline
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "Enter headline…",
 						Class: "w-full", Attributes: bindAttr(pfx, "headline"),
 					})
 				</div>
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Description }
+					@label.Label(label.LabelArgs{}) {
+						Description
+					}
 					@textarea.Textarea(textarea.TextareaArgs{
 						Placeholder: "Enter description…",
 						Class:       "w-full",
@@ -163,14 +186,18 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 					})
 				</div>
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Button Text }
+					@label.Label(label.LabelArgs{}) {
+						Button Text
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "e.g. Get Started",
 						Class: "w-full", Attributes: bindAttr(pfx, "button_text"),
 					})
 				</div>
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Button URL }
+					@label.Label(label.LabelArgs{}) {
+						Button URL
+					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "/signup",
 						Class: "w-full", Attributes: bindAttr(pfx, "button_url"),
@@ -188,7 +215,9 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 		case "prose":
 			<div class="space-y-3">
 				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) { Content (Markdown) }
+					@label.Label(label.LabelArgs{}) {
+						Content (Markdown)
+					}
 					@textarea.Textarea(textarea.TextareaArgs{
 						Placeholder: "Write your content in markdown…",
 						Class:       "w-full min-h-48",
@@ -204,14 +233,18 @@ templ featuresEditor(pageID int64, block *domain.PageBlock, pfx string) {
 	{{ items := toItems(content["items"]) }}
 	<div class="space-y-3">
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Section Title }
+			@label.Label(label.LabelArgs{}) {
+				Section Title
+			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "Enter section title…",
 				Class: "w-full", Attributes: bindAttr(pfx, "section_title"),
 			})
 		</div>
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Section Description }
+			@label.Label(label.LabelArgs{}) {
+				Section Description
+			}
 			@textarea.Textarea(textarea.TextareaArgs{
 				Placeholder: "Enter description…",
 				Class:       "w-full",
@@ -220,7 +253,9 @@ templ featuresEditor(pageID int64, block *domain.PageBlock, pfx string) {
 		</div>
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
-				@label.Label(label.LabelArgs{}) { Features }
+				@label.Label(label.LabelArgs{}) {
+					Features
+				}
 				@button.Button(button.ButtonArgs{
 					Variant: "outline", Size: "sm", Type: "button",
 					Attributes: map[string]any{
@@ -271,14 +306,18 @@ templ featureItemEditor(pageID int64, blockID int64, pfx string, index int, item
 templ episodesShowcaseEditor(block *domain.PageBlock, pfx string) {
 	<div class="space-y-3">
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Section Title }
+			@label.Label(label.LabelArgs{}) {
+				Section Title
+			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "Enter section title…",
 				Class: "w-full", Attributes: bindAttr(pfx, "section_title"),
 			})
 		</div>
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Section Description }
+			@label.Label(label.LabelArgs{}) {
+				Section Description
+			}
 			@textarea.Textarea(textarea.TextareaArgs{
 				Placeholder: "Enter description…",
 				Class:       "w-full",
@@ -286,14 +325,18 @@ templ episodesShowcaseEditor(block *domain.PageBlock, pfx string) {
 			})
 		</div>
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Max Episodes }
+			@label.Label(label.LabelArgs{}) {
+				Max Episodes
+			}
 			@input.Input(input.InputArgs{
 				Type: "number", Placeholder: "6",
 				Class: "w-full", Attributes: bindAttr(pfx, "max_episodes"),
 			})
 		</div>
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Display Mode }
+			@label.Label(label.LabelArgs{}) {
+				Display Mode
+			}
 			@selectcomponent.Select(selectcomponent.SelectArgs{
 				ID:           pfx + "display_mode_select",
 				DefaultValue: displayModeVal(block),
@@ -313,14 +356,18 @@ templ testimonialsEditor(pageID int64, block *domain.PageBlock, pfx string) {
 	{{ items := toItems(content["items"]) }}
 	<div class="space-y-3">
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Section Title }
+			@label.Label(label.LabelArgs{}) {
+				Section Title
+			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "Enter section title…",
 				Class: "w-full", Attributes: bindAttr(pfx, "section_title"),
 			})
 		</div>
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Section Description }
+			@label.Label(label.LabelArgs{}) {
+				Section Description
+			}
 			@textarea.Textarea(textarea.TextareaArgs{
 				Placeholder: "Enter description…",
 				Class:       "w-full",
@@ -329,7 +376,9 @@ templ testimonialsEditor(pageID int64, block *domain.PageBlock, pfx string) {
 		</div>
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
-				@label.Label(label.LabelArgs{}) { Testimonials }
+				@label.Label(label.LabelArgs{}) {
+					Testimonials
+				}
 				@button.Button(button.ButtonArgs{
 					Variant: "outline", Size: "sm", Type: "button",
 					Attributes: map[string]any{
@@ -388,7 +437,9 @@ templ footerEditor(pageID int64, block *domain.PageBlock, pfx string) {
 	{{ socialLinks := toItems(content["social_links"]) }}
 	<div class="space-y-3">
 		<div class="space-y-1.5">
-			@label.Label(label.LabelArgs{}) { Copyright }
+			@label.Label(label.LabelArgs{}) {
+				Copyright
+			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "© 2026 My Podcast",
 				Class: "w-full", Attributes: bindAttr(pfx, "copyright"),
@@ -396,7 +447,9 @@ templ footerEditor(pageID int64, block *domain.PageBlock, pfx string) {
 		</div>
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
-				@label.Label(label.LabelArgs{}) { Navigation Links }
+				@label.Label(label.LabelArgs{}) {
+					Navigation Links
+				}
 				@button.Button(button.ButtonArgs{
 					Variant: "outline", Size: "sm", Type: "button",
 					Attributes: map[string]any{
@@ -415,7 +468,9 @@ templ footerEditor(pageID int64, block *domain.PageBlock, pfx string) {
 		</div>
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
-				@label.Label(label.LabelArgs{}) { Social Links }
+				@label.Label(label.LabelArgs{}) {
+					Social Links
+				}
 				@button.Button(button.ButtonArgs{
 					Variant: "outline", Size: "sm", Type: "button",
 					Attributes: map[string]any{

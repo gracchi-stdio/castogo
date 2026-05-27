@@ -1,0 +1,71 @@
+package imageupload
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+)
+
+templ ImageUpload(args ImageUploadArgs) {
+	{{ accept := args.Accept }}
+	{{
+		if accept == "" {
+			accept = "image/jpeg,image/png,image/webp"
+		}
+	}}
+	{{ bindAttrs := templ.Attributes{"data-bind:" + args.SignalName: ""} }}
+	<div class={ args.Class } { args.Attributes... }>
+		@label.Label(label.LabelArgs{For: args.ID}) {
+			{ args.Label }
+		}
+		<input type="hidden" data-slot="image-url-input" { bindAttrs... }/>
+		<!-- Empty state: dashed upload area -->
+		<div
+			data-show={ "$" + args.SignalName + " === ''" }
+			class={ imageUploadDropZone("") }
+			data-on:click={ "document.getElementById('" + args.ID + "').click()" }
+		>
+			<div class="flex flex-col items-center gap-2 text-muted-foreground">
+				@icon.Lucide("image-plus", "size-8")
+				<p class="text-sm font-medium">Click to upload</p>
+				if args.Hint != "" {
+					<p class="text-xs">{ args.Hint }</p>
+				}
+			</div>
+		</div>
+		<!-- Has image: preview -->
+		<div data-show={ "$" + args.SignalName + " !== ''" } class="space-y-2">
+			<button
+				type="button"
+				class="block cursor-pointer"
+				data-on:click={ "document.getElementById('" + args.ID + "').click()" }
+			>
+				<img
+					data-attr:src={ "$" + args.SignalName }
+					alt="Image preview"
+					class={ imageUploadPreview(args.PreviewW, args.PreviewH) }
+				/>
+			</button>
+			<p class="text-xs text-muted-foreground">Click image to change</p>
+		</div>
+		<!-- Hidden file input -->
+		<input
+			type="file"
+			id={ args.ID }
+			name="image_file"
+			accept={ accept }
+			class="hidden"
+			if args.FormID != "" {
+				form={ args.FormID }
+			}
+			data-on:change={ "@post('" + args.UploadURL + "', {contentType: 'form', form: '#" + args.FormID + "'})" }
+		/>
+		<input
+			type="hidden"
+			name="signal_name"
+			value={ args.SignalName }
+			if args.FormID != "" {
+				form={ args.FormID }
+			}
+		/>
+	</div>
+}

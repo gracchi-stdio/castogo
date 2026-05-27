@@ -10,7 +10,7 @@ import (
 templ CtaBlock(content *domain.CTAContent) {
 	<section class="py-20">
 		<div class="mx-auto max-w-4xl px-6">
-			<div class="rounded-2xl bg-primary/5 border border-primary/10 p-12 text-center">
+			<div class="border-2 border-primary bg-background p-12 text-center">
 				if content.Headline != "" {
 					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.Headline }</h2>
 				}
@@ -20,7 +20,7 @@ templ CtaBlock(content *domain.CTAContent) {
 				if content.ButtonText != "" {
 					<div class="mt-8">
 						@button.Button(button.ButtonArgs{
-							Size: "lg",
+							Size:  "lg",
 							Class: "text-base px-8",
 							Attributes: map[string]any{
 								"onclick": fmt.Sprintf("window.location.href='%s'", content.ButtonURL),
