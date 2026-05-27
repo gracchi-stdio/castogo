@@ -1,12 +1,9 @@
 package settingview
 
 import (
-	"fmt"
-
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
-	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
 	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
 	"github.com/gracchi-stdio/castogo/internal/view/components/fielderror"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
@@ -18,7 +15,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/layout"
 )
 
-templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig, pages []*domain.Page) {
+templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 	@layout.AdminLayout("Settings", data, nil) {
 		{{
 			title := ""
@@ -33,8 +30,6 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig, p
 			subcategory := ""
 			ownerName := ""
 			ownerEmail := ""
-			homepageID := ""
-			homepageLabel := ""
 			if config != nil {
 				title = config.Title
 				description = config.Description
@@ -48,26 +43,6 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig, p
 				subcategory = config.Subcategory
 				ownerName = config.OwnerName
 				ownerEmail = config.OwnerEmail
-				if config.HomepageID != nil {
-					homepageID = fmt.Sprintf("%d", *config.HomepageID)
-					for _, p := range pages {
-						if p.ID == *config.HomepageID {
-							homepageLabel = p.Title
-							break
-						}
-					}
-				}
-			}
-			type pageItem struct {
-				ID    string
-				Title string
-			}
-			pageItems := make([]pageItem, 0, len(pages))
-			for _, p := range pages {
-				pageItems = append(pageItems, pageItem{
-					ID:    fmt.Sprintf("%d", p.ID),
-					Title: p.Title,
-				})
 			}
 		}}
 		<div
@@ -81,8 +56,6 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig, p
 			data-signals:cover_image_url={ "'" + coverImageURL + "'" }
 			data-signals:owner_name={ "'" + ownerName + "'" }
 			data-signals:owner_email={ "'" + ownerEmail + "'" }
-			data-signals:homepage_id={ "'" + homepageID + "'" }
-			data-signals:homepage_label={ "'" + homepageLabel + "'" }
 			data-signals:error="''"
 			data-signals:loading_status="false"
 			data-signals:loading_msg="''"
@@ -110,47 +83,6 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig, p
 				@card.Card(card.CardArgs{}) {
 					@card.CardContent(card.CardContentArgs{}) {
 						<div class="space-y-6">
-							<!-- Site -->
-							<div>
-								<h3 class="text-lg font-medium mb-4">Site</h3>
-								<div class="space-y-4">
-									<div class="space-y-2">
-										@label.Label(label.LabelArgs{For: "homepage_id"}) {
-											Homepage
-										}
-										<input
-											type="hidden"
-											name="homepage_id"
-											value={ homepageID }
-											data-bind="homepage_id"
-										/>
-										@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{
-											ID: "homepage_dropdown",
-										}) {
-											@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
-												ID: "homepage_dropdown",
-												Class: "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-											}) {
-												<span data-text="$homepage_label || 'Select a page...'" class="truncate text-muted-foreground">Select a page...</span>
-												<svg class="h-4 w-4 opacity-50 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-											}
-											@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{
-												ID:    "homepage_dropdown",
-												Class: "w-[--radix-dropdown-menu-trigger-width] max-h-48 overflow-y-auto",
-											}) {
-												for _, item := range pageItems {
-													@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
-														ID: "homepage_dropdown",
-														OnClick: fmt.Sprintf("$homepage_id = '%s', $homepage_label = '%s', document.querySelector('input[name=homepage_id]').value = '%s'", item.ID, item.Title, item.ID),
-													}) {
-														{ item.Title }
-													}
-												}
-											}
-										}
-									</div>
-								</div>
-							</div>
 							<!-- Podcast Info -->
 							<div>
 								<h3 class="text-lg font-medium mb-4">Podcast Info</h3>

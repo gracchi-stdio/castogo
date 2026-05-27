@@ -46,6 +46,25 @@
     animation: 150ms ease-in both fade-in;
 }
 
+/* Public navbar — no animation (stays stable during page transitions) */
+::view-transition-group(public-nav) {
+    animation-duration: 0s;
+}
+::view-transition-old(public-nav) {
+    animation: none;
+}
+::view-transition-new(public-nav) {
+    animation: none;
+}
+
+/* Public content — cross-fade */
+::view-transition-old(public-content) {
+    animation: 150ms ease-out both fade-out;
+}
+::view-transition-new(public-content) {
+    animation: 150ms ease-in both fade-in;
+}
+
 ::view-transition-old(toast),
 ::view-transition-new(toast) {
     animation: none;
@@ -71,4 +90,49 @@
 
 .sidebar-link-inactive {
     @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:bg-sidebar-accent focus-visible:text-sidebar-accent-foreground;
+}
+
+/* Block list drag-and-drop */
+[data-block-id] {
+    cursor: grab;
+}
+
+[data-block-id]:active {
+    cursor: grabbing;
+}
+
+[data-block-id] button,
+[data-block-id] a,
+[data-block-id] input,
+[data-block-id] select,
+[data-block-id] textarea {
+    cursor: default;
+}
+
+[data-block-id] button:active,
+[data-block-id] a:active {
+    cursor: pointer;
+}
+
+.sortable-ghost {
+    opacity: 0.3;
+}
+
+.sortable-chosen {
+    cursor: grabbing !important;
+}
+
+.sortable-chosen * {
+    cursor: grabbing !important;
+}
+
+.sortable-fallback {
+    cursor: grabbing !important;
+    opacity: 0.9;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+body.is-dragging,
+body.is-dragging * {
+    cursor: grabbing !important;
 }

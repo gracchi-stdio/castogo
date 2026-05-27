@@ -1,0 +1,26 @@
+package blocks
+
+import (
+	"bytes"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/yuin/goldmark"
+)
+
+templ ProseBlock(content *domain.ProseContent) {
+	<section class="py-12">
+		<div class="mx-auto max-w-4xl px-6">
+			<div class="prose prose-neutral dark:prose-invert max-w-none">
+				@templ.Raw(renderMarkdown(content.Body))
+			</div>
+		</div>
+	</section>
+}
+
+func renderMarkdown(src string) string {
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(src), &buf); err != nil {
+		return src
+	}
+	return buf.String()
+}

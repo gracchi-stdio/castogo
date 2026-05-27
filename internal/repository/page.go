@@ -22,4 +22,5 @@ type PageRepository interface {
 	GetBlockByPageID(ctx context.Context, pageID int64) ([]*domain.PageBlock, error)
 	UpdateBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error)
 	DeleteBlock(ctx context.Context, id int64) error
+	UpdateBlockOrder(ctx context.Context, id int64, sortOrder int) error
 }

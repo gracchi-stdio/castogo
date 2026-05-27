@@ -22,11 +22,19 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 				}
 			</div>
 			if len(episodes) > 0 {
-				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-					for _, ep := range episodes {
-						@episodeCard(ep)
-					}
-				</div>
+				if content.DisplayMode == "list" {
+					<div class="space-y-4 max-w-4xl mx-auto">
+						for _, ep := range episodes {
+							@episodeListItem(ep)
+						}
+					</div>
+				} else {
+					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+						for _, ep := range episodes {
+							@episodeCard(ep)
+						}
+					</div>
+				}
 			} else {
 				<div class="text-center py-12 rounded-xl border border-dashed">
 					<p class="text-muted-foreground">No episodes yet. Check back soon!</p>
@@ -53,6 +61,28 @@ templ episodeCard(ep *domain.Episode) {
 			}
 			if ep.Duration > 0 {
 				<p class="mt-3 text-xs text-muted-foreground">{ formatDuration(ep.Duration) }</p>
+			}
+		</div>
+	</div>
+}
+
+templ episodeListItem(ep *domain.Episode) {
+	<div class="flex gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow">
+		<div class="w-28 h-28 shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+			if ep.CoverImageURL != "" {
+				<img src={ ep.CoverImageURL } alt={ ep.Title } class="w-full h-full object-cover"/>
+			} else {
+				@icon.Lucide("mic", "size-8 text-muted-foreground/50")
+			}
+		</div>
+		<div class="flex-1 min-w-0">
+			<p class="text-xs text-muted-foreground mb-1">Episode { fmt.Sprintf("%d", ep.EpisodeNumber) }</p>
+			<h3 class="font-semibold text-foreground truncate">{ ep.Title }</h3>
+			if ep.Description != "" {
+				<p class="mt-1 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
+			}
+			if ep.Duration > 0 {
+				<p class="mt-2 text-xs text-muted-foreground">{ formatDuration(ep.Duration) }</p>
 			}
 		</div>
 	</div>

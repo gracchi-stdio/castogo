@@ -16,3 +16,8 @@ RETURNING *;
 
 -- name: DeleteBlock :exec
 DELETE FROM page_blocks WHERE id = $1;
+
+-- name: UpdateBlockOrder :exec
+UPDATE page_blocks
+SET sort_order = $2, updated_at = NOW()
+WHERE id = $1;

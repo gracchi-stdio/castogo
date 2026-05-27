@@ -1,0 +1,6 @@
+@layer base {
+    .theme-public {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+    }
+}

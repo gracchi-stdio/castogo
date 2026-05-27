@@ -19,12 +19,12 @@ type NavLink struct {
 }
 
 templ PublicNavbar(data *PublicNavbarData) {
-	<nav class="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+	<nav class="sticky top-0 z-50 border-b bg-background/80 backdrop-blur" style="view-transition-name: public-nav">
 		<div class="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
 			<a href="/" class="text-xl font-bold text-foreground font-heading">{ config.Cfg.AppName }</a>
 			<div class="hidden md:flex items-center gap-6">
 				for _, link := range data.NavLinks {
-					<a href={ templ.SafeURL(link.URL) } class="text-sm text-muted-foreground hover:text-foreground transition-colors">{ link.Label }</a>
+					<a href={ templ.SafeURL(link.URL) } data-public-nav-link class="text-sm text-muted-foreground hover:text-foreground transition-colors">{ link.Label }</a>
 				}
 			</div>
 			<div class="flex items-center gap-4">

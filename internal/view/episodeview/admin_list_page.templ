@@ -28,7 +28,7 @@ templ EpisodesListPage(shared *domain.AdminSharedData, episodes []*domain.Episod
 
 templ episodesList(episodes []*domain.Episode) {
 	@card.Card(card.CardArgs{}) {
-		@card.CardContent(card.CardContentArgs{Class: "overflow-x-auto"}) {
+		@card.CardContent(card.CardContentArgs{}) {
 			<table class="w-full table-auto">
 				<thead>
 					<tr class="border-b">

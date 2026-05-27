@@ -14,7 +14,6 @@ SET title = COALESCE(sqlc.narg('title'), title),
     category = COALESCE(sqlc.narg('category'), category),
     subcategory = COALESCE(sqlc.narg('subcategory'), subcategory),
     owner_name = COALESCE(sqlc.narg('owner_name'), owner_name),
-    owner_email = COALESCE(sqlc.narg('owner_email'), owner_email),
-    homepage_id = COALESCE(sqlc.narg('homepage_id'), homepage_id)
+    owner_email = COALESCE(sqlc.narg('owner_email'), owner_email)
 WHERE id = sqlc.arg('id')
 RETURNING *;

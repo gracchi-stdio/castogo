@@ -9,6 +9,7 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/playfair-display": "^5.2.8",
     "@tailwindcss/vite": "^4.2.4",
+    "sortablejs": "^1.15.7",
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {

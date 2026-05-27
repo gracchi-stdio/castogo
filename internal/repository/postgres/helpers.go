@@ -23,7 +23,6 @@ func toDomainPodcastConfig(c *db.PodcastConfig) *domain.PodcastConfig {
 		OwnerEmail:    c.OwnerEmail,
 		Category:      c.Category,
 		Subcategory:   c.Subcategory,
-		HomepageID:    c.HomepageID,
 	}
 }
 

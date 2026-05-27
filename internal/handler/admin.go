@@ -57,8 +57,11 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.PATCH("/pages/:id", h.pageUpdateAction)
 	g.DELETE("/pages/:id", h.pageDeleteAction)
 	g.POST("/pages/:id/blocks", h.blockCreateAction)
+		g.PATCH("/pages/:id/blocks/reorder", h.blockReorderAction)
 	g.PATCH("/pages/:id/blocks/:blockId", h.blockUpdateAction)
 	g.DELETE("/pages/:id/blocks/:blockId", h.blockDeleteAction)
+		g.POST("/pages/:id/blocks/:blockId/items", h.blockAddItemAction)
+		g.DELETE("/pages/:id/blocks/:blockId/items/:index", h.blockRemoveItemAction)
 }
 
 func (h *AdminHandler) dashboard(c echo.Context) error {

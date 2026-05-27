@@ -23,13 +23,12 @@ templ PageListPage(shared *domain.AdminSharedData, pages []*domain.Page) {
 
 templ pageList(pages []*domain.Page) {
 	@card.Card(card.CardArgs{}) {
-		@card.CardContent(card.CardContentArgs{Class: "overflow-x-auto"}) {
+		@card.CardContent(card.CardContentArgs{}) {
 			<table class="w-full table-auto">
 				<thead>
 					<tr class="border-b">
 						<th class="text-left font-medium py-3 px-2">Title</th>
 						<th class="text-left font-medium py-3 px-2">Path</th>
-						<th class="text-left font-medium py-3 px-2">Layout</th>
 						<th class="text-left font-medium py-3 px-2">Status</th>
 						<th class="text-right font-medium py-3 px-2">Actions</th>
 					</tr>
@@ -53,11 +52,6 @@ templ pageRow(page *domain.Page) {
 		</td>
 		<td class="py-3 px-2 text-muted-foreground font-mono text-sm">
 			/{ page.Path }
-		</td>
-		<td class="py-3 px-2">
-			<span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
-				{ page.Layout }
-			</span>
 		</td>
 		<td class="py-3 px-2">
 			@publishStatusBadge(page.IsPublished)

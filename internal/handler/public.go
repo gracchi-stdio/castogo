@@ -21,7 +21,6 @@ type PublicHandler struct {
 	feedService     *service.FeedService
 	pageService     *service.PageService
 	episodesService *service.EpisodeService
-	settingsService *service.SettingsService
 }
 
 func NewPublicHandler(
@@ -29,14 +28,12 @@ func NewPublicHandler(
 	feedService *service.FeedService,
 	pageService *service.PageService,
 	episodesService *service.EpisodeService,
-	settingsService *service.SettingsService,
 ) *PublicHandler {
 	return &PublicHandler{
 		auth:            auth,
 		feedService:     feedService,
 		pageService:     pageService,
 		episodesService: episodesService,
-		settingsService: settingsService,
 	}
 }
 
@@ -56,20 +53,23 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 		e.GET("/register", echo.WrapHandler(templ.Handler(authview.RegisterPage())))
 	}
 
-	e.GET("/*pageSlug", h.pageResolver)
+	e.GET("/*", h.pageResolver)
 }
 
 func (h *PublicHandler) homePage(c echo.Context) error {
-	cfg, err := h.settingsService.GetPodcastConfig(c.Request().Context())
-	if err != nil || cfg.HomepageID == nil {
-		log.Printf("no homepage configured: %v", err)
+	// Homepage is the root page — the one with empty slug and path ""
+	page, err := h.pageService.GetPageByPath(c.Request().Context(), "")
+	if err != nil {
 		return echo.ErrNotFound
 	}
 
-	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), *cfg.HomepageID)
-	if err != nil {
-		log.Printf("error fetching home page: %v", err)
+	if !page.IsPublished {
 		return echo.ErrNotFound
+	}
+
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), page.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching page content")
 	}
 
 	episodes, err := h.episodesService.ListPublished(c.Request().Context(), 5, 0)
@@ -88,8 +88,8 @@ func (h *PublicHandler) homePage(c echo.Context) error {
 }
 
 func (h *PublicHandler) pageResolver(c echo.Context) error {
-	slug := c.Param("pageSlug")
-	slug = strings.Trim(slug, "/")
+	// Echo stores wildcard params as "*", not the named version
+	slug := strings.Trim(c.Param("*"), "/")
 
 	page, err := h.pageService.GetPageByPath(c.Request().Context(), slug)
 	if err != nil {

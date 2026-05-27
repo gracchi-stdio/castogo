@@ -159,6 +159,13 @@ func (r *PageRepo) DeleteBlock(ctx context.Context, id int64) error {
 	return r.q.DeleteBlock(ctx, id)
 }
 
+func (r *PageRepo) UpdateBlockOrder(ctx context.Context, id int64, sortOrder int) error {
+	return r.q.UpdateBlockOrder(ctx, db.UpdateBlockOrderParams{
+		ID:        id,
+		SortOrder: int32(sortOrder),
+	})
+}
+
 // Converters
 
 func toDomainPage(p *db.Page) *domain.Page {

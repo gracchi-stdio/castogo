@@ -11,7 +11,7 @@ import (
 )
 
 templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Component) {
-	@BaseLayout() {
+	@BaseLayout("") {
 		{{
 			sidebarID := "admin_sidebar"
 			sections := sidebarSections(data.CurrentPath)
@@ -61,7 +61,7 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 								@actions
 							}
 							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
-					<!-- User dropdown -->
+							<!-- User dropdown -->
 							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
 								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
 									ID:    "user-menu",

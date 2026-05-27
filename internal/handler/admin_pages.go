@@ -12,6 +12,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view/pageadminview"
 	"github.com/labstack/echo/v4"
+	"github.com/starfederation/datastar-go/datastar"
 )
 
 func (h *AdminHandler) pageList(c echo.Context) error {
@@ -29,14 +30,24 @@ func (h *AdminHandler) pageCreatePage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
 	}
 
-	return echo.WrapHandler(templ.Handler(pageadminview.PageFormPage(getSharedData(c), nil, parentPages, nil, false)))(c)
+	return echo.WrapHandler(templ.Handler(pageadminview.PageFormPage(getSharedData(c), nil, parentPages, nil, false, "")))(c)
 }
 
 type pageCreateInput struct {
 	Title    string  `json:"title" validate:"required"`
-	Slug     string  `json:"slug" validate:"required"`
+	Slug     string  `json:"slug"`
 	Layout   string  `json:"page_layout"`
 	ParentID float64 `json:"parent_id"`
+}
+
+type pageUpdateInput struct {
+	Title       string  `json:"title" validate:"required"`
+	Slug        string  `json:"slug"`
+	Layout      string  `json:"page_layout"`
+	ParentID    float64 `json:"parent_id"`
+	IsPublished struct {
+		Checked bool `json:"checked"`
+	} `json:"is_published"`
 }
 
 func (h *AdminHandler) pageCreateAction(c echo.Context) error {
@@ -77,6 +88,11 @@ func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 				"slug_error": "A page with this slug already exists",
 			})
 		}
+		if errors.Is(err, domain.ErrHomepageExists) {
+			return sse(c).MarshalAndPatchSignals(map[string]string{
+				"slug_error": "A homepage already exists — only one root page may have an empty slug",
+			})
+		}
 		if errors.Is(err, domain.ErrMaxDepth) {
 			return sse(c).MarshalAndPatchSignals(map[string]string{
 				"error": "Maximum nesting depth exceeded (2 levels max)",
@@ -110,12 +126,18 @@ func (h *AdminHandler) pageEditPage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
 	}
 
+	defaultTab := c.QueryParam("tab")
+	if defaultTab == "" {
+		defaultTab = "settings"
+	}
+
 	return echo.WrapHandler(templ.Handler(pageadminview.PageFormPage(
 		getSharedData(c),
 		pageWithBlocks.Page,
 		parentPages,
 		pageWithBlocks.Blocks,
 		true,
+		defaultTab,
 	)))(c)
 }
 
@@ -125,34 +147,42 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
 	}
 
-	var raw map[string]any
-	if err := readSignals(c, &raw); err != nil {
+	var rawSignals map[string]any
+	if err := readSignals(c, &rawSignals); err != nil {
 		return sse(c).MarshalAndPatchSignals(map[string]string{
 			"error": "Invalid request",
 		})
 	}
 
-	input := service.UpdatePageInput{}
+	var raw pageUpdateInput
+	rawBytes, _ := json.Marshal(rawSignals)
+	json.Unmarshal(rawBytes, &raw)
 
-	if v, ok := raw["title"].(string); ok {
-		input.Title = &v
-	}
-	if v, ok := raw["slug"].(string); ok {
-		input.Slug = &v
-	}
-	if v, ok := raw["page_layout"].(string); ok {
-		input.Layout = &v
-	}
-	if v, ok := raw["parent_id"].(float64); ok {
-		pid := int64(v)
-		ppid := &pid
-		input.ParentID = &ppid
-	}
-	if v, ok := raw["is_published"].(bool); ok {
-		input.IsPublished = &v
+	if err := validate.Struct(raw); err != nil {
+		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err))
+		return nil
 	}
 
-	_, err = h.pageService.UpdatePage(c.Request().Context(), id, input)
+	var parentVal *int64
+	if raw.ParentID > 0 {
+		pid := int64(raw.ParentID)
+		parentVal = &pid
+	}
+
+	title := raw.Title
+	slug := raw.Slug
+	layout := raw.Layout
+	isPublished := raw.IsPublished.Checked
+
+	update := service.UpdatePageInput{
+		Title:       &title,
+		Slug:        &slug,
+		Layout:      &layout,
+		ParentID:    &parentVal,
+		IsPublished: &isPublished,
+	}
+
+	_, err = h.pageService.UpdatePage(c.Request().Context(), id, update)
 	if err != nil {
 		if errors.Is(err, domain.ErrReservedSlug) {
 			return sse(c).MarshalAndPatchSignals(map[string]string{
@@ -164,14 +194,76 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 				"slug_error": "A page with this slug already exists",
 			})
 		}
+		if errors.Is(err, domain.ErrHomepageExists) {
+			return sse(c).MarshalAndPatchSignals(map[string]string{
+				"slug_error": "A homepage already exists — only one root page may have an empty slug",
+			})
+		}
 		return sse(c).MarshalAndPatchSignals(map[string]string{
 			"error": "Failed to update page",
 		})
 	}
 
-	sse(c).MarshalAndPatchSignals(map[string]string{
+	// Save all blocks
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), id)
+	if err == nil {
+		for _, block := range pwb.Blocks {
+			content := buildBlockContent(block.ID, block.BlockType, rawSignals)
+			contentJSON, err := json.Marshal(content)
+			if err != nil {
+				continue
+			}
+			block.Content = contentJSON
+			h.pageService.SaveBlock(c.Request().Context(), block)
+		}
+	}
+
+	// Close all block edit modes
+	patchSignals := map[string]any{
 		"error": "",
-	})
+	}
+	if pwb != nil {
+		for _, block := range pwb.Blocks {
+			patchSignals[fmt.Sprintf("block_%d_editing", block.ID)] = false
+		}
+	}
+	sse(c).MarshalAndPatchSignals(patchSignals)
+	return nil
+}
+
+func (h *AdminHandler) blockReorderAction(c echo.Context) error {
+	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
+	}
+
+	var raw map[string]any
+	if err := readSignals(c, &raw); err != nil {
+		return sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Invalid request",
+		})
+	}
+
+	blockIDsRaw, ok := raw["block_ids"].([]any)
+	if !ok {
+		return sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Missing block order",
+		})
+	}
+
+	blockIDs := make([]int64, 0, len(blockIDsRaw))
+	for _, v := range blockIDsRaw {
+		if id, ok := v.(float64); ok {
+			blockIDs = append(blockIDs, int64(id))
+		}
+	}
+
+	if err := h.pageService.ReorderBlocks(c.Request().Context(), pageID, blockIDs); err != nil {
+		return sse(c).MarshalAndPatchSignals(map[string]string{
+			"error": "Failed to reorder blocks",
+		})
+	}
+
 	return nil
 }
 
@@ -213,7 +305,7 @@ func (h *AdminHandler) blockCreateAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to create block")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit", pageID)))
+	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit?tab=blocks", pageID)))
 	return nil
 }
 
@@ -232,7 +324,7 @@ func (h *AdminHandler) blockDeleteAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete block")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit", pageID)))
+	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit?tab=blocks", pageID)))
 	return nil
 }
 
@@ -303,7 +395,6 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 	content := map[string]any{}
 	prefix := fmt.Sprintf("block_%d_", blockID)
 
-	// Helper: get signal value as string, defaulting to empty
 	get := func(name string) string {
 		if v, ok := signals[prefix+name].(string); ok {
 			return v
@@ -311,22 +402,273 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 		return ""
 	}
 
+	getInt := func(name string) int {
+		if v, ok := signals[prefix+name]; ok {
+			switch n := v.(type) {
+			case float64:
+				return int(n)
+			case string:
+				i, _ := strconv.Atoi(n)
+				return i
+			}
+		}
+		return 0
+	}
+
 	switch blockType {
-	case "hero", "cta":
+	case "hero":
 		content["headline"] = get("headline")
 		content["subheadline"] = get("subheadline")
-		if blockType == "hero" {
-			content["cta_text"] = get("cta_text")
-			content["cta_url"] = get("cta_url")
-		} else {
-			content["button_text"] = get("button_text")
-			content["button_url"] = get("button_url")
-		}
-	case "features", "testimonials", "episodes_showcase":
+		content["cta_text"] = get("cta_text")
+		content["cta_url"] = get("cta_url")
+		content["background_image"] = get("background_image")
+	case "cta":
+		content["headline"] = get("headline")
+		content["description"] = get("description")
+		content["button_text"] = get("button_text")
+		content["button_url"] = get("button_url")
+	case "features":
 		content["section_title"] = get("section_title")
+		content["section_description"] = get("section_description")
+		items := []map[string]any{}
+		for i := 0; ; i++ {
+			icon := get(fmt.Sprintf("item_%d_icon", i))
+			title := get(fmt.Sprintf("item_%d_title", i))
+			desc := get(fmt.Sprintf("item_%d_description", i))
+			if title == "" && icon == "" && desc == "" {
+				break
+			}
+			items = append(items, map[string]any{
+				"icon": icon, "title": title, "description": desc,
+			})
+		}
+		content["items"] = items
+	case "episodes_showcase":
+		content["section_title"] = get("section_title")
+		content["section_description"] = get("section_description")
+		if max := getInt("max_episodes"); max > 0 {
+			content["max_episodes"] = max
+		}
+		if mode := get("display_mode"); mode != "" {
+			content["display_mode"] = mode
+		} else {
+			content["display_mode"] = "grid"
+		}
+	case "testimonials":
+		content["section_title"] = get("section_title")
+		content["section_description"] = get("section_description")
+		items := []map[string]any{}
+		for i := 0; ; i++ {
+			quote := get(fmt.Sprintf("item_%d_quote", i))
+			author := get(fmt.Sprintf("item_%d_author", i))
+			role := get(fmt.Sprintf("item_%d_role", i))
+			avatarURL := get(fmt.Sprintf("item_%d_avatar_url", i))
+			if quote == "" && author == "" {
+				break
+			}
+			items = append(items, map[string]any{
+				"quote": quote, "author": author, "role": role, "avatar_url": avatarURL,
+			})
+		}
+		content["items"] = items
 	case "footer":
 		content["text"] = get("text")
+		content["copyright"] = get("copyright")
+		links := []map[string]any{}
+		for i := 0; ; i++ {
+			label := get(fmt.Sprintf("link_%d_label", i))
+			url := get(fmt.Sprintf("link_%d_url", i))
+			if label == "" && url == "" {
+				break
+			}
+			links = append(links, map[string]any{"label": label, "url": url})
+		}
+		content["links"] = links
+		socialLinks := []map[string]any{}
+		for i := 0; ; i++ {
+			platform := get(fmt.Sprintf("social_%d_platform", i))
+			url := get(fmt.Sprintf("social_%d_url", i))
+			if platform == "" && url == "" {
+				break
+			}
+			socialLinks = append(socialLinks, map[string]any{"platform": platform, "url": url})
+		}
+		content["social_links"] = socialLinks
+	case "prose":
+		content["body"] = get("body")
 	}
 
 	return content
+}
+
+func (h *AdminHandler) blockAddItemAction(c echo.Context) error {
+	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
+	}
+
+	blockID, err := strconv.ParseInt(c.Param("blockId"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid block ID")
+	}
+
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Page not found")
+	}
+
+	var block *domain.PageBlock
+	for _, b := range pwb.Blocks {
+		if b.ID == blockID {
+			block = b
+			break
+		}
+	}
+	if block == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Block not found")
+	}
+
+	var content map[string]any
+	if err := json.Unmarshal(block.Content, &content); err != nil {
+		content = map[string]any{}
+	}
+
+	itemType := c.QueryParam("type")
+	switch itemType {
+	case "feature":
+		items := toSlice(content["items"])
+		items = append(items, map[string]any{"icon": "", "title": "", "description": ""})
+		content["items"] = items
+	case "testimonial":
+		items := toSlice(content["items"])
+		items = append(items, map[string]any{"quote": "", "author": "", "role": "", "avatar_url": ""})
+		content["items"] = items
+	case "link":
+		items := toSlice(content["links"])
+		items = append(items, map[string]any{"label": "", "url": ""})
+		content["links"] = items
+	case "social":
+		items := toSlice(content["social_links"])
+		items = append(items, map[string]any{"platform": "", "url": ""})
+		content["social_links"] = items
+	default:
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item type")
+	}
+
+	block.Content, _ = json.Marshal(content)
+	if _, err := h.pageService.SaveBlock(c.Request().Context(), block); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to save block")
+	}
+
+	// Re-render items via SSE patch (no full page reload)
+	html, err := pageadminview.RenderItemsFragment(pageID, block, itemType)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render items")
+	}
+
+	containerID := pageadminview.ItemsContainerID(blockID, itemType)
+	signals := map[string]any{
+		fmt.Sprintf("block_%d_editing", blockID): true,
+	}
+	for k, v := range pageadminview.NewItemSignals(block, itemType) {
+		signals[k] = v
+	}
+
+	sse(c).MarshalAndPatchSignals(signals)
+	sse(c).PatchElements(html, datastar.WithSelectorID(containerID), datastar.WithModeInner())
+	return nil
+}
+
+func (h *AdminHandler) blockRemoveItemAction(c echo.Context) error {
+	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
+	}
+
+	blockID, err := strconv.ParseInt(c.Param("blockId"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid block ID")
+	}
+
+	index, err := strconv.Atoi(c.Param("index"))
+	if err != nil || index < 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid index")
+	}
+
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Page not found")
+	}
+
+	var block *domain.PageBlock
+	for _, b := range pwb.Blocks {
+		if b.ID == blockID {
+			block = b
+			break
+		}
+	}
+	if block == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Block not found")
+	}
+
+	var content map[string]any
+	if err := json.Unmarshal(block.Content, &content); err != nil {
+		content = map[string]any{}
+	}
+
+	itemType := c.QueryParam("type")
+	switch itemType {
+	case "feature", "testimonial":
+		items := toSlice(content["items"])
+		if index < len(items) {
+			content["items"] = append(items[:index], items[index+1:]...)
+		}
+	case "link":
+		items := toSlice(content["links"])
+		if index < len(items) {
+			content["links"] = append(items[:index], items[index+1:]...)
+		}
+	case "social":
+		items := toSlice(content["social_links"])
+		if index < len(items) {
+			content["social_links"] = append(items[:index], items[index+1:]...)
+		}
+	default:
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item type")
+	}
+
+	block.Content, _ = json.Marshal(content)
+	if _, err := h.pageService.SaveBlock(c.Request().Context(), block); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to save block")
+	}
+
+	// Re-render items via SSE patch (no full page reload)
+	html, err := pageadminview.RenderItemsFragment(pageID, block, itemType)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render items")
+	}
+
+	containerID := pageadminview.ItemsContainerID(blockID, itemType)
+	signals := map[string]any{
+		fmt.Sprintf("block_%d_editing", blockID): true,
+	}
+	for k, v := range pageadminview.AllItemSignals(block, itemType) {
+		signals[k] = v
+	}
+
+	sse(c).MarshalAndPatchSignals(signals)
+	sse(c).PatchElements(html, datastar.WithSelectorID(containerID), datastar.WithModeInner())
+	return nil
+}
+
+// toSlice converts a JSON array to []any, returning nil if not an array.
+func toSlice(v any) []any {
+	if v == nil {
+		return nil
+	}
+	arr, ok := v.([]any)
+	if !ok {
+		return nil
+	}
+	return arr
 }

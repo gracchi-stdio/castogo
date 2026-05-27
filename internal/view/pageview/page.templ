@@ -46,6 +46,10 @@ templ PageView(data *PageData) {
 				{{ content, err := parseBlockContent[domain.FooterContent](block.Content) }}
 				{{ if err != nil { log.Printf("parse footer block: %v", err); continue } }}
 				@blocks.FooterBlock(content)
+			case "prose":
+				{{ content, err := parseBlockContent[domain.ProseContent](block.Content) }}
+				{{ if err != nil { log.Printf("parse prose block: %v", err); continue } }}
+				@blocks.ProseBlock(content)
 			}
 		}
 	}

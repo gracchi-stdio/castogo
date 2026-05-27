@@ -14,7 +14,6 @@ type PodcastConfig struct {
 	Subcategory   string `db:"subcategory"`
 	OwnerName     string `db:"owner_name"`
 	OwnerEmail    string `db:"owner_email"`
-	HomepageID    *int64 `db:"homepage_id"`
 }
 
 // UpdatePodcastConfig represents a partial update to podcast_config.
@@ -34,5 +33,4 @@ type UpdatePodcastConfig struct {
 	Subcategory   *string `db:"subcategory"`
 	OwnerName     *string `db:"owner_name"`
 	OwnerEmail    *string `db:"owner_email"`
-	HomepageID    *int64  `db:"homepage_id"`
 }

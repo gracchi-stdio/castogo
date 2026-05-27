@@ -1,39 +1,40 @@
 @layer base {
     .theme-public {
-        --background: 20 14% 5%;
-        --foreground: 30 10% 93%;
-        --card: 20 12% 8%;
-        --card-foreground: 30 10% 93%;
-        --popover: 20 12% 8%;
-        --popover-foreground: 30 10% 93%;
-        --primary: 24 95% 53%;
-        --primary-foreground: 20 14% 5%;
-        --secondary: 20 10% 14%;
-        --secondary-foreground: 30 10% 93%;
-        --muted: 20 10% 14%;
-        --muted-foreground: 30 8% 60%;
-        --accent: 20 10% 14%;
-        --accent-foreground: 30 10% 93%;
-        --destructive: 0 84% 60%;
-        --destructive-foreground: 30 10% 98%;
-        --border: 20 10% 18%;
-        --input: 20 10% 18%;
-        --ring: 24 95% 53%;
+        --background: 225 18% 8%;
+        --foreground: 210 20% 96%;
+        --card: 225 18% 12%;
+        --card-foreground: 210 20% 96%;
+        --popover: 225 18% 12%;
+        --popover-foreground: 210 20% 96%;
+        --primary: 0 82% 58%;
+        --primary-foreground: 225 18% 10%;
+        --secondary: 225 14% 16%;
+        --secondary-foreground: 210 20% 96%;
+        --muted: 225 12% 16%;
+        --muted-foreground: 215 10% 70%;
+        --accent: 0 30% 20%;
+        --accent-foreground: 210 20% 96%;
+        --destructive: 0 74% 55%;
+        --destructive-foreground: 210 20% 98%;
+        --border: 225 12% 24%;
+        --input: 225 12% 24%;
+        --ring: 0 82% 58%;
         --radius: 0.5rem;
-        --chart-1: 24 95% 53%;
-        --chart-2: 45 85% 55%;
-        --chart-3: 0 75% 55%;
-        --chart-4: 340 65% 55%;
-        --chart-5: 60 70% 50%;
-        --sidebar-background: 20 14% 6%;
-        --sidebar-foreground: 30 8% 68%;
-        --sidebar-primary: 24 95% 53%;
-        --sidebar-primary-foreground: 20 14% 5%;
-        --sidebar-accent: 20 10% 14%;
-        --sidebar-accent-foreground: 30 10% 93%;
-        --sidebar-border: 20 10% 16%;
-        --sidebar-ring: 24 95% 53%;
+        --chart-1: 0 82% 58%;
+        --chart-2: 45 85% 58%;
+        --chart-3: 190 80% 48%;
+        --chart-4: 260 70% 60%;
+        --chart-5: 120 60% 45%;
+        --sidebar-background: 225 18% 7%;
+        --sidebar-foreground: 215 10% 72%;
+        --sidebar-primary: 0 82% 58%;
+        --sidebar-primary-foreground: 225 18% 10%;
+        --sidebar-accent: 225 12% 16%;
+        --sidebar-accent-foreground: 210 20% 96%;
+        --sidebar-border: 225 12% 20%;
+        --sidebar-ring: 0 82% 58%;
 
-        --font-heading: 'Playfair Display Variable', 'Playfair Display', Georgia, serif;
+        --font-heading:
+            "Playfair Display Variable", "Playfair Display", Georgia, serif;
     }
 }

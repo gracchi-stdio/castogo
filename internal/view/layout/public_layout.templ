@@ -7,10 +7,10 @@ type PublicLayoutData struct {
 }
 
 templ PublicLayout(data *PublicLayoutData) {
-	@BaseLayout() {
-		<div class="theme-public min-h-screen flex flex-col">
+	@BaseLayout("theme-public") {
+		<div class="min-h-screen flex flex-col">
 			@PublicNavbar(data.NavData)
-			<main class="flex-1">
+			<main class="flex-1" data-public-content style="view-transition-name: public-content">
 				{ children... }
 			</main>
 			<footer class="border-t py-6 text-center text-sm text-muted-foreground">

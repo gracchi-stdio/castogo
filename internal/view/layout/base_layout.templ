@@ -3,9 +3,15 @@ package layout
 import "github.com/gracchi-stdio/castogo/internal/config"
 import "github.com/gracchi-stdio/castogo/internal/view"
 
-templ BaseLayout() {
+templ BaseLayout(bodyClass string) {
+	{{
+		extraClass := ""
+		if bodyClass != "" {
+			extraClass = " " + bodyClass
+		}
+	}}
 	<!DOCTYPE html>
-	<html lang="en">
+	<html lang="en" class={ bodyClass }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -40,7 +46,7 @@ templ BaseLayout() {
 				}
 			}
 		</head>
-		<body class="min-h-screen bg-background font-sans antialiased" data-signals="{theme: (localStorage.getItem('theme') || 'light'), toast: ''}">
+		<body class={ "min-h-screen bg-background font-sans antialiased" + extraClass } data-signals="{theme: (localStorage.getItem('theme') || 'light'), toast: ''}">
 			{ children... }
 		</body>
 	</html>

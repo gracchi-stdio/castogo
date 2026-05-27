@@ -24,6 +24,7 @@ type EpisodesShowcaseContent struct {
 	SectionTitle       string `json:"section_title"`
 	SectionDescription string `json:"section_description"`
 	MaxEpisodes        int    `json:"max_episodes"`
+	DisplayMode        string `json:"display_mode"`
 }
 
 type TestimonialsContent struct {
@@ -60,4 +61,8 @@ type FooterLink struct {
 type SocialLink struct {
 	Platform string `json:"platform"`
 	URL      string `json:"url"`
+}
+
+type ProseContent struct {
+	Body string `json:"body"`
 }

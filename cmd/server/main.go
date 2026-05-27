@@ -91,7 +91,7 @@ func main() {
 	pageService := service.NewPageService(pageRepo, episodeRepo)
 
 	// Handlers
-	publicHandler := handler.NewPublicHandler(authService, feedService, pageService, episodeService, settingsService)
+	publicHandler := handler.NewPublicHandler(authService, feedService, pageService, episodeService)
 	publicHandler.RegisterRoutes(e)
 
 	// Admin routes (protected by auth middleware)
@@ -123,8 +123,13 @@ func main() {
 		e.DefaultHTTPErrorHandler(err, c)
 	}
 
-	// Static files — must be registered LAST so it doesn't swallow routes
-	e.Static("/", "public")
+	// Static files — use middleware (not route-based e.Static) so it falls through
+	// to route handlers when no static file exists. e.Static would register GET /*
+	// which overwrites the /*pageSlug wildcard route used by the page resolver.
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "public",
+		Browse: false,
+	}))
 
 	httpClient := &http.Client{Timeout: 60 * time.Second} // 60 Timeout
 	fetcher := service.NewBunnyLogFetcher(

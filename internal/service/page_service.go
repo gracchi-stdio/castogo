@@ -57,8 +57,21 @@ type PageWithBlocks struct {
 }
 
 func (s *PageService) CreatePage(ctx context.Context, input CreatePageInput) (*domain.Page, error) {
-	if reservedSlugs[input.Slug] {
+	// Empty slug is only allowed for root-level pages (homepage)
+	if input.Slug == "" && input.ParentID != nil {
+		return nil, domain.ErrInvalidInput
+	}
+
+	if input.Slug != "" && reservedSlugs[input.Slug] {
 		return nil, domain.ErrReservedSlug
+	}
+
+	// If creating a root page with empty slug, check one doesn't already exist
+	if input.Slug == "" {
+		existing, _ := s.page.GetBySlug(ctx, "")
+		if existing != nil {
+			return nil, domain.ErrHomepageExists
+		}
 	}
 
 	path := input.Slug
@@ -118,8 +131,23 @@ func (s *PageService) UpdatePage(ctx context.Context, id int64, input UpdatePage
 		return nil, err
 	}
 
-	if input.Slug != nil && reservedSlugs[*input.Slug] && *input.Slug != existing.Slug {
-		return nil, domain.ErrReservedSlug
+	if input.Slug != nil {
+		newSlug := *input.Slug
+		// Empty slug only allowed for root pages
+		if newSlug == "" {
+			if existing.ParentID != nil || (input.ParentID != nil && *input.ParentID != nil) {
+				return nil, domain.ErrInvalidInput
+			}
+			// Check no other root page already has empty slug
+			if existing.Slug != "" {
+				existingHomepage, _ := s.page.GetBySlug(ctx, "")
+				if existingHomepage != nil && existingHomepage.ID != existing.ID {
+					return nil, domain.ErrHomepageExists
+				}
+			}
+		} else if reservedSlugs[newSlug] && newSlug != existing.Slug {
+			return nil, domain.ErrReservedSlug
+		}
 	}
 
 	updated := applyUpdates(existing, input)
@@ -184,6 +212,15 @@ func (s *PageService) SaveBlock(ctx context.Context, block *domain.PageBlock) (*
 
 func (s *PageService) DeleteBlock(ctx context.Context, id int64) error {
 	return s.page.DeleteBlock(ctx, id)
+}
+
+func (s *PageService) ReorderBlocks(ctx context.Context, pageID int64, blockIDs []int64) error {
+	for i, id := range blockIDs {
+		if err := s.page.UpdateBlockOrder(ctx, id, i); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func applyUpdates(existing *domain.Page, input UpdatePageInput) *domain.Page {
