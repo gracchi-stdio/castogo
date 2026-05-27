@@ -60,3 +60,15 @@ SELECT p.path, (SELECT COUNT(*) FROM pages WHERE parent_id = p.id) AS children_c
 
 -- name: CountPageWithoutParent :one
 SELECT COUNT(*) FROM pages WHERE parent_id IS NULL;
+
+-- name: GetPublishedTopLevelPages :many
+SELECT * FROM pages
+WHERE parent_id IS NULL AND is_published = true
+ORDER BY sort_order ASC;
+
+-- name: SearchPublishedPages :many
+SELECT * FROM pages
+WHERE is_published = true
+  AND title ILIKE '%' || @search || '%'
+ORDER BY sort_order ASC
+LIMIT @page_limit OFFSET @page_offset;

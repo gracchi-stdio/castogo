@@ -109,3 +109,10 @@ func (s *EpisodeService) GetDashboardStats(ctx context.Context) (*domain.Dashboa
 		Scheduled: scheduled,
 	}, nil
 }
+
+func (s *EpisodeService) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	return s.repo.SearchPublished(ctx, query, limit, offset)
+}

@@ -1,6 +1,7 @@
 // Podlog — app entry point
 import "./audio-metadata.js";
 import { initBlockSorter } from "./blocks.js";
+import { initEpisodePlayers, destroyActivePlayer } from "./episode-player.js";
 
 // Import CSS (Vite resolves @import and bundles)
 import "../css/app.css";
@@ -209,6 +210,8 @@ async function navigatePublic(url, options = {}) {
     publicNavigationController.abort();
   }
 
+  destroyActivePlayer();
+
   publicNavigationController = new AbortController();
   const { signal } = publicNavigationController;
 
@@ -260,6 +263,9 @@ async function navigatePublic(url, options = {}) {
   if (scrollToTop) {
     window.scrollTo(0, 0);
   }
+
+  initEpisodePlayers();
+  initPublicNavScroll();
 }
 
 function updateActiveNavLink(pathname) {
@@ -282,9 +288,9 @@ function updateActivePublicNavLink(pathname) {
     const isActive = link.getAttribute("href") === pathname;
     if (isActive) {
       link.classList.remove("text-muted-foreground");
-      link.classList.add("text-foreground", "font-medium");
+      link.classList.add("text-primary");
     } else {
-      link.classList.remove("text-foreground", "font-medium");
+      link.classList.remove("text-primary");
       link.classList.add("text-muted-foreground");
     }
   }
@@ -337,6 +343,8 @@ window.navigatePublic = navigatePublic;
 
 // Init block sorter on initial page load
 initBlockSorter();
+initEpisodePlayers();
+initPublicNavScroll();
 
 window.addEventListener("popstate", () => {
   if (window.location.pathname.startsWith("/admin") && hasAdminContent()) {
@@ -364,4 +372,35 @@ window.addEventListener("popstate", () => {
       });
     }
   }
+});
+
+// Brutalist nav scroll collapse
+function initPublicNavScroll() {
+  const nav = document.querySelector(".public-nav");
+  if (!nav) return;
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 80) {
+      nav.setAttribute("data-scrolled", "");
+    } else {
+      nav.removeAttribute("data-scrolled");
+    }
+  }, { passive: true });
+}
+
+// Search form SPA interception
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement)) return;
+  if (!form.matches("[data-public-search]")) return;
+  if (!hasPublicContent()) return;
+
+  event.preventDefault();
+  const url = new URL(form.action, window.location.href);
+  const formData = new FormData(form);
+  for (const [key, value] of formData.entries()) {
+    url.searchParams.set(key, value);
+  }
+  void navigatePublic(url.toString()).catch(() => {
+    window.location.assign(url.toString());
+  });
 });

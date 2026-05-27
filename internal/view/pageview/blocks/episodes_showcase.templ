@@ -23,7 +23,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 			</div>
 			if len(episodes) > 0 {
 				if content.DisplayMode == "list" {
-					<div class="space-y-4 max-w-4xl mx-auto">
+					<div class="max-w-4xl mx-auto">
 						for _, ep := range episodes {
 							@episodeListItem(ep)
 						}
@@ -36,7 +36,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 					</div>
 				}
 			} else {
-				<div class="text-center py-12 rounded-xl border border-dashed">
+				<div class="text-center py-12 border border-dashed">
 					<p class="text-muted-foreground">No episodes yet. Check back soon!</p>
 				</div>
 			}
@@ -45,7 +45,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 }
 
 templ episodeCard(ep *domain.Episode) {
-	<div class="rounded-xl border overflow-hidden hover:shadow-md transition-shadow">
+	<div class="border overflow-hidden hover:shadow-md transition-shadow">
 		<div class="aspect-video bg-muted flex items-center justify-center">
 			if ep.CoverImageURL != "" {
 				<img src={ ep.CoverImageURL } alt={ ep.Title } class="w-full h-full object-cover"/>
@@ -67,23 +67,34 @@ templ episodeCard(ep *domain.Episode) {
 }
 
 templ episodeListItem(ep *domain.Episode) {
-	<div class="flex gap-4 p-4 rounded-xl border hover:shadow-md transition-shadow">
-		<div class="w-28 h-28 shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-			if ep.CoverImageURL != "" {
-				<img src={ ep.CoverImageURL } alt={ ep.Title } class="w-full h-full object-cover"/>
-			} else {
-				@icon.Lucide("mic", "size-8 text-muted-foreground/50")
+	<div class="border-b border-border/40 py-5 group"
+		data-episode-player
+		data-audio-src={ ep.AudioSourceURL }>
+		<div class="flex items-center gap-4">
+			if ep.AudioSourceURL != "" {
+				<button data-episode-play
+					type="button"
+					class="shrink-0 w-6 h-6 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer"
+					aria-label="Play episode">
+					@icon.Lucide("play", "size-4")
+				</button>
 			}
-		</div>
-		<div class="flex-1 min-w-0">
-			<p class="text-xs text-muted-foreground mb-1">Episode { fmt.Sprintf("%d", ep.EpisodeNumber) }</p>
-			<h3 class="font-semibold text-foreground truncate">{ ep.Title }</h3>
-			if ep.Description != "" {
-				<p class="mt-1 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
-			}
+			<span class="text-xs text-muted-foreground font-mono tabular-nums w-6 shrink-0">
+				{ fmt.Sprintf("%02d", ep.EpisodeNumber) }
+			</span>
+			<div class="flex-1 min-w-0">
+				<h3 class="text-foreground truncate group-hover:text-primary transition-colors">{ ep.Title }</h3>
+			</div>
 			if ep.Duration > 0 {
-				<p class="mt-2 text-xs text-muted-foreground">{ formatDuration(ep.Duration) }</p>
+				<span data-episode-time class="text-xs text-muted-foreground font-mono tabular-nums shrink-0">
+					{ formatDuration(ep.Duration) }
+				</span>
 			}
 		</div>
+		if ep.AudioSourceURL != "" {
+			<div class="ml-10 mt-3 h-5">
+				<div data-episode-waveform class="w-full h-full"></div>
+			</div>
+		}
 	</div>
 }

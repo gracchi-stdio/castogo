@@ -22,4 +22,5 @@ type EpisodeRepository interface {
 	CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error)
 	ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error)
 	GetMaxEpisodeNumber(ctx context.Context) (int, error)
+	SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error)
 }

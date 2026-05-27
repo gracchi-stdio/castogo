@@ -12,6 +12,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/authview"
 	"github.com/gracchi-stdio/castogo/internal/view/layout"
 	"github.com/gracchi-stdio/castogo/internal/view/pageview"
+	"github.com/gracchi-stdio/castogo/internal/view/searchview"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
@@ -40,6 +41,9 @@ func NewPublicHandler(
 func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	// Public home page
 	e.GET("/", h.homePage)
+
+	// Search (before wildcard)
+	e.GET("/search", h.searchPage)
 
 	// RSS Feed (public)
 	e.GET("/feed/podcast.xml", h.RSSFeed)
@@ -81,7 +85,7 @@ func (h *PublicHandler) homePage(c echo.Context) error {
 		Page:     pwb.Page,
 		Blocks:   toBlocks(pwb.Blocks),
 		Episodes: episodes,
-		Nav:      buildPublicNav(c),
+		Nav:      h.buildPublicNav(c),
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -114,7 +118,7 @@ func (h *PublicHandler) pageResolver(c echo.Context) error {
 		Page:     pwb.Page,
 		Blocks:   toBlocks(pwb.Blocks),
 		Episodes: episodes,
-		Nav:      buildPublicNav(c),
+		Nav:      h.buildPublicNav(c),
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -162,15 +166,65 @@ func (h *PublicHandler) logout(c echo.Context) error {
 	return nil
 }
 
-func buildPublicNav(c echo.Context) *layout.PublicLayoutData {
+func (h *PublicHandler) buildPublicNav(c echo.Context) *layout.PublicLayoutData {
+	pages, err := h.pageService.GetTopLevelPublished(c.Request().Context())
+	if err != nil {
+		pages = nil
+	}
+
+	var navLinks []layout.NavLink
+	for _, p := range pages {
+		url := "/" + p.Path
+		if p.Path == "" {
+			url = "/"
+		}
+		navLinks = append(navLinks, layout.NavLink{
+			Label: p.Title,
+			URL:   url,
+		})
+	}
+
 	return &layout.PublicLayoutData{
 		NavData: &layout.PublicNavbarData{
-			NavLinks: []layout.NavLink{
-				{Label: "Home", URL: "/"},
-				{Label: "Episodes", URL: "/episodes"},
-			},
+			NavLinks: navLinks,
 		},
 	}
+}
+
+func (h *PublicHandler) searchPage(c echo.Context) error {
+	query := strings.TrimSpace(c.QueryParam("q"))
+	searchType := c.QueryParam("type")
+	if searchType == "" {
+		searchType = "all"
+	}
+
+	var pages []*domain.Page
+	var episodes []*domain.Episode
+
+	if query != "" {
+		if searchType == "all" || searchType == "pages" {
+			results, err := h.pageService.SearchPublished(c.Request().Context(), query, 20, 0)
+			if err == nil {
+				pages = results
+			}
+		}
+		if searchType == "all" || searchType == "episodes" {
+			results, err := h.episodesService.SearchPublished(c.Request().Context(), query, 20, 0)
+			if err == nil {
+				episodes = results
+			}
+		}
+	}
+
+	data := &searchview.SearchPageData{
+		Query:    query,
+		Type:     searchType,
+		Pages:    pages,
+		Episodes: episodes,
+		Nav:      h.buildPublicNav(c),
+	}
+
+	return echo.WrapHandler(templ.Handler(searchview.SearchPage(data)))(c)
 }
 
 func toBlocks(blocks []*domain.PageBlock) []domain.PageBlock {

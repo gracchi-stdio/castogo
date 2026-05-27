@@ -23,4 +23,8 @@ type PageRepository interface {
 	UpdateBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error)
 	DeleteBlock(ctx context.Context, id int64) error
 	UpdateBlockOrder(ctx context.Context, id int64, sortOrder int) error
+
+	// Navigation
+	GetTopLevelPublished(ctx context.Context) ([]*domain.Page, error)
+	SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Page, error)
 }

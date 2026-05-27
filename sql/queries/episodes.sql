@@ -55,3 +55,12 @@ DELETE FROM episodes WHERE id = $1;
 
 -- name: GetMaxEpisodeNumber :one
 SELECT COALESCE(MAX(episode_number), 0)::bigint FROM episodes;
+
+-- name: SearchPublishedEpisodes :many
+SELECT * FROM episodes
+WHERE published_at IS NOT NULL
+  AND published_at <= NOW()
+  AND archived_at IS NULL
+  AND (title ILIKE '%' || @search || '%' OR description ILIKE '%' || @search || '%')
+ORDER BY published_at DESC
+LIMIT @page_limit OFFSET @page_offset;

@@ -223,6 +223,17 @@ func (s *PageService) ReorderBlocks(ctx context.Context, pageID int64, blockIDs 
 	return nil
 }
 
+func (s *PageService) GetTopLevelPublished(ctx context.Context) ([]*domain.Page, error) {
+	return s.page.GetTopLevelPublished(ctx)
+}
+
+func (s *PageService) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Page, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	return s.page.SearchPublished(ctx, query, limit, offset)
+}
+
 func applyUpdates(existing *domain.Page, input UpdatePageInput) *domain.Page {
 	p := &domain.Page{
 		ID:          existing.ID,

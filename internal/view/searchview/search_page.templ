@@ -1,0 +1,129 @@
+package searchview
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+type SearchPageData struct {
+	Query    string
+	Type     string
+	Pages    []*domain.Page
+	Episodes []*domain.Episode
+	Nav      *layout.PublicLayoutData
+}
+
+func tabClass(active bool) string {
+	if active {
+		return "font-mono text-xs uppercase tracking-widest text-primary transition-colors"
+	}
+	return "font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+}
+
+templ SearchPage(data *SearchPageData) {
+	@layout.PublicLayout(data.Nav) {
+		<section class="py-16">
+			<div class="mx-auto max-w-4xl px-6">
+				<form action="/search" method="GET" data-public-search class="mb-12">
+					<div class="flex border-2 border-border">
+						<input
+							type="text"
+							name="q"
+							value={ data.Query }
+							placeholder="SEARCH..."
+							class="public-search-input flex-1 w-full border-none"
+							autocomplete="off"
+						/>
+						<button type="submit" class="px-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+							@icon.Lucide("search", "size-5")
+						</button>
+					</div>
+				</form>
+
+				if data.Query != "" {
+					<div class="flex items-center gap-4 mb-8 border-b border-border pb-4">
+						<a href={ templ.SafeURL("/search?q=" + data.Query + "&type=all") }
+							class={ tabClass(data.Type == "all") }>
+							All
+						</a>
+						<span class="text-muted-foreground">|</span>
+						<a href={ templ.SafeURL("/search?q=" + data.Query + "&type=pages") }
+							class={ tabClass(data.Type == "pages") }>
+							Pages
+						</a>
+						<span class="text-muted-foreground">|</span>
+						<a href={ templ.SafeURL("/search?q=" + data.Query + "&type=episodes") }
+							class={ tabClass(data.Type == "episodes") }>
+							Episodes
+						</a>
+					</div>
+
+					if len(data.Pages) == 0 && len(data.Episodes) == 0 {
+						<p class="font-mono text-sm text-muted-foreground uppercase tracking-widest">
+							No results for "{ data.Query }"
+						</p>
+					}
+
+					if len(data.Pages) > 0 {
+						<div class="mb-8">
+							if data.Type == "all" {
+								<h3 class="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-4">Pages</h3>
+							}
+							for _, page := range data.Pages {
+								@searchPageResult(page)
+							}
+						</div>
+					}
+
+					if len(data.Episodes) > 0 {
+						<div>
+							if data.Type == "all" {
+								<h3 class="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-4">Episodes</h3>
+							}
+							for _, ep := range data.Episodes {
+								@searchEpisodeResult(ep)
+							}
+						</div>
+					}
+				} else {
+					<p class="font-mono text-sm text-muted-foreground uppercase tracking-widest">
+						Type to search
+					</p>
+				}
+			</div>
+		</section>
+	}
+}
+
+templ searchPageResult(page *domain.Page) {
+	{{
+		url := "/" + page.Path
+		if page.Path == "" {
+			url = "/"
+		}
+	}}
+	<a href={ templ.SafeURL(url) } data-public-nav-link class="block border-b border-border/40 py-4 group">
+		<div class="flex items-center gap-3">
+			<span class="font-mono text-xs uppercase tracking-widest text-muted-foreground">PAGE</span>
+		</div>
+		<h3 class="text-foreground group-hover:text-primary transition-colors">{ page.Title }</h3>
+		if page.Metadata.MetaDescription != "" {
+			<p class="mt-1 text-sm text-muted-foreground line-clamp-2">{ page.Metadata.MetaDescription }</p>
+		}
+	</a>
+}
+
+templ searchEpisodeResult(ep *domain.Episode) {
+	<a href={ templ.SafeURL("/episodes/" + ep.Slug) } data-public-nav-link class="block border-b border-border/40 py-4 group">
+		<div class="flex items-center gap-3">
+			<span class="font-mono text-xs uppercase tracking-widest text-muted-foreground">EP { fmt.Sprintf("%d", ep.EpisodeNumber) }</span>
+		</div>
+		<h3 class="text-foreground group-hover:text-primary transition-colors">{ ep.Title }</h3>
+		if ep.Description != "" {
+			<p class="mt-1 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
+		}
+	</a>
+}

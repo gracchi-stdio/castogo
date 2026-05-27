@@ -199,3 +199,31 @@ func toDomainPageBlock(b *db.PageBlock) *domain.PageBlock {
 func ptrInt32(v int32) *int32 {
 	return &v
 }
+
+func (r *PageRepo) GetTopLevelPublished(ctx context.Context) ([]*domain.Page, error) {
+	pages, err := r.q.GetPublishedTopLevelPages(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*domain.Page, len(pages))
+	for i := range pages {
+		result[i] = toDomainPage(&pages[i])
+	}
+	return result, nil
+}
+
+func (r *PageRepo) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Page, error) {
+	pages, err := r.q.SearchPublishedPages(ctx, db.SearchPublishedPagesParams{
+		Search:     &query,
+		PageLimit:  int32(limit),
+		PageOffset: int32(offset),
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*domain.Page, len(pages))
+	for i := range pages {
+		result[i] = toDomainPage(&pages[i])
+	}
+	return result, nil
+}

@@ -167,3 +167,19 @@ func (r *EpisodeRepo) GetMaxEpisodeNumber(ctx context.Context) (int, error) {
 	}
 	return int(max), nil
 }
+
+func (r *EpisodeRepo) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error) {
+	results, err := r.q.SearchPublishedEpisodes(ctx, db.SearchPublishedEpisodesParams{
+		Search:     &query,
+		PageLimit:  int32(limit),
+		PageOffset: int32(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("search published episodes: %w", err)
+	}
+	episodes := make([]*domain.Episode, len(results))
+	for i, result := range results {
+		episodes[i] = toDomainEpisode(&result)
+	}
+	return episodes, nil
+}
