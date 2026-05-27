@@ -4,9 +4,11 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	"github.com/gracchi-stdio/castogo/internal/view/components/sheet"
+	"github.com/gracchi-stdio/castogo/internal/view/utils"
 )
 
 type PublicNavbarData struct {
+	Title    string
 	CTAhref  string
 	CTAtext  string
 	NavLinks []NavLink
@@ -18,10 +20,19 @@ type NavLink struct {
 }
 
 templ PublicNavbar(data *PublicNavbarData) {
+	{{
+		brandTitle := config.Cfg.AppName
+		if data != nil && data.Title != "" {
+			brandTitle = data.Title
+		}
+		brandHTML := utils.RenderBrandTokens(brandTitle)
+	}}
 	<nav class="public-nav sticky top-0 z-50 bg-background border-b-2 border-border">
 		<!-- Row 1: Brand + Search (desktop) -->
 		<div class="public-nav-row1 mx-auto max-w-6xl flex items-center justify-between px-6 py-3">
-			<a href="/" class="text-xl font-bold text-foreground font-heading">{ config.Cfg.AppName }</a>
+			<a href="/" class="public-logo text-xl font-bold text-foreground">
+				@templ.Raw(brandHTML)
+			</a>
 
 			<!-- Desktop search -->
 			<form action="/search" method="GET" data-public-search class="hidden md:flex items-center">
@@ -76,7 +87,9 @@ templ PublicNavbar(data *PublicNavbarData) {
 		@sheet.SheetContent(sheet.SheetContentArgs{SheetID: "mobile-nav-sheet"}) {
 			@sheet.SheetHeader(sheet.SheetHeaderArgs{}) {
 				@sheet.SheetTitle(sheet.SheetTitleArgs{}) {
-					{ config.Cfg.AppName }
+					<span class="public-logo text-foreground">
+						@templ.Raw(brandHTML)
+					</span>
 				}
 			}
 

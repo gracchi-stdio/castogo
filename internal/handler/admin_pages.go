@@ -436,6 +436,7 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 		content["cta_text"] = get("cta_text")
 		content["cta_url"] = get("cta_url")
 		content["background_image"] = get("background_image")
+		content["overlay_opacity"] = get("overlay_opacity")
 	case "cta":
 		content["headline"] = get("headline")
 		content["description"] = get("description")

@@ -16,10 +16,17 @@ type PageData struct {
 	Blocks   []domain.PageBlock
 	Episodes []*domain.Episode
 	Nav      *layout.PublicLayoutData
+	Settings domain.PodcastConfig
 }
 
 templ PageView(data *PageData) {
-	@layout.PublicLayout(data.Nav) {
+	{{
+		publicLayoutData := layout.PublicLayoutData{
+			NavData: data.Nav.NavData,
+			Settings: &layout.SettingsArgs{Title: data.Settings.Title},
+		}
+	}}
+	@layout.PublicLayout(&publicLayoutData) {
 		for _, block := range data.Blocks {
 			switch block.BlockType {
 			case "hero":

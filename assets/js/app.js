@@ -7,6 +7,7 @@ import { initEpisodePlayers, destroyActivePlayer } from "./episode-player.js";
 import "../css/app.css";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/playfair-display";
+import "@fontsource/oswald";
 
 const SKIPPED_TRANSITION_MESSAGE = "Transition was skipped";
 const ADMIN_CONTENT_SELECTOR = "[data-admin-content]";

@@ -6,6 +6,7 @@ type HeroContent struct {
 	CTAText         string `json:"cta_text"`
 	CTAURL          string `json:"cta_url"`
 	BackgroundImage string `json:"background_image"`
+	OverlayOpacity  string `json:"overlay_opacity"`
 }
 
 type FeaturesContent struct {

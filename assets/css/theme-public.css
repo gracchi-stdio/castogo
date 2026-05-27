@@ -1,5 +1,44 @@
 @layer base {
     .theme-public {
+        --background: 32 45% 97%;
+        --foreground: 230 25% 12%;
+        --card: 32 45% 99%;
+        --card-foreground: 230 25% 12%;
+        --popover: 32 45% 99%;
+        --popover-foreground: 230 25% 12%;
+        --primary: 0 78% 48%;
+        --primary-foreground: 32 45% 96%;
+        --secondary: 28 30% 92%;
+        --secondary-foreground: 230 25% 12%;
+        --muted: 28 25% 92%;
+        --muted-foreground: 230 12% 40%;
+        --accent: 0 55% 90%;
+        --accent-foreground: 230 25% 14%;
+        --destructive: 0 74% 48%;
+        --destructive-foreground: 32 45% 96%;
+        --border: 28 18% 82%;
+        --input: 28 18% 82%;
+        --ring: 0 78% 48%;
+        --radius: 0rem;
+        --chart-1: 0 78% 48%;
+        --chart-2: 42 85% 50%;
+        --chart-3: 200 65% 42%;
+        --chart-4: 260 60% 55%;
+        --chart-5: 120 45% 42%;
+        --sidebar-background: 32 45% 96%;
+        --sidebar-foreground: 230 12% 36%;
+        --sidebar-primary: 0 78% 48%;
+        --sidebar-primary-foreground: 32 45% 96%;
+        --sidebar-accent: 28 25% 92%;
+        --sidebar-accent-foreground: 230 25% 12%;
+        --sidebar-border: 28 18% 80%;
+        --sidebar-ring: 0 78% 48%;
+
+        --font-heading:
+            "Playfair Display Variable", "Playfair Display", Georgia, serif;
+    }
+
+    .dark .theme-public {
         --background: 225 18% 8%;
         --foreground: 210 20% 96%;
         --card: 225 18% 12%;
@@ -33,8 +72,5 @@
         --sidebar-accent-foreground: 210 20% 96%;
         --sidebar-border: 225 12% 20%;
         --sidebar-ring: 0 82% 58%;
-
-        --font-heading:
-            "Playfair Display Variable", "Playfair Display", Georgia, serif;
     }
 }

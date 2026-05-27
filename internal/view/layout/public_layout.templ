@@ -1,12 +1,21 @@
 package layout
 
-import "github.com/gracchi-stdio/castogo/internal/config"
+import "github.com/gracchi-stdio/castogo/internal/view/utils"
 
 type PublicLayoutData struct {
 	NavData *PublicNavbarData
+	Settings *SettingsArgs
 }
 
 templ PublicLayout(data *PublicLayoutData) {
+	{{
+		footerTitle := "Podcast"
+		if data != nil && data.Settings != nil && data.Settings.Title != "" {
+			footerTitle = data.Settings.Title
+		}
+		footerLine := footerTitle + ". All rights reserved."
+		footerHTML := utils.RenderBrandTokens(footerLine)
+	}}
 	@BaseLayout("theme-public") {
 		<div class="min-h-screen flex flex-col">
 			@PublicNavbar(data.NavData)
@@ -14,7 +23,7 @@ templ PublicLayout(data *PublicLayoutData) {
 				{ children... }
 			</main>
 			<footer class="border-t-2 border-border py-6 text-center text-sm text-muted-foreground">
-				<p>{ config.Cfg.AppName }. All rights reserved.</p>
+				<p>@templ.Raw(footerHTML)</p>
 			</footer>
 		</div>
 	}

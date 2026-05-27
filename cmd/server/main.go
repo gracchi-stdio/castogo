@@ -91,7 +91,7 @@ func main() {
 	pageService := service.NewPageService(pageRepo, episodeRepo)
 
 	// Handlers
-	publicHandler := handler.NewPublicHandler(authService, feedService, pageService, episodeService)
+	publicHandler := handler.NewPublicHandler(authService, feedService, pageService, episodeService, settingsService)
 	publicHandler.RegisterRoutes(e)
 
 	// Admin routes (protected by auth middleware)

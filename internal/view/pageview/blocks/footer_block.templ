@@ -3,17 +3,22 @@ package blocks
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/utils"
 )
 
 templ FooterBlock(content *domain.FooterContent) {
 	<footer class="border-t-2 border-border py-12 bg-background">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="flex flex-col sm:flex-row items-center justify-between gap-6">
-				<p class="text-sm text-muted-foreground">{ content.Copyright }</p>
+				<p class="text-sm text-muted-foreground">
+					@templ.Raw(utils.RenderBrandTokens(content.Copyright))
+				</p>
 				if len(content.Links) > 0 {
 					<div class="flex items-center gap-6">
 						for _, link := range content.Links {
-							<a href={ templ.SafeURL(link.URL) } class="text-sm text-muted-foreground hover:text-primary transition-colors">{ link.Label }</a>
+							<a href={ templ.SafeURL(link.URL) } class="text-sm text-muted-foreground hover:text-primary transition-colors">
+								@templ.Raw(utils.RenderBrandTokens(link.Label))
+							</a>
 						}
 					</div>
 				}

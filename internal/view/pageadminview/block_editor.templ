@@ -163,6 +163,22 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 						Hint:       "Recommended: 1920x1080px, JPG or PNG",
 					})
 				}
+				<div class="space-y-1.5">
+					{{
+						overlayAttrs := bindAttr(pfx, "overlay_opacity")
+						overlayAttrs["min"] = "0"
+						overlayAttrs["max"] = "0.9"
+						overlayAttrs["step"] = "0.05"
+						overlayAttrs["inputmode"] = "decimal"
+					}}
+					@label.Label(label.LabelArgs{}) {
+						Overlay Opacity (0-0.9)
+					}
+					@input.Input(input.InputArgs{
+						Type: "number", Placeholder: "0.5",
+						Class: "w-full", Attributes: overlayAttrs,
+					})
+				</div>
 			</div>
 		case "cta":
 			<div class="space-y-3">
@@ -345,7 +361,7 @@ templ episodesShowcaseEditor(block *domain.PageBlock, pfx string) {
 					{Value: "list", Label: "List"},
 				},
 				Class:    "w-full",
-				OnChange: fmt.Sprintf("$%sdisplay_mode = el.value", pfx),
+				OnChange: fmt.Sprintf("$%sdisplay_mode = $%sdisplay_mode_select.value", pfx, pfx),
 			})
 		</div>
 	</div>
@@ -695,6 +711,7 @@ func blockSignalAttrs(block *domain.PageBlock) templ.Attributes {
 		attrs[sig("cta_text")] = jsSignalVal(content["cta_text"])
 		attrs[sig("cta_url")] = jsSignalVal(content["cta_url"])
 		attrs[sig("background_image")] = jsSignalVal(content["background_image"])
+		attrs[sig("overlay_opacity")] = jsSignalVal(content["overlay_opacity"])
 	case "cta":
 		desc := content["description"]
 		if desc == nil {

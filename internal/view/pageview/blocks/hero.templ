@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
@@ -9,11 +10,26 @@ import (
 )
 
 templ HeroBlock(content *domain.HeroContent) {
-	{{ bg := strings.Trim(content.BackgroundImage, "'\"") }}
+	{{
+		bg := strings.Trim(content.BackgroundImage, "'\"")
+		overlay := strings.Trim(content.OverlayOpacity, "'\"")
+		overlayOpacity := 0.5
+		if overlay != "" {
+			if v, err := strconv.ParseFloat(overlay, 64); err == nil {
+				if v < 0 {
+					v = 0
+				}
+				if v > 0.9 {
+					v = 0.9
+				}
+				overlayOpacity = v
+			}
+		}
+	}}
 	<section class="relative overflow-hidden border-b-2 border-border">
 		if bg != "" {
 			<div class="absolute inset-0 bg-cover bg-center" style={ fmt.Sprintf("background-image: url(%s)", bg) }>
-				<div class="absolute inset-0 bg-black/50"></div>
+				<div class="absolute inset-0 bg-black" style={ fmt.Sprintf("opacity: %.2f", overlayOpacity) }></div>
 			</div>
 		}
 		<div class={ "relative mx-auto max-w-4xl px-6 py-24 text-center", ternary(bg == "", "bg-background", "") }>

@@ -22,6 +22,7 @@ type PublicHandler struct {
 	feedService     *service.FeedService
 	pageService     *service.PageService
 	episodesService *service.EpisodeService
+	settingsService *service.SettingsService
 }
 
 func NewPublicHandler(
@@ -29,12 +30,14 @@ func NewPublicHandler(
 	feedService *service.FeedService,
 	pageService *service.PageService,
 	episodesService *service.EpisodeService,
+	settingsService *service.SettingsService,
 ) *PublicHandler {
 	return &PublicHandler{
 		auth:            auth,
 		feedService:     feedService,
 		pageService:     pageService,
 		episodesService: episodesService,
+		settingsService: settingsService,
 	}
 }
 
@@ -81,11 +84,17 @@ func (h *PublicHandler) homePage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}
 
+	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
+	}
+
 	data := &pageview.PageData{
 		Page:     pwb.Page,
 		Blocks:   toBlocks(pwb.Blocks),
 		Episodes: episodes,
 		Nav:      h.buildPublicNav(c),
+		Settings: *settings,
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -114,11 +123,17 @@ func (h *PublicHandler) pageResolver(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}
 
+	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
+	}
+
 	data := &pageview.PageData{
 		Page:     pwb.Page,
 		Blocks:   toBlocks(pwb.Blocks),
 		Episodes: episodes,
 		Nav:      h.buildPublicNav(c),
+		Settings: *settings,
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -172,6 +187,11 @@ func (h *PublicHandler) buildPublicNav(c echo.Context) *layout.PublicLayoutData 
 		pages = nil
 	}
 
+	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
+	if err != nil {
+		settings = nil
+	}
+
 	var navLinks []layout.NavLink
 	for _, p := range pages {
 		url := "/" + p.Path
@@ -184,11 +204,15 @@ func (h *PublicHandler) buildPublicNav(c echo.Context) *layout.PublicLayoutData 
 		})
 	}
 
-	return &layout.PublicLayoutData{
-		NavData: &layout.PublicNavbarData{
-			NavLinks: navLinks,
-		},
+	navData := &layout.PublicNavbarData{
+		NavLinks: navLinks,
 	}
+	data := &layout.PublicLayoutData{NavData: navData}
+	if settings != nil {
+		data.Settings = &layout.SettingsArgs{Title: settings.Title}
+		navData.Title = settings.Title
+	}
+	return data
 }
 
 func (h *PublicHandler) searchPage(c echo.Context) error {
