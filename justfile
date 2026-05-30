@@ -63,6 +63,11 @@ run: build
 run: build
 	./bin/castogo
 
+# Build assets and run server in production mode (no Vite dev server)
+[unix]
+prod: build
+	ENV=production ./bin/castogo
+
 # Run tests
 test:
 	go test -v ./... -count=1

@@ -14,11 +14,16 @@ import (
 templ LoginPage() {
 	@layout.BaseLayout("") {
 		<main class="min-h-screen grid sm:grid-cols-2 grid-cols-1 place-items-center p-4 gap-4">
-			<div class="flex justify-center items-center flex-wrap gap-4">
+			<div class="flex justify-center items-center flex-wrap gap-6">
 				@brand.Mascot("size-42")
-				<h1 class="text-5xl font-bold">{ config.Cfg.AppName }</h1>
+				<div class="flex flex-col space-y-4">
+					<h1 class="text-5xl font-bold">{ config.Cfg.AppName }</h1>
+					<p class="text-lg text-muted-foreground max-w-sm text-sm">
+						A <a href="https://go.dev/" class="text-primary hover:underline" target="_blank">Go lang</a> CMS for podcasters who want to own their content and data without sacrificing ease of use.	
+					</p>
+				</div>
 			</div>
-			<div class="w-full max-w-sm" data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
+			<div class="w-full max-w-sm justify-self-start" data-signals:email="''" data-signals:password="''" data-signals:error="''" data-signals:email_error="''" data-signals:password_error="''">
 				<div
 					data-show="$error != ''"
 					data-text="$error"

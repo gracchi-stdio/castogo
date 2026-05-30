@@ -29,7 +29,7 @@ templ HeroBlock(content *domain.HeroContent) {
 	<section class="relative overflow-hidden border-b-2 border-border">
 		if bg != "" {
 			<div class="absolute inset-0 bg-cover bg-center" style={ fmt.Sprintf("background-image: url(%s)", bg) }>
-				<div class="absolute inset-0 bg-black" style={ fmt.Sprintf("opacity: %.2f", overlayOpacity) }></div>
+				<div class="absolute inset-0 bg-white dark:bg-black" style={ fmt.Sprintf("opacity: %.2f", overlayOpacity) }></div>
 			</div>
 		}
 		<div class={ "relative mx-auto max-w-4xl px-6 py-24 text-center", ternary(bg == "", "bg-background", "") }>
