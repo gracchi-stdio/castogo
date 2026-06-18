@@ -1,6 +1,6 @@
 package dropdown
 
-import "github.com/coreycole/datastarui/utils"
+import "github.com/gracchi-stdio/castogo/internal/view/utils"
 
 // dropdownMenuVariants generates CSS classes for the main DropdownMenu root component
 func dropdownMenuVariants(className string) string {

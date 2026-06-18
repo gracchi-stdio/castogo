@@ -4,6 +4,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	"github.com/gracchi-stdio/castogo/internal/view/components/sheet"
+	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
 	"github.com/gracchi-stdio/castogo/internal/view/utils"
 )
 
@@ -29,27 +30,15 @@ templ PublicNavbar(data *PublicNavbarData) {
 	}}
 	<nav class="public-nav sticky top-0 z-50 bg-background border-b-2 border-border">
 		<!-- Row 1: Brand + Search (desktop) -->
-		<div class="public-nav-row1 mx-auto max-w-6xl flex items-center justify-between px-6 py-3">
+		<div class="public-nav-row1 mx-auto max-w-6xl flex items-center justify-between px-6 py-4 pt-6">
 			<a href="/" class="public-logo text-xl font-bold text-foreground">
-				@templ.Raw(brandHTML)
+				// @templ.Raw(brandHTML)
+				<img src="/loah-logo.svg" alt="LoAH Logo" class="h-6 w-auto"/>
 			</a>
-
-			<!-- Desktop search -->
-			<form action="/search" method="GET" data-public-search class="hidden md:flex items-center">
-				<div class="flex border-2 border-border">
-					<input
-						type="text"
-						name="q"
-						placeholder="SEARCH..."
-						class="public-search-input border-none w-48"
-						autocomplete="off"
-					/>
-					<button type="submit" class="px-3 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-						@icon.Lucide("search", "size-4")
-					</button>
-				</div>
-			</form>
-
+			<!-- Desktop theme toggle -->
+			<div class="hidden md:block">
+				@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+			</div>
 			<!-- Mobile hamburger -->
 			@sheet.SheetTrigger(sheet.SheetTriggerArgs{
 				SheetID: "mobile-nav-sheet",
@@ -59,7 +48,6 @@ templ PublicNavbar(data *PublicNavbarData) {
 				@icon.Lucide("menu", "size-6")
 			}
 		</div>
-
 		<!-- Row 2: Nav links (desktop) -->
 		if len(data.NavLinks) > 0 {
 			<div class="public-nav-row2 border-t border-border">
@@ -77,7 +65,6 @@ templ PublicNavbar(data *PublicNavbarData) {
 			</div>
 		}
 	</nav>
-
 	<!-- Mobile drawer -->
 	@sheet.Sheet(sheet.SheetArgs{
 		ID:    "mobile-nav-sheet",
@@ -92,7 +79,6 @@ templ PublicNavbar(data *PublicNavbarData) {
 					</span>
 				}
 			}
-
 			<!-- Mobile search -->
 			<form action="/search" method="GET" data-public-search class="mt-6 mb-6">
 				<div class="flex border-2 border-border">
@@ -108,7 +94,6 @@ templ PublicNavbar(data *PublicNavbarData) {
 					</button>
 				</div>
 			</form>
-
 			<!-- Mobile nav links -->
 			if len(data.NavLinks) > 0 {
 				<nav class="flex flex-col">
@@ -122,6 +107,7 @@ templ PublicNavbar(data *PublicNavbarData) {
 						</a>
 					}
 				</nav>
+				@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
 			}
 		}
 	}

@@ -3,7 +3,7 @@ package dropdown
 import (
 	"fmt"
 
-	"github.com/coreycole/datastarui/utils"
+	"github.com/gracchi-stdio/castogo/internal/view/utils"
 )
 
 // DropdownHandler creates handlers for dropdown components
