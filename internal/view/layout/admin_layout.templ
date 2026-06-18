@@ -100,7 +100,7 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 				<!-- Toast notification — outside data-admin-content so it survives SPA nav -->
 				<div
 					data-show="$toast !== ''"
-					class="fixed bottom-4 right-4 z-50 bg-card border rounded-lg px-4 py-3 shadow-lg flex items-center gap-3 transition-all"
+					class="fixed top-4 right-4 z-50 bg-card border rounded-lg px-4 py-3 shadow-lg flex items-center gap-3 transition-all"
 					style="view-transition-name: toast"
 				>
 					<span class="text-sm font-medium" data-text="$toast"></span>

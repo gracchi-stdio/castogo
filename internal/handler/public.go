@@ -152,7 +152,7 @@ func (h *PublicHandler) login(c echo.Context) error {
 	}
 
 	if err := validate.Struct(input); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err))
+		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, input))
 		return nil
 	}
 

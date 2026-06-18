@@ -22,7 +22,7 @@ check-deps:
 
 # Vite dev server (HMR on localhost:3000)
 dev-vite:
-	yarn dev --port 3000
+	bun run dev -- --port 3000
 
 # templ file watcher
 dev-templ:
@@ -48,7 +48,7 @@ css-build:
 
 # Build frontend for production
 frontend-build:
-	yarn build
+	bun run build
 
 # Build the Go binary (runs generate + frontend-build first)
 build: generate frontend-build
@@ -105,5 +105,5 @@ clean:
 	rm -rf bin internal/db tmp public/assets public/.vite
 
 # Install frontend dependencies
-yarn:
-	yarn install
+install:
+	bun install

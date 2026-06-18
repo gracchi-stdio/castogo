@@ -5,7 +5,6 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
-	"github.com/gracchi-stdio/castogo/internal/view/components/fielderror"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
@@ -64,6 +63,7 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 			data-signals:author_email_error="''"
 			data-signals:owner_email_error="''"
 			data-signals:cover_image_url_error="''"
+			data-signals:subcategory_error="''"
 		>
 			@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{
 				ErrorSignal: "error",
@@ -88,7 +88,9 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 								<h3 class="text-lg font-medium mb-4">Podcast Info</h3>
 								<div class="space-y-4">
 									<div class="space-y-2">
-										@label.Label(label.LabelArgs{For: "title"}) {
+										@label.Label(label.LabelArgs{For: "title", Attributes: map[string]any{
+											"data-class:text-destructive": "$title_error != ''",
+										}}) {
 											Title
 										}
 										@input.Input(input.InputArgs{
@@ -98,13 +100,16 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 											Placeholder: "My Awesome Podcast",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-bind:title": "",
-												"data-on:input":   "$title_error = ''",
+												"data-on:input":          "$title = el.value; $title_error = ''",
+												"data-bind:title":        "",
+												"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
 											},
 										})
-										@fielderror.FieldError(fielderror.FieldErrorArgs{
-											Signal: "title_error",
-										})
+										<p
+											data-show="$title_error != ''"
+											data-text="$title_error"
+											class="text-sm text-destructive"
+										></p>
 									</div>
 									<div class="space-y-2">
 										@label.Label(label.LabelArgs{For: "description"}) {
@@ -135,9 +140,11 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 												"data-bind:cover_image_url": "",
 											},
 										})
-										@fielderror.FieldError(fielderror.FieldErrorArgs{
-											Signal: "cover_image_url_error",
-										})
+										<p
+											data-show="$cover_image_url_error != ''"
+											data-text="$cover_image_url_error"
+											class="text-sm text-destructive"
+										></p>
 										// Image preview and upload button
 										<!-- No image: dashed upload area -->
 										<div
@@ -175,7 +182,9 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 										/>
 									</div>
 									<div class="space-y-2">
-										@label.Label(label.LabelArgs{For: "site_url"}) {
+										@label.Label(label.LabelArgs{For: "site_url", Attributes: map[string]any{
+											"data-class:text-destructive": "$site_url_error != ''",
+										}}) {
 											Site URL
 										}
 										@input.Input(input.InputArgs{
@@ -185,12 +194,16 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 											Placeholder: "https://example.com",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-bind:site_url": "",
+												"data-on:input":          "$site_url = el.value; $site_url_error = ''",
+												"data-bind:site_url":     "",
+												"data-attr:aria-invalid": "$site_url_error != '' ? 'true' : ''",
 											},
 										})
-										@fielderror.FieldError(fielderror.FieldErrorArgs{
-											Signal: "site_url_error",
-										})
+										<p
+											data-show="$site_url_error != ''"
+											data-text="$site_url_error"
+											class="text-sm text-destructive"
+										></p>
 									</div>
 									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 										<div class="space-y-2">
@@ -247,7 +260,9 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 											})
 										</div>
 										<div class="space-y-2">
-											@label.Label(label.LabelArgs{For: "author_email"}) {
+											@label.Label(label.LabelArgs{For: "author_email", Attributes: map[string]any{
+												"data-class:text-destructive": "$author_email_error != ''",
+											}}) {
 												Author Email
 											}
 											@input.Input(input.InputArgs{
@@ -257,12 +272,16 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 												Placeholder: "john@example.com",
 												Class:       "w-full",
 												Attributes: map[string]any{
+													"data-on:input":          "$author_email = el.value; $author_email_error = ''",
 													"data-bind:author_email": "",
+													"data-attr:aria-invalid": "$author_email_error != '' ? 'true' : ''",
 												},
 											})
-											@fielderror.FieldError(fielderror.FieldErrorArgs{
-												Signal: "author_email_error",
-											})
+											<p
+												data-show="$author_email_error != ''"
+												data-text="$author_email_error"
+												class="text-sm text-destructive"
+											></p>
 										</div>
 									</div>
 									<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -282,7 +301,9 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 											})
 										</div>
 										<div class="space-y-2">
-											@label.Label(label.LabelArgs{For: "owner_email"}) {
+											@label.Label(label.LabelArgs{For: "owner_email", Attributes: map[string]any{
+												"data-class:text-destructive": "$owner_email_error != ''",
+											}}) {
 												Owner Email
 											}
 											@input.Input(input.InputArgs{
@@ -292,12 +313,16 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 												Placeholder: "john@example.com",
 												Class:       "w-full",
 												Attributes: map[string]any{
-													"data-bind:owner_email": "",
+													"data-on:input":          "$owner_email = el.value; $owner_email_error = ''",
+													"data-bind:owner_email":  "",
+													"data-attr:aria-invalid": "$owner_email_error != '' ? 'true' : ''",
 												},
 											})
-											@fielderror.FieldError(fielderror.FieldErrorArgs{
-												Signal: "owner_email_error",
-											})
+											<p
+												data-show="$owner_email_error != ''"
+												data-text="$owner_email_error"
+												class="text-sm text-destructive"
+											></p>
 										</div>
 									</div>
 								</div>
@@ -323,26 +348,35 @@ templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
 											})
 										</div>
 										// Subcategory
-										<div class="space-y-2" id="subcategory_wrapper">
-											{{
-												subcategoryOptions := GetSubcategoryOptions(category)
-												subLabel := ""
-												if len(subcategoryOptions) == 0 {
-													subLabel = "hidden"
+										<div class="space-y-2">
+											<div id="subcategory_wrapper" class="space-y-2">
+												{{
+													subcategoryOptions := GetSubcategoryOptions(category)
+													subLabel := ""
+													if len(subcategoryOptions) == 0 {
+														subLabel = "hidden"
+													}
+												}}
+												@label.Label(label.LabelArgs{For: "subcategory", Class: subLabel, Attributes: map[string]any{
+													"data-class:text-destructive": "$subcategory_error != ''",
+												}}) {
+													Subcategory
 												}
-											}}
-											@label.Label(label.LabelArgs{For: "subcategory", Class: subLabel}) {
-												Subcategory
-											}
-											@selectcomponent.Select(selectcomponent.SelectArgs{
-												ID:           "subcategory_select",
-												Name:         "subcategory",
-												Placeholder:  "Select subcategory...",
-												Options:      subcategoryOptions,
-												ContentClass: "max-h-32",
-												Value:        subcategory,
-												Disabled:     len(subcategoryOptions) == 0,
-											})
+												@selectcomponent.Select(selectcomponent.SelectArgs{
+													ID:           "subcategory_select",
+													Name:         "subcategory",
+													Placeholder:  "Select subcategory...",
+													Options:      subcategoryOptions,
+													ContentClass: "max-h-32",
+													Value:        subcategory,
+													Disabled:     len(subcategoryOptions) == 0,
+												})
+											</div>
+											<p
+												data-show="$subcategory_error != ''"
+												data-text="$subcategory_error"
+												class="text-sm text-destructive"
+											></p>
 										</div>
 									</div>
 								</div>

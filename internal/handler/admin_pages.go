@@ -63,7 +63,7 @@ func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 	}
 
 	if err := validate.Struct(raw); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err))
+		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
 		return nil
 	}
 
@@ -163,7 +163,7 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 	json.Unmarshal(rawBytes, &raw)
 
 	if err := validate.Struct(raw); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err))
+		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
 		return nil
 	}
 

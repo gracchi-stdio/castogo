@@ -187,13 +187,12 @@ func (s *SelectItemHandler) BuildClickHandler() string {
 	labelExpr := "evt.currentTarget.querySelector('.select-item-text')?.textContent.trim() || ''"
 	valueExpr := fmt.Sprintf("%q", s.value)
 
-	// DOM uses original ID (with hyphens) for data-select-id, but signals use sanitized ID (underscores)
-	domID := strings.ReplaceAll(s.selectID, "_", "-")
-	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = document.querySelector('[data-select-id="%[4]s"] input[name]'); if (input) { input.value = %[2]s; } })()`,
+	// Walk up to the owning select to find its hidden input — robust against ID
+	// naming (underscores vs hyphens) since it doesn't hardcode the DOM id.
+	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = evt.currentTarget.closest('[data-select-id]')?.querySelector('input[name]'); if (input) { input.value = %[2]s; } })()`,
 		s.selectID,
 		valueExpr,
 		labelExpr,
-		domID,
 	)
 
 	if s.onChange != "" {

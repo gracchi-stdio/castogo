@@ -1,0 +1,2 @@
+ALTER TABLE page_blocks
+ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT 'active';

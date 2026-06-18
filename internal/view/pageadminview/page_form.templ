@@ -28,6 +28,7 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 				data-signals:error="''"
 				data-signals:title_error="''"
 				data-signals:slug_error="''"
+				class="h-full"
 			>
 				@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{ErrorSignal: "error"})
 				@tabs.Tabs(tabs.TabsArgs{
@@ -90,6 +91,7 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 				data-signals:error="''"
 				data-signals:title_error="''"
 				data-signals:slug_error="''"
+				class="h-full"
 			>
 				@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{ErrorSignal: "error"})
 				@pageSettingsCard(fd, parentPages)
@@ -189,9 +191,9 @@ templ pageSettingsCard(fd pageFormData, parentPages []*domain.Page) {
 				<!-- Published -->
 				<div class="flex items-center gap-3">
 					@checkbox.Checkbox(checkbox.CheckboxArgs{
-						ID:       "is_published",
-						Name:     "is_published",
-						Checked:  fd.IsPublished,
+						ID:        "is_published",
+						Name:      "is_published",
+						Checked:   fd.IsPublished,
 						ClassName: "data-[state=checked]:bg-primary data-[state=checked]:border-primary",
 					})
 					@label.Label(label.LabelArgs{For: "is_published"}) {

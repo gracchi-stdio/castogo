@@ -59,7 +59,7 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	}
 
 	if err := validate.Struct(input); err != nil {
-		errors := fieldValidationErrors(err)
+		errors := fieldValidationErrors(err, input)
 		errors["uploading"] = ""
 		sse(c).MarshalAndPatchSignals(errors)
 		return nil

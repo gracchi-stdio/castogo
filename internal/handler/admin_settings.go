@@ -64,7 +64,7 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 		OwnerEmail:    c.FormValue("owner_email"),
 	}
 	if err := c.Validate(settingInput); err != nil {
-		errorStruct := fieldValidationErrors(err)
+		errorStruct := fieldValidationErrors(err, settingInput)
 		errorStruct["loading_status"] = ""
 		errorStruct["loading_msg"] = ""
 		sse(c).MarshalAndPatchSignals(errorStruct)
@@ -72,9 +72,9 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 	}
 	if settingInput.Category != "" && !domain.IsValidCategory(settingInput.Category, settingInput.Subcategory) {
 		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error":          "Please choose a valid category and subcategory",
-			"loading_status": "",
-			"loading_msg":    "",
+			"subcategory_error": "Please choose a valid subcategory for this category",
+			"loading_status":    "",
+			"loading_msg":       "",
 		})
 		return nil
 	}

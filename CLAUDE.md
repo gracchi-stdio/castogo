@@ -8,7 +8,7 @@ Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with d
 - Frontend: Tailwind v4 (via Vite), Datastar (runtime), Templ (type-safe HTML templates)
 - Config: `github.com/caarlos0/env/v11` — global `config.Cfg`, `config.Cfg.IsDev`
 - Task runner: `just` (justfile) — run `just` to list commands
-- Frontend build: Vite + Yarn — `just dev` starts Vite HMR + templ watch + air (Go live reload)
+- Frontend build: Vite + Bun — `just dev` starts Vite HMR + templ watch + air (Go live reload)
 
 ## Architecture
 
