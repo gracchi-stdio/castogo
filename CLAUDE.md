@@ -125,14 +125,7 @@ Defined in `internal/domain/errors.go`:
 
 Dev on Ubuntu 24 + Windows 11. Use `filepath.Join()` for paths, Docker for Postgres.
 
-## Shoelace Components
 
-- Shoelace is the UI component library, loaded via CDN in `base_layout.templ`
-- Always prefer Shoelace components over native HTML elements (e.g., `<sl-select>` not `<select>`, `<sl-button>` not `<button>`, `<sl-drawer>` for slide-in panels)
-- Shoelace web components fire custom events (e.g., `sl-change` not `change`) — Datastar's `data-bind` does NOT work with web components out of the box; use `data-on:sl-change` with manual signal wiring
-- `<sl-menu>` is for system menus (dropdowns, context menus). For navigation sidebars, use `<nav>` + `<a>` elements with `<sl-icon>` for icons
-- Use `<sl-drawer>` for mobile slide-in navigation (handles overlay, escape key, backdrop click)
-- Static assets served from `public/` directory via Echo's static middleware (registered LAST in route order)
 
 ## Shared Components (`internal/view/components/`)
 
