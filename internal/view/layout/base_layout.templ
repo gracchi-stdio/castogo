@@ -34,10 +34,10 @@ templ BaseLayout(bodyClass string) {
 			if config.Cfg.IsDev {
 				<!-- Vite dev server: HMR client + app bundle -->
 				<script type="module" src="http://localhost:3000/@vite/client"></script>
-				<script type="module" src="http://localhost:3000/assets/js/app.js"></script>
+				<script type="module" src="http://localhost:3000/assets/js/app.ts"></script>
 			} else {
 				<!-- Production: Vite manifest assets -->
-				{{ productionCSS, productionJS := view.ViteAssets("assets/js/app.js") }}
+				{{ productionCSS, productionJS := view.ViteAssets("assets/js/app.ts") }}
 				for _, cssPath := range productionCSS {
 					<link rel="stylesheet" href={ templ.SafeURL(cssPath) }/>
 				}

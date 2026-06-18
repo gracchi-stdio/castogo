@@ -15,7 +15,7 @@ export default defineConfig({
     emptyOutDir: false,
     outDir: "public",
     rollupOptions: {
-      input: "assets/js/app.js",
+      input: "assets/js/app.ts",
       output: {
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
