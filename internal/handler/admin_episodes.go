@@ -49,7 +49,9 @@ type EpisodeInput struct {
 
 func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	if err := c.Request().ParseMultipartForm(100 << 20); err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to parse form", "uploading": ""})
+		out := sse(c)
+		out.MarshalAndPatchSignals(map[string]string{"uploading": ""})
+		out.ExecuteScript(toastScript("Failed to parse form", "error"))
 		return nil
 	}
 
@@ -84,7 +86,8 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 
 	tmp, err := service.NewTempFile(file, ext)
 	if err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to create temporary file", "uploading": ""})
+		out.MarshalAndPatchSignals(map[string]string{"uploading": ""})
+		out.ExecuteScript(toastScript("Failed to create temporary file", "error"))
 		return nil
 	}
 	defer tmp.Cleanup()
@@ -94,7 +97,8 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	processResult, err := h.audioProcessor.Process(c.Request().Context(), tmp.Path, service.DefaultProcessingOptions())
 	if err != nil {
 		log.Printf("audio processing failed: %v", err)
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to process audio file", "uploading": ""})
+		out.MarshalAndPatchSignals(map[string]string{"uploading": ""})
+		out.ExecuteScript(toastScript("Failed to process audio file", "error"))
 		return nil
 	}
 	defer os.Remove(processResult.OutputPath)
@@ -109,7 +113,8 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 
 	processedFile, err := os.Open(processResult.OutputPath)
 	if err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to open processed audio file", "uploading": ""})
+		out.MarshalAndPatchSignals(map[string]string{"uploading": ""})
+		out.ExecuteScript(toastScript("Failed to open processed audio file", "error"))
 		return nil
 	}
 	defer processedFile.Close()
@@ -117,7 +122,8 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	cdnURL, err := h.storageService.UploadFile(c.Request().Context(), processedFile, filename)
 	if err != nil {
 		log.Printf("upload failed: %v", err)
-		out.MarshalAndPatchSignals(map[string]string{"error": "Failed to upload audio file", "uploading": ""})
+		out.MarshalAndPatchSignals(map[string]string{"uploading": ""})
+		out.ExecuteScript(toastScript("Failed to upload audio file", "error"))
 		return nil
 	}
 
@@ -145,7 +151,8 @@ func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
 	_, err = h.episodeService.Create(c.Request().Context(), episode)
 	if err != nil {
 		log.Printf("create episode failed: %v", err)
-		out.MarshalAndPatchSignals(map[string]string{"error": "Failed to create episode", "uploading": ""})
+		out.MarshalAndPatchSignals(map[string]string{"uploading": ""})
+		out.ExecuteScript(toastScript("Failed to create episode", "error"))
 		return nil
 	}
 
@@ -176,7 +183,8 @@ func (h *AdminHandler) episodeUpdatePublishAt(c echo.Context) error {
 
 	var raw map[string]any
 	if err := readSignals(c, &raw); err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid input"})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Invalid input", "error"))
 		return nil
 	}
 
@@ -191,7 +199,8 @@ func (h *AdminHandler) episodeUpdatePublishAt(c echo.Context) error {
 	if dateValue != "" {
 		t, err := time.Parse("2006-01-02", dateValue)
 		if err != nil {
-			sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid date format"})
+			out := sse(c)
+			out.ExecuteScript(toastScript("Invalid date format", "error"))
 			return nil
 		}
 		publishAt = &t
@@ -203,7 +212,8 @@ func (h *AdminHandler) episodeUpdatePublishAt(c echo.Context) error {
 	})
 	if err != nil {
 		log.Printf("update publish_at failed: %v", err)
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to update publish date"})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to update publish date", "error"))
 		return nil
 	}
 
@@ -218,7 +228,8 @@ func (h *AdminHandler) episodeDelete(c echo.Context) error {
 
 	if err := h.episodeService.Delete(c.Request().Context(), id); err != nil {
 		log.Printf("delete episode failed: %v", err)
-		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Failed to delete episode"})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to delete episode", "error"))
 		return nil
 	}
 

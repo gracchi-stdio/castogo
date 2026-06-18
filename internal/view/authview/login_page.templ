@@ -45,7 +45,9 @@ templ LoginPage() {
 						@card.CardContent(card.CardContentArgs{}) {
 							<div class="space-y-4">
 								<div class="space-y-2">
-									@label.Label(label.LabelArgs{For: "email"}) {
+									@label.Label(label.LabelArgs{For: "email", Attributes: map[string]any{
+										"data-class:text-destructive": "$email_error != ''",
+									}}) {
 										Email
 									}
 									@input.Input(input.InputArgs{
@@ -54,7 +56,8 @@ templ LoginPage() {
 										Name:  "email",
 										Class: "w-full",
 										Attributes: map[string]any{
-											"data-on:input": "$email = el.value; $email_error = ''",
+											"data-on:input":          "$email = el.value; $email_error = ''",
+											"data-attr:aria-invalid": "$email_error != '' ? 'true' : ''",
 										},
 									})
 									<p
@@ -64,7 +67,9 @@ templ LoginPage() {
 									></p>
 								</div>
 								<div class="space-y-2">
-									@label.Label(label.LabelArgs{For: "password"}) {
+									@label.Label(label.LabelArgs{For: "password", Attributes: map[string]any{
+										"data-class:text-destructive": "$password_error != ''",
+									}}) {
 										Password
 									}
 									@input.Input(input.InputArgs{
@@ -73,7 +78,8 @@ templ LoginPage() {
 										Name:  "password",
 										Class: "w-full",
 										Attributes: map[string]any{
-											"data-on:input": "$password = el.value; $password_error = ''",
+											"data-on:input":          "$password = el.value; $password_error = ''",
+											"data-attr:aria-invalid": "$password_error != '' ? 'true' : ''",
 										},
 									})
 									<p

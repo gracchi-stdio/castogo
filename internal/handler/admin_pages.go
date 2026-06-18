@@ -57,9 +57,9 @@ type pageUpdateInput struct {
 func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 	var raw pageCreateInput
 	if err := readSignals(c, &raw); err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Invalid request",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Invalid request", "error"))
+		return nil
 	}
 
 	if err := validate.Struct(raw); err != nil {
@@ -98,13 +98,13 @@ func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 			})
 		}
 		if errors.Is(err, domain.ErrMaxDepth) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"error": "Maximum nesting depth exceeded (2 levels max)",
-			})
+			out := sse(c)
+			out.ExecuteScript(toastScript("Maximum nesting depth exceeded (2 levels max)", "error"))
+			return nil
 		}
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to create page",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to create page", "error"))
+		return nil
 	}
 
 	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit", page.ID)))
@@ -153,9 +153,9 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 
 	var rawSignals map[string]any
 	if err := readSignals(c, &rawSignals); err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Invalid request",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Invalid request", "error"))
+		return nil
 	}
 
 	var raw pageUpdateInput
@@ -203,9 +203,9 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 				"slug_error": "A homepage already exists — only one root page may have an empty slug",
 			})
 		}
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to update page",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to update page", "error"))
+		return nil
 	}
 
 	// Save all blocks
@@ -223,9 +223,7 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 	}
 
 	// Close all block edit modes
-	patchSignals := map[string]any{
-		"error": "",
-	}
+	patchSignals := map[string]any{}
 	if pwb != nil {
 		for _, block := range pwb.Blocks {
 			patchSignals[fmt.Sprintf("block_%d_editing", block.ID)] = false
@@ -243,16 +241,16 @@ func (h *AdminHandler) blockReorderAction(c echo.Context) error {
 
 	var raw map[string]any
 	if err := readSignals(c, &raw); err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Invalid request",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Invalid request", "error"))
+		return nil
 	}
 
 	blockIDsRaw, ok := raw["block_ids"].([]any)
 	if !ok {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Missing block order",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Missing block order", "error"))
+		return nil
 	}
 
 	blockIDs := make([]int64, 0, len(blockIDsRaw))
@@ -263,9 +261,9 @@ func (h *AdminHandler) blockReorderAction(c echo.Context) error {
 	}
 
 	if err := h.pageService.ReorderBlocks(c.Request().Context(), pageID, blockIDs); err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to reorder blocks",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to reorder blocks", "error"))
+		return nil
 	}
 
 	return nil
@@ -346,9 +344,9 @@ func (h *AdminHandler) blockUpdateAction(c echo.Context) error {
 	// Load current blocks first — block type comes from the database (source of truth)
 	pageWithBlocks, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
 	if err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to load page",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to load page", "error"))
+		return nil
 	}
 
 	var currentBlock *domain.PageBlock
@@ -359,32 +357,32 @@ func (h *AdminHandler) blockUpdateAction(c echo.Context) error {
 		}
 	}
 	if currentBlock == nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Block not found",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Block not found", "error"))
+		return nil
 	}
 
 	var raw map[string]any
 	if err := readSignals(c, &raw); err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Invalid request",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Invalid request", "error"))
+		return nil
 	}
 
 	// Build content map based on the block type from the database
 	content := buildBlockContent(blockID, currentBlock.BlockType, raw)
 	contentJSON, err := json.Marshal(content)
 	if err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to encode block content",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to encode block content", "error"))
+		return nil
 	}
 
 	currentBlock.Content = contentJSON
 	if _, err := h.pageService.SaveBlock(c.Request().Context(), currentBlock); err != nil {
-		return sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to save block",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to save block", "error"))
+		return nil
 	}
 
 	// Toggle back to view mode — the saved signal values persist in the frontend
@@ -518,34 +516,30 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 
 func (h *AdminHandler) blockUploadImage(c echo.Context) error {
 	if err := c.Request().ParseMultipartForm(10 << 20); err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to parse form data",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to parse form data", "error"))
 		return nil
 	}
 
 	signalName := c.FormValue("signal_name")
 	if signalName == "" {
-		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Missing signal name",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Missing signal name", "error"))
 		return nil
 	}
 
 	file, header, err := c.Request().FormFile("image_file")
 	if err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Please select a file to upload",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Please select a file to upload", "error"))
 		return nil
 	}
 	defer file.Close()
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
-		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Invalid file type. Please upload a JPG, PNG, or WebP image.",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Invalid file type. Please upload a JPG, PNG, or WebP image.", "error"))
 		return nil
 	}
 
@@ -555,9 +549,8 @@ func (h *AdminHandler) blockUploadImage(c echo.Context) error {
 
 	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
 	if err != nil {
-		sse(c).MarshalAndPatchSignals(map[string]string{
-			"error": "Failed to upload image. Please try again.",
-		})
+		out := sse(c)
+		out.ExecuteScript(toastScript("Failed to upload image. Please try again.", "error"))
 		return nil
 	}
 

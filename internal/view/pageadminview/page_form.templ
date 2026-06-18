@@ -7,7 +7,6 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
-	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
@@ -30,7 +29,6 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 				data-signals:slug_error="''"
 				class="h-full"
 			>
-				@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{ErrorSignal: "error"})
 				@tabs.Tabs(tabs.TabsArgs{
 					ID:           "page_tabs",
 					DefaultValue: defaultTab,
@@ -93,7 +91,6 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 				data-signals:slug_error="''"
 				class="h-full"
 			>
-				@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{ErrorSignal: "error"})
 				@pageSettingsCard(fd, parentPages)
 				<div class="sticky bottom-0 bg-background/95 backdrop-blur border-t py-3 px-4 -mx-4 mb-[-1rem]">
 					<div class="flex justify-end gap-2">

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"reflect"
 	"strconv"
 	"strings"
@@ -99,4 +100,18 @@ func parseInt(s string) int {
 func parseInt64(s string) int64 {
 	v, _ := strconv.ParseInt(s, 10, 64)
 	return v
+}
+
+type toastPayload struct {
+	Message string `json:"message"`
+	Variant string `json:"variant"`
+}
+
+func toastScript(message, variant string) string {
+	payload := toastPayload{Message: message, Variant: variant}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
+	return "window.pushToast(" + string(encoded) + ")"
 }

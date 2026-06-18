@@ -97,19 +97,12 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 						{ children... }
 					</main>
 				</div>
-				<!-- Toast notification — outside data-admin-content so it survives SPA nav -->
+				<!-- Toast stack — outside data-admin-content so it survives SPA nav -->
 				<div
-					data-show="$toast !== ''"
-					class="fixed top-4 right-4 z-50 bg-card border rounded-lg px-4 py-3 shadow-lg flex items-center gap-3 transition-all"
+					id="toast-stack"
+					class="fixed top-4 right-4 z-50 flex flex-col gap-2"
 					style="view-transition-name: toast"
-				>
-					<span class="text-sm font-medium" data-text="$toast"></span>
-					<button
-						type="button"
-						class="text-muted-foreground hover:text-foreground"
-						data-on:click="$toast = ''"
-					>&times;</button>
-				</div>
+				></div>
 			</div>
 		</div>
 	}

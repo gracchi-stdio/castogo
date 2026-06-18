@@ -166,6 +166,7 @@ func (s *SelectContentHandler) BuildKeyboardHandler() string {
 // SelectItemHandler creates handlers for select item functionality
 type SelectItemHandler struct {
 	selectID string
+	domID    string
 	value    string
 	onChange string
 }
@@ -176,6 +177,7 @@ func NewSelectItemHandler(selectID, value, onChange string) *SelectItemHandler {
 	sanitizedID := strings.ReplaceAll(selectID, "-", "_")
 	return &SelectItemHandler{
 		selectID: sanitizedID,
+		domID:    selectID,
 		value:    value,
 		onChange: onChange,
 	}
@@ -187,12 +189,12 @@ func (s *SelectItemHandler) BuildClickHandler() string {
 	labelExpr := "evt.currentTarget.querySelector('.select-item-text')?.textContent.trim() || ''"
 	valueExpr := fmt.Sprintf("%q", s.value)
 
-	// Walk up to the owning select to find its hidden input — robust against ID
-	// naming (underscores vs hyphens) since it doesn't hardcode the DOM id.
-	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = evt.currentTarget.closest('[data-select-id]')?.querySelector('input[name]'); if (input) { input.value = %[2]s; } })()`,
+	// DOM uses the original ID, but signals use the sanitized ID (hyphens -> underscores)
+	base := fmt.Sprintf(`(function(){ $%[1]s.value = %[2]s; $%[1]s.label = %[3]s; $%[1]s.open = false; var input = document.querySelector('[data-select-id="%[4]s"] input[name]'); if (input) { input.value = %[2]s; } })()`,
 		s.selectID,
 		valueExpr,
 		labelExpr,
+		s.domID,
 	)
 
 	if s.onChange != "" {

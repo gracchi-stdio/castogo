@@ -4,7 +4,6 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
-	"github.com/gracchi-stdio/castogo/internal/view/components/errorbanner"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
@@ -40,10 +39,6 @@ templ EpisodeNewPage(data *domain.AdminSharedData) {
 			data-signals:meta_format="''"
 			data-signals:meta_mime_type="''"
 		>
-			<!-- General error banner -->
-			@errorbanner.ErrorBanner(errorbanner.ErrorBannerArgs{
-				ErrorSignal: "error",
-			})
 			@loading.LoadingOverlay(loading.LoadingOverlayArgs{
 				Signal: "uploading",
 				Status: "uploading_status",

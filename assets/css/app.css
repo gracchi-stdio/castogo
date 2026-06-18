@@ -71,6 +71,14 @@
     mix-blend-mode: normal;
 }
 
+.toast-enter {
+    animation: 160ms ease-out both toast-in;
+}
+
+.toast-exit {
+    animation: 160ms ease-in both toast-out;
+}
+
 @keyframes fade-out {
     to {
         opacity: 0;
@@ -80,6 +88,20 @@
 @keyframes fade-in {
     from {
         opacity: 0;
+    }
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+}
+
+@keyframes toast-out {
+    to {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
     }
 }
 

@@ -46,7 +46,7 @@ templ BaseLayout(bodyClass string) {
 				}
 			}
 		</head>
-		<body class={ "min-h-screen bg-background font-sans antialiased" + extraClass } data-signals="{theme: (localStorage.getItem('theme') || 'light'), toast: ''}">
+		<body class={ "min-h-screen bg-background font-sans antialiased" + extraClass } data-signals="{theme: (localStorage.getItem('theme') || 'light')}">
 			{ children... }
 		</body>
 	</html>
