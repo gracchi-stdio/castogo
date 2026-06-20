@@ -14,7 +14,8 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	"github.com/gracchi-stdio/castogo/internal/view/pageadminview"
+	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
+	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
 	"github.com/labstack/echo/v4"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -25,7 +26,7 @@ func (h *AdminHandler) pageList(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load pages")
 	}
 
-	return echo.WrapHandler(templ.Handler(pageadminview.PageListPage(getSharedData(c), pages)))(c)
+	return echo.WrapHandler(templ.Handler(pageform.PageListPage(getSharedData(c), pages)))(c)
 }
 
 func (h *AdminHandler) pageCreatePage(c echo.Context) error {
@@ -34,14 +35,22 @@ func (h *AdminHandler) pageCreatePage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
 	}
 
-	return echo.WrapHandler(templ.Handler(pageadminview.PageFormPage(getSharedData(c), nil, parentPages, nil, false, "")))(c)
+	return echo.WrapHandler(templ.Handler(pageform.Page(getSharedData(c), pageform.Args{
+		ParentPages: parentPages,
+	})))(c)
 }
 
 type pageCreateInput struct {
-	Title    string  `json:"title" validate:"required"`
-	Slug     string  `json:"slug"`
-	Layout   string  `json:"page_layout"`
-	ParentID float64 `json:"parent_id"`
+	Title     string  `json:"title" validate:"required"`
+	Slug      string  `json:"slug"`
+	Layout    string  `json:"page_layout"`
+	ParentID  float64 `json:"parent_id"`
+	ShowInNav struct {
+		Checked bool `json:"checked"`
+	} `json:"show_in_nav"`
+	IsPublished struct {
+		Checked bool `json:"checked"`
+	} `json:"is_published"`
 }
 
 type pageUpdateInput struct {
@@ -135,13 +144,14 @@ func (h *AdminHandler) pageEditPage(c echo.Context) error {
 		defaultTab = "settings"
 	}
 
-	return echo.WrapHandler(templ.Handler(pageadminview.PageFormPage(
+	return echo.WrapHandler(templ.Handler(pageform.Page(
 		getSharedData(c),
-		pageWithBlocks.Page,
-		parentPages,
-		pageWithBlocks.Blocks,
-		true,
-		defaultTab,
+		pageform.Args{
+			Page:        pageWithBlocks.Page,
+			ParentPages: parentPages,
+			Blocks:      pageWithBlocks.Blocks,
+			DefaultTab:  defaultTab,
+		},
 	)))(c)
 }
 
@@ -613,16 +623,16 @@ func (h *AdminHandler) blockAddItemAction(c echo.Context) error {
 	}
 
 	// Re-render items via SSE patch (no full page reload)
-	html, err := pageadminview.RenderItemsFragment(pageID, block, itemType)
+	html, err := blockEditor.RenderItemsFragment(pageID, block, itemType)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render items")
 	}
 
-	containerID := pageadminview.ItemsContainerID(blockID, itemType)
+	containerID := blockEditor.ItemsContainerID(blockID, itemType)
 	signals := map[string]any{
 		fmt.Sprintf("block_%d_editing", blockID): true,
 	}
-	for k, v := range pageadminview.NewItemSignals(block, itemType) {
+	for k, v := range blockEditor.NewItemSignals(block, itemType) {
 		signals[k] = v
 	}
 
@@ -695,16 +705,16 @@ func (h *AdminHandler) blockRemoveItemAction(c echo.Context) error {
 	}
 
 	// Re-render items via SSE patch (no full page reload)
-	html, err := pageadminview.RenderItemsFragment(pageID, block, itemType)
+	html, err := blockEditor.RenderItemsFragment(pageID, block, itemType)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render items")
 	}
 
-	containerID := pageadminview.ItemsContainerID(blockID, itemType)
+	containerID := blockEditor.ItemsContainerID(blockID, itemType)
 	signals := map[string]any{
 		fmt.Sprintf("block_%d_editing", blockID): true,
 	}
-	for k, v := range pageadminview.AllItemSignals(block, itemType) {
+	for k, v := range blockEditor.AllItemSignals(block, itemType) {
 		signals[k] = v
 	}
 
@@ -723,4 +733,17 @@ func toSlice(v any) []any {
 		return nil
 	}
 	return arr
+}
+
+func pageSlugError(err error) map[string]string {
+	switch {
+	case errors.Is(err, domain.ErrReservedSlug):
+		return map[string]string{"slug_error": "This slug is reserved and cannot be used"}
+	case errors.Is(err, domain.ErrDuplicatePath):
+		return map[string]string{"slug_error": "A page with this slug already exists"}
+	case errors.Is(err, domain.ErrHomepageExists):
+		return map[string]string{"slug_error": "A homepage already exists — only one root page may have an empty slug"}
+	}
+
+	return nil
 }
