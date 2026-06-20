@@ -1,4 +1,4 @@
-package pageadminview
+package view
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPages []*domain.Page, blocks []*domain.PageBlock, isEdit bool, defaultTab string) {
 	{{ fd := newPageFormData(page) }}
 	if isEdit {
-		@layout.AdminLayout("Edit Page", shared, pageEditActions()) {
+		@layout.AdminLayout("Edit Page", shared, pageEditActions(), nil) {
 			<div
 				data-signals:title={ fd.TitleSignal() }
 				data-signals:slug={ fd.SlugSignal() }
@@ -27,7 +27,7 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 				data-signals:error="''"
 				data-signals:title_error="''"
 				data-signals:slug_error="''"
-				class="h-full"
+				class="h-full flex flex-col space-y-6 justify-between"
 			>
 				@tabs.Tabs(tabs.TabsArgs{
 					ID:           "page_tabs",
@@ -80,7 +80,7 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 			</div>
 		}
 	} else {
-		@layout.AdminLayout("New Page", shared, pageCreateActions()) {
+		@layout.AdminLayout("New Page", shared, pageCreateActions(), nil) {
 			<div
 				data-signals:title={ fd.TitleSignal() }
 				data-signals:slug={ fd.SlugSignal() }
@@ -89,7 +89,7 @@ templ PageFormPage(shared *domain.AdminSharedData, page *domain.Page, parentPage
 				data-signals:error="''"
 				data-signals:title_error="''"
 				data-signals:slug_error="''"
-				class="h-full"
+				class="h-full flex flex-col space-y-6 justify-between"
 			>
 				@pageSettingsCard(fd, parentPages)
 				<div class="sticky bottom-0 bg-background/95 backdrop-blur border-t py-3 px-4 -mx-4 mb-[-1rem]">

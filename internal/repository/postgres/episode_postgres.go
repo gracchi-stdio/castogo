@@ -183,3 +183,18 @@ func (r *EpisodeRepo) SearchPublished(ctx context.Context, query string, limit, 
 	}
 	return episodes, nil
 }
+
+func (r *EpisodeRepo) UpdateLinkedPageID(ctx context.Context, episodeID int64, pageID *int64) error {
+	return r.q.UpdateEpisodeLinkedPageID(ctx, db.UpdateEpisodeLinkedPageIDParams{
+		ID:           episodeID,
+		LinkedPageID: pageID,
+	})
+}
+
+func (r *EpisodeRepo) GetByLinkedPageID(ctx context.Context, pageID int64) (*domain.Episode, error) {
+	result, err := r.q.GetEpisodeByLinkedPageID(ctx, &pageID)
+	if err != nil {
+		return nil, fmt.Errorf("get episode by linked page ID: %w", err)
+	}
+	return toDomainEpisode(&result), nil
+}

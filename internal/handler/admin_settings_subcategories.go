@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view/settingview"
+	"github.com/gracchi-stdio/castogo/internal/view/forms/settings"
 	"github.com/labstack/echo/v4"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -14,7 +14,7 @@ func (h *AdminHandler) subcategoriesSSE(c echo.Context) error {
 	if selected == "" || selected == "undefined" {
 		selected = ""
 	}
-	options := settingview.GetSubcategoryOptions(category)
+	options := settings.SubcategoryOptions(category)
 	if selected != "" && !domain.IsValidCategory(category, selected) {
 		selected = ""
 	}
@@ -27,7 +27,7 @@ func (h *AdminHandler) subcategoriesSSE(c echo.Context) error {
 	})
 
 	sse(c).PatchElementTempl(
-		settingview.SubcategoryFragment(options, selected),
+		settings.SubcategoryFragment(options, selected),
 		datastar.WithSelectorID("subcategory_wrapper"),
 		datastar.WithModeInner(),
 	)

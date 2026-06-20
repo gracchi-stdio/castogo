@@ -1,0 +1,2 @@
+ALTER TABLE pages
+ADD COLUMN show_in_nav BOOLEAN NOT NULL DEFAULT true;

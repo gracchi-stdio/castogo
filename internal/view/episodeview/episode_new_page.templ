@@ -13,7 +13,7 @@ import (
 )
 
 templ EpisodeNewPage(data *domain.AdminSharedData) {
-	@layout.AdminLayout("New Episode", data, episodeNewActions()) {
+	@layout.AdminLayout("New Episode", data, episodeNewActions(), nil) {
 		<div
 			data-signals:title="''"
 			data-signals:description="''"

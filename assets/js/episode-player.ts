@@ -1,21 +1,34 @@
 import WaveSurfer from "wavesurfer.js";
 
-/** @type {WeakMap<HTMLElement, import('wavesurfer.js').default>} */
-const instances = new WeakMap();
+interface ActivePlayer {
+  ws: WaveSurfer;
+  playBtn: HTMLButtonElement;
+  timeEl: HTMLElement | null;
+  container: HTMLElement;
+}
 
-let active = null; // { ws, playBtn, timeEl, container }
+interface ThemeColors {
+  waveColor: string;
+  progressColor: string;
+}
 
-const PLAY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>`;
-const PAUSE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="4" height="16" rx="0"/><rect x="6" y="4" width="4" height="16" rx="0"/></svg>`;
+const instances = new WeakMap<HTMLElement, WaveSurfer>();
 
-function formatTime(seconds) {
+let active: ActivePlayer | null = null;
+
+const PLAY_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>';
+const PAUSE_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="4" width="4" height="16" rx="0"/><rect x="6" y="4" width="4" height="16" rx="0"/></svg>';
+
+function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function readThemeColors() {
-  const el = document.querySelector(".theme-public") || document.documentElement;
+function readThemeColors(): ThemeColors {
+  const el = document.querySelector(".theme-public") ?? document.documentElement;
   const style = getComputedStyle(el);
   const fg = style.getPropertyValue("--muted-foreground").trim();
   const primary = style.getPropertyValue("--primary").trim();
@@ -25,22 +38,22 @@ function readThemeColors() {
   };
 }
 
-function setIcon(btn, playing) {
+function setIcon(btn: HTMLButtonElement, playing: boolean): void {
   btn.innerHTML = playing ? PAUSE_SVG : PLAY_SVG;
   btn.setAttribute("aria-label", playing ? "Pause episode" : "Play episode");
 }
 
-function pauseActive() {
+function pauseActive(): void {
   if (!active) return;
   active.ws.pause();
   setIcon(active.playBtn, false);
   active = null;
 }
 
-function handleClick(root) {
-  const playBtn = root.querySelector("[data-episode-play]");
-  const waveformEl = root.querySelector("[data-episode-waveform]");
-  const timeEl = root.querySelector("[data-episode-time]");
+function handleClick(root: HTMLElement): void {
+  const playBtn = root.querySelector<HTMLButtonElement>("[data-episode-play]");
+  const waveformEl = root.querySelector<HTMLElement>("[data-episode-waveform]");
+  const timeEl = root.querySelector<HTMLElement>("[data-episode-time]");
   const audioUrl = root.dataset.audioSrc;
   if (!playBtn || !waveformEl || !audioUrl) return;
 
@@ -95,7 +108,7 @@ function handleClick(root) {
       setIcon(playBtn, true);
     });
 
-    ws.on("timeupdate", (currentTime) => {
+    ws.on("timeupdate", (currentTime: number) => {
       if (timeEl) timeEl.textContent = formatTime(currentTime);
     });
 
@@ -113,11 +126,11 @@ function handleClick(root) {
   });
 }
 
-export function initEpisodePlayers() {
-  document.querySelectorAll("[data-episode-player]").forEach(handleClick);
+export function initEpisodePlayers(): void {
+  document.querySelectorAll<HTMLElement>("[data-episode-player]").forEach(handleClick);
 }
 
-export function destroyActivePlayer() {
+export function destroyActivePlayer(): void {
   if (!active) return;
   active.ws.pause();
   setIcon(active.playBtn, false);

@@ -32,7 +32,7 @@ internal/view/               — Templ templates (*_templ.go generated, gitignor
 sql/migrations/              — numbered: 001_, 002_, 003_
 sql/queries/                 — sqlc query source of truth
 assets/                      — frontend source (Vite entry point)
-  ├─ js/app.js               — JS entry point (imports CSS, view transitions logic)
+  ├─ js/                     — TypeScript modules (app.ts entry; see Frontend TS section)
   └─ css/                    — Tailwind v4 CSS (theme tokens, animations)
 public/                      — served statically by Echo (registered LAST)
   ├─ assets/                 — Vite production build output (hashed JS/CSS)
@@ -190,6 +190,29 @@ Public layout wraps content in `<div class="theme-public">`. All Tailwind utilit
 - Production: `vite_assets.go` reads `.vite/manifest.json` to resolve hashed filenames
 - Run `just dev` for dev mode (Vite HMR + templ watch + air), `just frontend-build` for production build
 
+## Frontend TypeScript & SPA Navigation
+
+All frontend code under `assets/js/` is TypeScript under `strict: true` (`tsconfig.json`); `allowJs: false`, `skipLibCheck: true`. Vite uses esbuild for transpile-only — type errors surface via `bunx tsc --noEmit`.
+
+**Module map:**
+- `app.ts` — entry point; Swup setup, hooks, bridge globals, init calls
+- `nav.ts` — admin sidebar + public nav active-link state, public nav scroll-collapse
+- `toast.ts` — class-based `Toast` / `ToastManager`
+- `audio-metadata.ts` — file decode + `audiometadata` CustomEvent dispatch
+- `blocks.ts` — Sortable.js block drag-reorder on page editor
+- `episode-player.ts` — WaveSurfer.js per-episode player on public pages
+- `globals.d.ts` — types for `window.navigateAdmin`, `window.pushToast`, `window.extractAudioMetadata`
+- `types.ts` — shared `ToastOptions` / `ToastVariant`
+
+**Swup + View Transitions:** Swup 4 with `@swup/preload-plugin` and `native: true` (browser View Transitions API). `ignoreVisit` triggers full reload for cross-shell transitions (admin ↔ public — different swap targets) and reserved paths (`/login`, `/logout`, `/register`, `/feed`, `/healthcheck`, `/assets`). Per-visit container narrowing in `visit:start`: admin swaps `[data-swap-title]`, `[data-swap-actions]`, `[data-admin-content]`; public swaps `[data-public-content]`.
+
+**Admin layout swap targets:** Header chrome (sidebar trigger, theme toggle, user dropdown) lives **outside** any swap container in `internal/view/layout/admin_layout.templ` — same status as the sidebar, never re-mounts on SPA nav. Only title, actions slot, and body content animate. Slide animations live in `assets/css/app.css`.
+
+**Backend bridge globals** (typed in `globals.d.ts`, called from Go via `datastar.ExecuteScript` or `data-on:*` attributes):
+- `window.navigateAdmin(url)` — `swup.navigate(url)` (callers: `admin_pages.go`, `admin_episodes.go`)
+- `window.pushToast(opts)` — `toastManager.push(opts)` (from `helpers.go:toastScript`)
+- `window.extractAudioMetadata(el)` — `audio-metadata.ts` (from `episode_new_page.templ`)
+
 ## Datastar + Templ Rules
 
 - Signal values are JS expressions — strings must be quoted: `data-signals:status="'all'"` not `"all"`
@@ -212,8 +235,6 @@ Key rules:
 - Layout types: `landing` (block-based), `text` (simple body) — extensible
 - Max nesting depth: 2 levels
 
-Full plan: `docs/pages-cms-plan.md`
-
 ## CSRF
 
 Not needed yet. `SameSite: Lax` + JSON-only `fetch()` via Datastar provides adequate protection. Add when introducing traditional form endpoints or cross-origin API access.
@@ -229,7 +250,14 @@ Keep mutable admin model separate from read-only feed model. Test the serializat
 
 ## Reference Docs
 
-- `docs/pages-cms-plan.md` — Pages CMS full plan, schema, steps, architecture
+Reference material (general patterns, not castogo-specific implementation):
 - `docs/datastar-reference.md` — Datastar SDK, attributes, expressions, patching, animations
-- `docs/shoelace-drawer-menu-details.md` — Drawer, Menu, Menu Item, Details component reference
-- `docs/open-props-reference.md` — Open Props design tokens, colors, spacing, typography, Shoelace integration
+- `docs/rss-feed-reference.md` — RSS feed architecture
+- `docs/go-testing-reference.md` — Go testing patterns
+- `docs/analytics-log-fetcher.md` — Bunny log fetcher / streaming patterns
+
+Future-work plans (not yet implemented):
+- `docs/audio-processing-plan.md` — FFmpeg audio normalization pipeline
+- `docs/distribution-analytics-plan.md` — RSS + IAB analytics pipeline
+- `docs/phase2-platform-distribution.md` — Platform distribution UI
+- `docs/settings-categories-plan.md` — iTunes category/subcategory cascade

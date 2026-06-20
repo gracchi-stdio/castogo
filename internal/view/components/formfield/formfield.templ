@@ -1,0 +1,45 @@
+package formfield
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+)
+
+// FormField composes FormItem + FormLabel + caller-supplied control + reactive error display.
+// The caller passes the input/control as children. Error display is reactive: it reads
+// `$<ErrorSignal>` from Datastar signals and shows/hides via data-show.
+templ FormField(args FormFieldArgs) {
+	@form.FormItem(form.FormItemArgs{
+		Class:      args.Class,
+		Attributes: args.Attributes,
+	}) {
+		@form.FormLabel(form.FormLabelArgs{
+			For:      args.Name,
+			HasError: args.ErrorSignal != "",
+			Attributes: templ.Attributes{
+				"data-class:text-destructive": fmt.Sprintf("$%s != ''", args.ErrorSignal),
+			},
+		}) {
+			if args.Required {
+				{ args.Label }
+				<span class="text-destructive">*</span>
+			} else {
+				{ args.Label }
+			}
+		}
+		{ children... }
+		if args.Description != "" {
+			@form.FormDescription(form.FormDescriptionArgs{}) {
+				{ args.Description }
+			}
+		}
+		if args.ErrorSignal != "" {
+			<p
+				class="text-destructive text-sm"
+				data-show={ fmt.Sprintf("$%s != ''", args.ErrorSignal) }
+				data-text={ fmt.Sprintf("$%s", args.ErrorSignal) }
+			></p>
+		}
+	}
+}

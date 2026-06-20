@@ -17,7 +17,7 @@ import (
 )
 
 templ EpisodesListPage(shared *domain.AdminSharedData, episodes []*domain.Episode) {
-	@layout.AdminLayout("Episodes", shared, episodesListActions()) {
+	@layout.AdminLayout("Episodes", shared, episodesListActions(), nil) {
 		if len(episodes) > 0 {
 			@episodesList(episodes)
 		} else {

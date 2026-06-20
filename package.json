@@ -9,6 +9,7 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/playfair-display": "^5.2.8",
     "@fontsource/oswald": "^5.2.8",
+    "@swup/preload-plugin": "^3.2.11",
     "@tailwindcss/vite": "^4.3.1",
     "sortablejs": "^1.15.7",
     "swup": "^4.9.2",
@@ -18,10 +19,12 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.20",
+    "@types/sortablejs": "^1.15.9",
     "browserslist": "^4.28.2",
     "lightningcss": "^1.32.0",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
+    "prettier-plugin-templ": "^0.2.2",
     "vite": "^6.4.3"
   }
 }

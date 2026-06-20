@@ -222,14 +222,9 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 		}
 	}
 
-	// Close all block edit modes
-	patchSignals := map[string]any{}
-	if pwb != nil {
-		for _, block := range pwb.Blocks {
-			patchSignals[fmt.Sprintf("block_%d_editing", block.ID)] = false
-		}
-	}
-	sse(c).MarshalAndPatchSignals(patchSignals)
+	// Signal save success — leave block edit modes alone so the user's open
+	// blocks stay open. Toast feedback confirms the save happened.
+	sse(c).ExecuteScript(toastScript("Page saved successfully", "success"))
 	return nil
 }
 
@@ -385,10 +380,8 @@ func (h *AdminHandler) blockUpdateAction(c echo.Context) error {
 		return nil
 	}
 
-	// Toggle back to view mode — the saved signal values persist in the frontend
-	sse(c).MarshalAndPatchSignals(map[string]any{
-		fmt.Sprintf("block_%d_editing", blockID): false,
-	})
+	// Stay in edit mode so the user can keep iterating. Toast confirms the save.
+	sse(c).ExecuteScript(toastScript("Block saved", "success"))
 	return nil
 }
 

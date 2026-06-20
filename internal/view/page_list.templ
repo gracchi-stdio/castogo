@@ -1,4 +1,4 @@
-package pageadminview
+package view
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 )
 
 templ PageListPage(shared *domain.AdminSharedData, pages []*domain.Page) {
-	@layout.AdminLayout("Pages", shared, pageListActions()) {
+	@layout.AdminLayout("Pages", shared, pageListActions(), nil) {
 		if len(pages) > 0 {
 			@pageList(pages)
 		} else {

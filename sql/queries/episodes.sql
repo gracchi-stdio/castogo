@@ -50,6 +50,13 @@ SET title = COALESCE(sqlc.narg('title'), title),
 WHERE id = sqlc.arg('id')
 RETURNING *;
 
+-- name: UpdateEpisodeLinkedPageID :exec
+UPDATE episodes SET linked_page_id = $2, updated_at = NOW()
+WHERE id = $1;
+
+-- name: GetEpisodeByLinkedPageID :one
+SELECT * FROM episodes WHERE linked_page_id = $1;
+
 -- name: DeleteEpisode :exec
 DELETE FROM episodes WHERE id = $1;
 

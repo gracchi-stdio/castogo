@@ -1,0 +1,45 @@
+package formactions
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+)
+
+// FormActions renders the typical sticky-footer action row: optional Cancel link +
+// Submit button bound to a form by ID. Submit button is $fetching-aware via the
+// auto-populated signal from form.Form's data-indicator-fetching attribute.
+templ FormActions(args FormActionsArgs) {
+	{{
+		submitLabel := args.SubmitLabel
+		if submitLabel == "" {
+			submitLabel = "Save"
+		}
+		submittingLabel := args.SubmittingLabel
+		if submittingLabel == "" {
+			submittingLabel = "Saving..."
+		}
+		cancelLabel := args.CancelLabel
+		if cancelLabel == "" {
+			cancelLabel = "Cancel"
+		}
+	}}
+	if args.CancelHref != "" {
+		<a href={ args.CancelHref }>
+			@button.Button(button.ButtonArgs{
+				Variant: "outline",
+				Type:    "button",
+			}) {
+				{ cancelLabel }
+			}
+		</a>
+	}
+	@button.Button(button.ButtonArgs{
+		Type: "submit",
+		Attributes: templ.Attributes{
+			"form":               args.FormID,
+			"data-attr:disabled": "$fetching",
+		},
+	}) {
+		<span data-show="!$fetching">{ submitLabel }</span>
+		<span data-show="$fetching">{ submittingLabel }</span>
+	}
+}

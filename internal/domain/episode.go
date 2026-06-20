@@ -34,6 +34,7 @@ type Episode struct {
 	CoverImageURL  string        `json:"cover_image_url"`
 	AudioSourceURL string        `json:"audio_source_url"`
 	EpisodeNumber  int           `json:"episode_number"`
+	LinkedPageID   *int64        `json:"linked_page_id"`
 	PublishAt      *time.Time    `json:"publish_at,omitempty"`
 	ArchivedAt     *time.Time    `json:"archived_at,omitempty"`
 	CreatedAt      time.Time     `json:"created_at"`

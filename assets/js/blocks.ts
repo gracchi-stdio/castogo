@@ -1,8 +1,8 @@
 import Sortable from "sortablejs";
 
-let sortableInstance = null;
+let sortableInstance: Sortable | null = null;
 
-export function initBlockSorter() {
+export function initBlockSorter(): void {
   if (sortableInstance) {
     sortableInstance.destroy();
     sortableInstance = null;
@@ -18,15 +18,15 @@ export function initBlockSorter() {
     fallbackClass: "sortable-fallback",
     ghostClass: "sortable-ghost",
     chosenClass: "sortable-chosen",
-    onStart: function () {
+    onStart: () => {
       document.body.classList.add("is-dragging");
     },
-    onEnd: function () {
+    onEnd: () => {
       document.body.classList.remove("is-dragging");
 
       const items = list.querySelectorAll("[data-block-id]");
-      const blockIds = Array.from(items).map((el) =>
-        parseInt(el.getAttribute("data-block-id"), 10)
+      const blockIds: number[] = Array.from(items).map((el) =>
+        parseInt(el.getAttribute("data-block-id") ?? "", 10),
       );
 
       const match = window.location.pathname.match(/\/admin\/pages\/(\d+)/);

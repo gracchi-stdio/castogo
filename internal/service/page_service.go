@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"strconv"
 
+	"github.com/gosimple/slug"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/repository"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -283,4 +285,38 @@ func isDuplicateKeyError(err error) bool {
 		return pgErr.Code == "23505"
 	}
 	return false
+}
+
+func (s *PageService) CreateCompanionPage(ctx context.Context, episode *domain.Episode) (*domain.Page, error) {
+	slug := slug.Make(episode.Title)
+	i := 1
+	// Ensure slug is unique
+	for {
+		existing, err := s.page.GetBySlug(ctx, slug)
+		if err != nil {
+			return nil, err
+		}
+		if existing == nil {
+			break
+		}
+		slug = slug + "-" + strconv.Itoa(i)
+		i++
+	}
+
+	// Create page
+	page, err := s.page.Create(ctx, &domain.Page{
+		Title:     episode.Title,
+		Slug:      slug,
+		ShowInNav: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Link episode to page
+	if err := s.episode.UpdateLinkedPageID(ctx, episode.ID, &page.ID); err != nil {
+		return nil, err
+	}
+
+	return page, nil
 }

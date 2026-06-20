@@ -1,10 +1,11 @@
-package settingview
+package settings
 
 import (
-	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
 )
 
+// SubcategoryFragment is the SSE-swapped content for #subcategory_wrapper.
+// Rendered by GET /admin/settings/subcategories when category changes.
 templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs, selected string) {
 	{{
 		labelClass := ""
@@ -12,9 +13,9 @@ templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs, selected s
 			labelClass = "hidden"
 		}
 	}}
-	@label.Label(label.LabelArgs{For: "subcategory", Class: labelClass}) {
+	<label for="subcategory_select" class={ "text-sm font-medium leading-none", labelClass }>
 		Subcategory
-	}
+	</label>
 	@selectcomponent.Select(selectcomponent.SelectArgs{
 		ID:           "subcategory_select",
 		Name:         "subcategory",

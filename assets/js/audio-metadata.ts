@@ -1,16 +1,26 @@
-const CODEC_MAP = {
-  "audio/mpeg": "MP3",
-  "audio/wav": "PCM",
-  "audio/wave": "PCM",
-  "audio/x-wav": "PCM",
-  "audio/mp4": "AAC",
-  "audio/x-m4a": "AAC",
-  "audio/ogg": "Vorbis",
-  "audio/flac": "FLAC",
-  "audio/x-flac": "FLAC",
-};
+// Audio metadata extraction — called from episode_new_page.templ via
+// `data-on:change="window.extractAudioMetadata(el)"`. Decodes the file with
+// AudioContext, then dispatches an `audiometadata` CustomEvent on the input
+// with computed signals (Datastar merges them into the form's signals).
 
-const FORMAT_MAP = {
+interface AudioMetadataDetail {
+  meta_duration: number;
+  meta_sample_rate: number;
+  meta_channel_count: number;
+  meta_bitrate: number;
+  meta_file_size: number;
+  meta_format: string;
+  meta_mime_type: string;
+  audio_duration: string;
+  audio_sample_rate: string;
+  audio_channel_count: string;
+  audio_bitrate: string;
+  audio_format: string;
+  audio_mime_type: string;
+  audio_file_size: string;
+}
+
+const FORMAT_MAP: Record<string, string> = {
   "audio/mpeg": "mp3",
   "audio/wav": "wav",
   "audio/wave": "wav",
@@ -22,14 +32,11 @@ const FORMAT_MAP = {
   "audio/x-flac": "flac",
 };
 
-function getFormat(mimeType) {
-  if (FORMAT_MAP[mimeType]) {
-    return FORMAT_MAP[mimeType];
-  }
-  return "unknown";
+function getFormat(mimeType: string): string {
+  return FORMAT_MAP[mimeType] ?? "unknown";
 }
 
-function formatDuration(sec) {
+function formatDuration(sec: number): string {
   const hours = Math.floor(sec / 3600);
   const minutes = Math.floor((sec % 3600) / 60);
   const seconds = sec % 60;
@@ -39,41 +46,44 @@ function formatDuration(sec) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function formatFileSize(bytes) {
+function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB", "TB"];
+  let value = bytes;
   let i = -1;
   do {
-    bytes /= 1024;
+    value /= 1024;
     i++;
-  } while (bytes >= 1024 && i < units.length - 1);
-  return `${bytes.toFixed(2)} ${units[i]}`;
+  } while (value >= 1024 && i < units.length - 1);
+  return `${value.toFixed(2)} ${units[i]}`;
 }
 
-// main extraction function
-window.extractAudioMetadata = function (el) {
-  const file = el.files[0];
+window.extractAudioMetadata = (el: HTMLInputElement): void => {
+  const file = el.files?.[0];
   if (!file) return;
 
   const fileSize = file.size;
   const mimeType = file.type;
   const format = getFormat(mimeType);
 
-  // decode audio to get duration and sample rate
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const Ctx = window.AudioContext ?? window.webkitAudioContext;
+  if (!Ctx) return;
+  const audioContext = new Ctx();
+
   const reader = new FileReader();
-  reader.onload = function (event) {
-    const arrayBuffer = event.target.result;
+  reader.onload = (event) => {
+    const arrayBuffer = event.target?.result;
+    if (!(arrayBuffer instanceof ArrayBuffer)) return;
+
     audioContext.decodeAudioData(
       arrayBuffer,
-      function (decodedData) {
-        const duration = decodedData.duration;
-        const sampleRate = decodedData.sampleRate;
-        const channelCount = decodedData.numberOfChannels;
+      (decoded) => {
+        const duration = decoded.duration;
+        const sampleRate = decoded.sampleRate;
+        const channelCount = decoded.numberOfChannels;
         const bitrate = Math.round((fileSize * 8) / duration / 1000);
 
-        // dispatch custom event with metadata — handled by data-on:audiometadata in the template
-        const detail = {
+        const detail: AudioMetadataDetail = {
           meta_duration: duration,
           meta_sample_rate: sampleRate,
           meta_channel_count: channelCount,
@@ -82,24 +92,23 @@ window.extractAudioMetadata = function (el) {
           meta_format: format,
           meta_mime_type: mimeType,
           audio_duration: formatDuration(duration),
-          audio_sample_rate: sampleRate.toLocaleString() + " Hz",
+          audio_sample_rate: `${sampleRate.toLocaleString()} Hz`,
           audio_channel_count:
             channelCount === 1
               ? "Mono"
               : channelCount === 2
                 ? "Stereo"
-                : channelCount + " channels",
-          audio_bitrate: bitrate + " kbps",
+                : `${channelCount} channels`,
+          audio_bitrate: `${bitrate} kbps`,
           audio_format: format.toUpperCase(),
           audio_mime_type: mimeType,
           audio_file_size: formatFileSize(fileSize),
         };
 
-        el.dispatchEvent(new CustomEvent('audiometadata', { detail }));
-
-      audioContext.close();
+        el.dispatchEvent(new CustomEvent<AudioMetadataDetail>("audiometadata", { detail }));
+        audioContext.close();
       },
-      function (error) {
+      (error) => {
         console.error("Error decoding audio data:", error);
       },
     );

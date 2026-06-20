@@ -10,7 +10,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
 )
 
-templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Component) {
+templ AdminLayout(title string, data *domain.AdminSharedData, actions, footer templ.Component) {
 	@BaseLayout("") {
 		{{
 			sidebarID := "admin_sidebar"
@@ -51,51 +51,62 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions templ.Comp
 						</div>
 					}
 				}
-				<!-- Main area -->
-				<div class="flex-1 flex flex-col min-w-0" >
+				<!-- Main area: header chrome (toggle, dropdown, sidebar trigger) lives
+				     outside the swap area so it never re-mounts on SPA nav. Only the
+				     title, actions slot, and body are swap targets. -->
+				<div class="flex-1 flex flex-col min-w-0">
 					<header data-admin-header class="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 						@sidebar.SidebarTrigger(sidebar.SidebarTriggerArgs{ID: sidebarID, Class: "md:hidden"})
-						<h2 class="text-lg font-semibold flex-1">{ title }</h2>
-						<div class="flex items-center gap-2">
+						<h2 data-swap-title style="view-transition-name: admin-title" class="text-lg font-semibold flex-1">{ title }</h2>
+						<div data-swap-actions style="view-transition-name: admin-actions" class="flex items-center gap-2">
 							if actions != nil {
 								@actions
 							}
-							@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
-							<!-- User dropdown -->
-							@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
-								@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
-									ID:    "user-menu",
-									Class: "h-8 w-8 rounded-full p-0 inline-flex items-center justify-center bg-primary text-primary-foreground cursor-pointer",
-								}) {
-									{ data.User.Email[0:2] }
+						</div>
+						@themetoggle.ThemeToggle(themetoggle.ThemeToggleArgs{})
+						<!-- User dropdown -->
+						@dropdown.DropdownMenu(dropdown.DropdownMenuArgs{ID: "user-menu"}) {
+							@dropdown.DropdownMenuTrigger(dropdown.DropdownMenuTriggerArgs{
+								ID:    "user-menu",
+								Class: "h-8 w-8 rounded-full p-0 inline-flex items-center justify-center bg-primary text-primary-foreground cursor-pointer",
+							}) {
+								{ data.User.Email[0:2] }
+							}
+							@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{ID: "user-menu", Align: "end"}) {
+								@dropdown.DropdownMenuLabel(dropdown.DropdownMenuLabelArgs{ID: "user-menu"}) {
+									{ data.User.Email }
 								}
-								@dropdown.DropdownMenuContent(dropdown.DropdownMenuContentArgs{ID: "user-menu", Align: "end"}) {
-									@dropdown.DropdownMenuLabel(dropdown.DropdownMenuLabelArgs{ID: "user-menu"}) {
-										{ data.User.Email }
-									}
-									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
-									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu"}) {
-										<a href="/admin/settings" class="flex items-center gap-2">
-											@icon.Lucide("settings")
-											Settings
-										</a>
-									}
-									@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
-									@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
-										ID:      "user-menu",
-										Variant: "destructive",
-										OnClick: "@post('/logout')",
-									}) {
-										@icon.Lucide("log-out", "mr-2")
-										Sign Out
-									}
+								@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
+								@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{ID: "user-menu"}) {
+									<a href="/admin/settings" class="flex items-center gap-2">
+										@icon.Lucide("settings")
+										Settings
+									</a>
+								}
+								@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: "user-menu"})
+								@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
+									ID:      "user-menu",
+									Variant: "destructive",
+									OnClick: "@post('/logout')",
+								}) {
+									@icon.Lucide("log-out", "mr-2")
+									Sign Out
 								}
 							}
-						</div>
+						}
 					</header>
-					<main class="flex-1 p-4" data-admin-content style="view-transition-name: admin-content">
-						{ children... }
-					</main>
+					<div data-admin-content style="view-transition-name: admin-content" class="flex-1 flex flex-col min-w-0">
+						<main class="flex-1 p-4">
+							{ children... }
+						</main>
+						if footer != nil {
+							<footer class="sticky bottom-0 z-10 bg-background/95 backdrop-blur border-t supports-[backdrop-filter]:bg-background/60">
+								<div class="flex items-center justify-end gap-2 px-4 py-3">
+									@footer
+								</div>
+							</footer>
+						}
+					</div>
 				</div>
 				<!-- Toast stack — outside data-admin-content so it survives SPA nav -->
 				<div

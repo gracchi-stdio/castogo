@@ -51,26 +51,16 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 	settingInput := new(SettingsForm)
 	if err := c.Bind(settingInput); err != nil {
 		out := sse(c)
-		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
-		})
 		out.ExecuteScript(toastScript("Failed to parse form data", "error"))
 		return nil
 	}
 	if err := c.Validate(settingInput); err != nil {
 		errorStruct := fieldValidationErrors(err, settingInput)
-		errorStruct["loading_status"] = ""
-		errorStruct["loading_msg"] = ""
 		sse(c).MarshalAndPatchSignals(errorStruct)
 		return nil
 	}
 	if settingInput.Category != "" && !domain.IsValidCategory(settingInput.Category, settingInput.Subcategory) {
 		out := sse(c)
-		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
-		})
 		out.ExecuteScript(toastScript("Please choose a valid category and subcategory", "error"))
 		return nil
 	}
@@ -101,19 +91,11 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 	}
 	if _, err := h.settingsService.UpdatePodcastConfig(c.Request().Context(), update); err != nil {
 		out := sse(c)
-		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
-		})
 		out.ExecuteScript(toastScript("Failed to save settings. Please try again.", "error"))
 		return nil
 	}
 
 	out := sse(c)
-	out.MarshalAndPatchSignals(map[string]string{
-		"loading_status": "",
-		"loading_msg":    "",
-	})
 	out.ExecuteScript(toastScript("Settings saved successfully", "success"))
 	return nil
 }
@@ -123,8 +105,8 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 	if err := c.Request().ParseMultipartForm(10 << 20); err != nil {
 		out := sse(c)
 		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
+			"cover_uploading": "false",
+			"cover_status":    "",
 		})
 		out.ExecuteScript(toastScript("Failed to parse form data", "error"))
 		return nil
@@ -135,8 +117,8 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 	if err != nil {
 		out := sse(c)
 		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
+			"cover_uploading": "false",
+			"cover_status":    "",
 		})
 		out.ExecuteScript(toastScript("Please select a file to upload", "error"))
 		return nil
@@ -148,8 +130,8 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
 		out := sse(c)
 		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
+			"cover_uploading": "false",
+			"cover_status":    "",
 		})
 		out.ExecuteScript(toastScript("Invalid file type. Please upload a JPG, JPEG, PNG, or WebP image.", "error"))
 		return nil
@@ -161,13 +143,13 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 	filename := fmt.Sprintf("%s/setting_cover_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), b, ext)
 
 	// upload
-	sse(c).MarshalAndPatchSignals(map[string]string{"loading_msg": "Uploading cover image file..."})
+	sse(c).MarshalAndPatchSignals(map[string]string{"cover_status": "Uploading cover image file..."})
 	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
 	if err != nil {
 		out := sse(c)
 		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
+			"cover_uploading": "false",
+			"cover_status":    "",
 		})
 		out.ExecuteScript(toastScript("Failed to upload image. Please try again.", "error"))
 		log.Printf("Error uploading file: %v", err)
@@ -175,7 +157,7 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 	}
 
 	// save on database — only update the cover_image_url column
-	sse(c).MarshalAndPatchSignals(map[string]string{"loading_msg": "Saving changes..."})
+	sse(c).MarshalAndPatchSignals(map[string]string{"cover_status": "Saving changes..."})
 	settings := domain.UpdatePodcastConfig{
 		ID:            parseInt64(c.FormValue("id")),
 		CoverImageURL: &url,
@@ -183,8 +165,8 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 	if _, err := h.settingsService.UpdatePodcastConfig(c.Request().Context(), &settings); err != nil {
 		out := sse(c)
 		out.MarshalAndPatchSignals(map[string]string{
-			"loading_status": "",
-			"loading_msg":    "",
+			"cover_uploading": "false",
+			"cover_status":    "",
 		})
 		out.ExecuteScript(toastScript("Failed to save cover image URL. Please try again.", "error"))
 		return nil
@@ -192,9 +174,9 @@ func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
 
 	// Update frontend — set the CDN URL and clear uploading state
 	sse(c).MarshalAndPatchSignals(map[string]string{
-		"cover_image_url": url,
-		"loading_status":  "",
-		"loading_msg":     "",
+		"cover_image_url":  url,
+		"cover_uploading":  "false",
+		"cover_status":     "",
 	})
 	return nil
 }

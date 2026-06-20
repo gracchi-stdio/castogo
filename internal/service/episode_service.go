@@ -116,3 +116,15 @@ func (s *EpisodeService) SearchPublished(ctx context.Context, query string, limi
 	}
 	return s.repo.SearchPublished(ctx, query, limit, offset)
 }
+
+func (s *EpisodeService) LinkPage(ctx context.Context, episodeID, pageID int64) error {
+	return s.repo.UpdateLinkedPageID(ctx, episodeID, &pageID)
+}
+
+func (s *EpisodeService) UnlinkPage(ctx context.Context, episodeID int64) error {
+	return s.repo.UpdateLinkedPageID(ctx, episodeID, nil)
+}
+
+func (s *EpisodeService) GetByLinkedPageID(ctx context.Context, pageID int64) (*domain.Episode, error) {
+	return s.repo.GetByLinkedPageID(ctx, pageID)
+}

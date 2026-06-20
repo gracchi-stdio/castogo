@@ -1,93 +1,4 @@
-package pageadminview
-
-import (
-	"bytes"
-	"context"
-	"fmt"
-	"strconv"
-
-	"github.com/gracchi-stdio/castogo/internal/domain"
-	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
-)
-
-type pageFormData struct {
-	Title       string
-	Slug        string
-	Layout      string
-	IsPublished bool
-	ParentID    string
-	IsEdit      bool
-	PageID      int64
-}
-
-func newPageFormData(page *domain.Page) pageFormData {
-	d := pageFormData{
-		Layout:   "default",
-		ParentID: "0",
-	}
-	if page != nil {
-		d.Title = page.Title
-		d.Slug = page.Slug
-		d.Layout = page.Layout
-		d.IsPublished = page.IsPublished
-		d.PageID = page.ID
-		d.IsEdit = true
-		if page.ParentID != nil {
-			d.ParentID = strconv.FormatInt(*page.ParentID, 10)
-		}
-	}
-	return d
-}
-
-func (d pageFormData) TitleSignal() string {
-	return fmt.Sprintf("'%s'", jsEscape(d.Title))
-}
-
-func (d pageFormData) SlugSignal() string {
-	return fmt.Sprintf("'%s'", jsEscape(d.Slug))
-}
-
-func (d pageFormData) LayoutSignal() string {
-	return fmt.Sprintf("'%s'", d.Layout)
-}
-
-func (d pageFormData) ParentIDSignal() string {
-	return d.ParentID
-}
-
-func parentPageOptions(parentPages []*domain.Page, currentPageID int64) []selectcomponent.SelectOptionArgs {
-	opts := make([]selectcomponent.SelectOptionArgs, 0, len(parentPages))
-	for _, p := range parentPages {
-		if p.ParentID == nil && p.ID != currentPageID {
-			opts = append(opts, selectcomponent.SelectOptionArgs{
-				Value: fmt.Sprintf("%d", p.ID),
-				Label: p.Title + " (/" + p.Path + ")",
-			})
-		}
-	}
-	return opts
-}
-
-func jsEscape(s string) string {
-	out := make([]byte, 0, len(s))
-	for _, c := range s {
-		switch c {
-		case '\'':
-			out = append(out, '\\', '\'')
-		case '\\':
-			out = append(out, '\\', '\\')
-		case '\n':
-			out = append(out, '\\', 'n')
-		case '\r':
-			out = append(out, '\\', 'r')
-		case '\t':
-			out = append(out, '\\', 't')
-		default:
-			out = append(out, string(c)...)
-		}
-	}
-	return string(out)
-}
+package blockeditor
 
 // ItemsContainerID returns the DOM element ID for a block's items list.
 func ItemsContainerID(blockID int64, listType string) string {
@@ -118,8 +29,7 @@ func RenderItemsFragment(pageID int64, block *domain.PageBlock, listType string)
 				return "", err
 			}
 		}
-	case "testimonial":
-		for i, item := range toItems(content["items"]) {
+	case "testimonial":internal/view/pageadminview/block_editor.temploItems(content["items"]) {
 			if err := testimonialItemEditor(pageID, block.ID, pfx, i, item).Render(ctx, &buf); err != nil {
 				return "", err
 			}

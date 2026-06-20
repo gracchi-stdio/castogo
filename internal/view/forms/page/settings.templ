@@ -1,0 +1,112 @@
+package pageform
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/select"
+)
+
+templ Settings(args Args) {
+	{{
+		signals := NewSignals(args.Page)
+		mgr := form.SignalsWithFormId("page_settings", signals)
+		formID := "page-settings-form"
+		action := "admin/pages/create"
+		submittLabel := "Create Page"
+		if args.Page != nil {
+			action = fmt.Sprintf("admin/pages/%d", args.Page.ID)
+			submittLabel = "Update Page"
+		}
+	}}
+	<div data-signals={ mgr.DataSignals }>
+		@form.Form(form.FormArgs{
+			ID:     formID,
+			Action: action,
+		}) {
+			@pageSettingsFields(signals, args.ParentPages)
+			@linkedEpisodeFragment(args.LinkedEpisode)
+		}
+	</div>
+	<div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
+		<div class="flex justify-end gap-2">
+			@formactions.FormActions(formactions.FormActionsArgs{FormID: formID, SubmitLabel: submittLabel, CancelHref: "admin/pages"})
+		</div>
+	</div>
+}
+
+templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
+	<div class="space-y-6">
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "title",
+			Label:       "Title",
+			Required:    true,
+			ErrorSignal: "title_error"}) {
+			@input.Input(input.InputArgs{
+				Type:        "text",
+				ID:          "title",
+				Name:        "title",
+				Placeholder: "About Us",
+				Class:       "w-full",
+				Attributes: map[string]any{"data-on:input": "$title = el.value; $title_error = ''",
+					"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
+				}})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "slug",
+			Label:       "Slug",
+			ErrorSignal: "slug_error",
+			Description: "Used in the URL: /" + s.Slug}) {
+			@input.Input(input.InputArgs{
+				Type:        "text",
+				ID:          "slug",
+				Name:        "slug",
+				Placeholder: "about-us",
+				Class:       "w-full",
+				Attributes: map[string]any{"data-on:input": "$slug = el.value; $slug_error = ''",
+					"data-attr:aria-invalid": "$slug_error != '' ? 'true' : ''",
+				},
+			})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "parent_id",
+			Label:       "Parent Page",
+			Description: "Child pages create nested URLs like /about/team",
+		}) {
+			@selectcomponent.Select(selectcomponent.SelectArgs{
+				ID:           "parent-select",
+				Name:         "parent_id",
+				DefaultValue: fmt.Sprint("%d", s.ParentID),
+				Options:      parentPageOptions(parentPages),
+				Placeholder:  "None (top-level)",
+				Class:        "w-full",
+				OnChange:     "$parent_id= $parent_select.value ? parseInt($parent_select.value) : 0",
+			})
+		}
+		<div class="flex items-center gap-3">
+			@checkbox.Checkbox(checkbox.CheckboxArgs{ID: "is_published", Name: "is_published", Checked: s.IsPublished})
+			<span class="text-sm">Published</span>
+		</div>
+		<div class="flex items-center gap-3">
+			@checkbox.Checkbox(checkbox.CheckboxArgs{ID: "show_in_nav", Name: "show_in_nav", Checked: s.ShowInNav})
+			<span class="text-sm">Show in main navigation</span>
+		</div>
+	</div>
+}
+
+templ linkedEpisodeFragment(episode *domain.Episode) {
+	if episode != nil {
+		<div class="rounded-md border p-3 flex items-center justify-between">
+			<div class="text-sm">
+				<span class="text-muted-foreground">Linked to episode:</span>
+				<span class="font-medium ml-2">{ episode.Title }</span>
+			</div>
+			<a href={ fmt.Sprint("/admin/episodes/%d/edit", episode.ID) }><span class="text-sm text-primary hover:underline">Edit Episode</span></a>
+		</div>
+	}
+}

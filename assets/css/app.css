@@ -10,18 +10,12 @@
 /* Use class strategy for dark mode (toggled via .dark on <html>) */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* View Transitions — smooth cross-page navigation */
-@view-transition {
-    navigation: auto;
-}
-
-/* Main content area cross-fades */
-::view-transition-old(root) {
-    animation: 150ms ease-out both fade-out;
-}
-
+/* View Transitions — only named containers (admin-content, public-content) animate.
+   Root is disabled so the header, body, and other static chrome don't cross-fade
+   with themselves (which causes a visible opacity dip / blink mid-transition). */
+::view-transition-old(root),
 ::view-transition-new(root) {
-    animation: 150ms ease-in both fade-in;
+    animation: none;
 }
 
 /* Admin sidebar — no animation (looks identical across pages) */
@@ -37,13 +31,29 @@
     animation: none;
 }
 
-/* Admin content — cross-fade */
-::view-transition-old(admin-content) {
-    animation: 150ms ease-out both fade-out;
+/* Admin title, actions, content + public content — slide-up transition.
+   Old snapshot slides up & fades out; new slides in from below & fades in.
+   Group morph is disabled so size/height changes between pages don't
+   interpolate (looks janky on form pages where content height varies). */
+::view-transition-group(admin-title),
+::view-transition-group(admin-actions),
+::view-transition-group(admin-content),
+::view-transition-group(public-content) {
+    animation-duration: 0s;
 }
 
-::view-transition-new(admin-content) {
-    animation: 150ms ease-in both fade-in;
+::view-transition-old(admin-title),
+::view-transition-old(admin-actions),
+::view-transition-old(admin-content),
+::view-transition-old(public-content) {
+    animation: 140ms ease-in both slide-out;
+}
+
+::view-transition-new(admin-title),
+::view-transition-new(admin-actions),
+::view-transition-new(admin-content),
+::view-transition-new(public-content) {
+    animation: 200ms ease-out both slide-in;
 }
 
 /* Public navbar — no animation (stays stable during page transitions) */
@@ -55,14 +65,6 @@
 }
 ::view-transition-new(public-nav) {
     animation: none;
-}
-
-/* Public content — cross-fade */
-::view-transition-old(public-content) {
-    animation: 150ms ease-out both fade-out;
-}
-::view-transition-new(public-content) {
-    animation: 150ms ease-in both fade-in;
 }
 
 ::view-transition-old(toast),
@@ -79,15 +81,17 @@
     animation: 160ms ease-in both toast-out;
 }
 
-@keyframes fade-out {
+@keyframes slide-out {
     to {
         opacity: 0;
+        transform: translateY(-10px);
     }
 }
 
-@keyframes fade-in {
+@keyframes slide-in {
     from {
         opacity: 0;
+        transform: translateY(10px);
     }
 }
 
