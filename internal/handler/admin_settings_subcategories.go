@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view/forms/settings"
+	"github.com/gracchi-stdio/castogo/internal/view/editors/settings"
 	"github.com/labstack/echo/v4"
 	"github.com/starfederation/datastar-go/datastar"
 )

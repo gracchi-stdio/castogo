@@ -5,7 +5,7 @@ import "github.com/gracchi-stdio/castogo/internal/view/layout"
 import "github.com/gracchi-stdio/castogo/internal/view/components/tabs"
 import "github.com/gracchi-stdio/castogo/internal/view/components/button"
 import "github.com/gracchi-stdio/castogo/internal/view/components/icon"
-import "github.com/gracchi-stdio/castogo/internal/view/components/blockeditor"
+import "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
 
 templ Page(shared *domain.AdminSharedData, args Args) {
 	{{
@@ -25,7 +25,7 @@ templ Page(shared *domain.AdminSharedData, args Args) {
 					@Settings(args)
 				}
 				@tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "blocks"}) {
-					@blockeditor.BlockEditor(args.Page.ID, args.Blocks)
+					@blockEditor.BlockEditor(args.Page.ID, args.Blocks)
 				}
 			}
 		} else {

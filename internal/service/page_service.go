@@ -36,11 +36,13 @@ var reservedSlugs = map[string]bool{
 }
 
 type CreatePageInput struct {
-	Title    string
-	Slug     string
-	Layout   string
-	ParentID *int64
-	Metadata domain.PageMetadata
+	Title       string
+	Slug        string
+	Layout      string
+	ParentID    *int64
+	IsPublished *bool
+	ShowInNav   *bool
+	Metadata    domain.PageMetadata
 }
 
 type UpdatePageInput struct {
@@ -49,6 +51,7 @@ type UpdatePageInput struct {
 	Layout      *string
 	ParentID    **int64
 	IsPublished *bool
+	ShowInNav   *bool
 	Metadata    *domain.PageMetadata
 	SortOrder   *int
 }
@@ -89,12 +92,14 @@ func (s *PageService) CreatePage(ctx context.Context, input CreatePageInput) (*d
 	}
 
 	page := &domain.Page{
-		Title:    input.Title,
-		Slug:     input.Slug,
-		Layout:   input.Layout,
-		ParentID: input.ParentID,
-		Path:     path,
-		Metadata: input.Metadata,
+		Title:       input.Title,
+		Slug:        input.Slug,
+		Layout:      input.Layout,
+		ParentID:    input.ParentID,
+		ShowInNav:   ptrOr(input.ShowInNav, false),
+		IsPublished: ptrOr(input.IsPublished, false),
+		Path:        path,
+		Metadata:    input.Metadata,
 	}
 
 	created, err := s.page.Create(ctx, page)
@@ -105,6 +110,13 @@ func (s *PageService) CreatePage(ctx context.Context, input CreatePageInput) (*d
 		return nil, err
 	}
 	return created, nil
+}
+
+func ptrOr[T any](a *T, defaultValue T) T {
+	if a == nil {
+		return defaultValue
+	}
+	return *a
 }
 
 func (s *PageService) GetPage(ctx context.Context, id int64) (*domain.Page, error) {

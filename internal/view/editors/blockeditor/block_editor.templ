@@ -1,8 +1,9 @@
-package blockeditor
+package blockEditor
 
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
@@ -780,7 +781,8 @@ func jsSignalVal(v any) string {
 	if !ok || s == "" {
 		return "''"
 	}
-	return fmt.Sprintf("'%s'", jsEscape(s))
+	escaped := strings.NewReplacer("\\", "\\\\", "'", "\\'").Replace(s)
+	return fmt.Sprintf("'%s'", escaped)
 }
 
 // jsNumberSignalVal converts a Go value to a JS number signal.

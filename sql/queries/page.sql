@@ -5,11 +5,12 @@ INSERT INTO pages (
     parent_id,
     layout,
     is_published,
+    show_in_nav,
     metadata,
     path,
     sort_order
   )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 -- name: GetPageByID :one
 SELECT *
@@ -49,6 +50,7 @@ SET title = COALESCE(sqlc.narg('title'), title),
   layout = COALESCE(sqlc.narg('layout'), layout),
   parent_id = COALESCE(sqlc.narg('parent_id'), parent_id),
   is_published = COALESCE(sqlc.narg('is_published'), is_published),
+  show_in_nav = COALESCE(sqlc.narg('show_in_nav'), show_in_nav),
   metadata = COALESCE(sqlc.narg('metadata'), metadata),
   path = COALESCE(sqlc.narg('path'), path),
   sort_order = COALESCE(sqlc.narg('sort_order'), sort_order),

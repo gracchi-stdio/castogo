@@ -18,16 +18,20 @@ templ Settings(args Args) {
 		mgr := form.SignalsWithFormId("page_settings", signals)
 		formID := "page-settings-form"
 		action := "admin/pages/create"
-		submittLabel := "Create Page"
+		submitLabel := "Create Page"
 		if args.Page != nil {
 			action = fmt.Sprintf("admin/pages/%d", args.Page.ID)
-			submittLabel = "Update Page"
+			submitLabel = "Update Page"
 		}
 	}}
 	<div data-signals={ mgr.DataSignals }>
 		@form.Form(form.FormArgs{
 			ID:     formID,
 			Action: action,
+			FormDataFields: []string{
+				"title", "slug", "parent_id", "is_published", "show_in_nav", 
+				"title_error", "slug_error",
+			},
 		}) {
 			@pageSettingsFields(signals, args.ParentPages)
 			@linkedEpisodeFragment(args.LinkedEpisode)
@@ -35,7 +39,10 @@ templ Settings(args Args) {
 	</div>
 	<div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
 		<div class="flex justify-end gap-2">
-			@formactions.FormActions(formactions.FormActionsArgs{FormID: formID, SubmitLabel: submittLabel, CancelHref: "admin/pages"})
+			@formactions.FormActions(formactions.FormActionsArgs{
+				FormID: formID, 
+				SubmitLabel: submitLabel, 
+				CancelHref: "admin/pages"})
 		</div>
 	</div>
 }
@@ -53,7 +60,9 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 				Name:        "title",
 				Placeholder: "About Us",
 				Class:       "w-full",
-				Attributes: map[string]any{"data-on:input": "$title = el.value; $title_error = ''",
+				Attributes: map[string]any{
+					"data-bind": "title",
+					"data-on:input": "$title_error = ''",
 					"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
 				}})
 		}
@@ -68,8 +77,11 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 				Name:        "slug",
 				Placeholder: "about-us",
 				Class:       "w-full",
-				Attributes: map[string]any{"data-on:input": "$slug = el.value; $slug_error = ''",
+				Attributes: map[string]any{
+					"data-bind": "slug",
+					"data-on:input": "$slug_error = ''",
 					"data-attr:aria-invalid": "$slug_error != '' ? 'true' : ''",
+					"data-on:blur": "$slug = $slug.trim()",
 				},
 			})
 		}
@@ -81,7 +93,7 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 			@selectcomponent.Select(selectcomponent.SelectArgs{
 				ID:           "parent-select",
 				Name:         "parent_id",
-				DefaultValue: fmt.Sprint("%d", s.ParentID),
+				DefaultValue: fmt.Sprintf("%d", s.ParentID),
 				Options:      parentPageOptions(parentPages),
 				Placeholder:  "None (top-level)",
 				Class:        "w-full",
@@ -89,11 +101,17 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 			})
 		}
 		<div class="flex items-center gap-3">
-			@checkbox.Checkbox(checkbox.CheckboxArgs{ID: "is_published", Name: "is_published", Checked: s.IsPublished})
+			@checkbox.Checkbox(checkbox.CheckboxArgs{
+				ID: "is_published", 
+				Name: "is_published", 
+				Checked: s.IsPublished})
 			<span class="text-sm">Published</span>
 		</div>
 		<div class="flex items-center gap-3">
-			@checkbox.Checkbox(checkbox.CheckboxArgs{ID: "show_in_nav", Name: "show_in_nav", Checked: s.ShowInNav})
+			@checkbox.Checkbox(checkbox.CheckboxArgs{
+				ID: "show_in_nav", 
+				Name: "show_in_nav", 
+				Checked: s.ShowInNav})
 			<span class="text-sm">Show in main navigation</span>
 		</div>
 	</div>
@@ -106,7 +124,7 @@ templ linkedEpisodeFragment(episode *domain.Episode) {
 				<span class="text-muted-foreground">Linked to episode:</span>
 				<span class="font-medium ml-2">{ episode.Title }</span>
 			</div>
-			<a href={ fmt.Sprint("/admin/episodes/%d/edit", episode.ID) }><span class="text-sm text-primary hover:underline">Edit Episode</span></a>
+			<a href={ fmt.Sprintf("/admin/episodes/%d/edit", episode.ID) }><span class="text-sm text-primary hover:underline">Edit Episode</span></a>
 		</div>
 	}
 }

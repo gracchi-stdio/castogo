@@ -9,7 +9,10 @@
       "mcp__anytype__API-update-object",
       "mcp__anytype__API-get-type",
       "mcp__anytype__API-list-tags",
-      "mcp__anytype__API-list-properties"
+      "mcp__anytype__API-list-properties",
+      "mcp__anytype__API-list-spaces",
+      "mcp__anytype__API-search-global",
+      "mcp__anytype__API-get-object"
     ]
   }
 }

@@ -22,6 +22,8 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/session"
 	"github.com/gracchi-stdio/castogo/internal/view/notfoundview"
+
+	_ "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor/types" // initialize block types
 )
 
 type CustomValidator struct {

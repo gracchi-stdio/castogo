@@ -1,4 +1,12 @@
-package blockeditor
+package blockEditor
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+)
 
 // ItemsContainerID returns the DOM element ID for a block's items list.
 func ItemsContainerID(blockID int64, listType string) string {
@@ -29,7 +37,8 @@ func RenderItemsFragment(pageID int64, block *domain.PageBlock, listType string)
 				return "", err
 			}
 		}
-	case "testimonial":internal/view/pageadminview/block_editor.temploItems(content["items"]) {
+	case "testimonial":
+		for i, item := range toItems(content["items"]) {
 			if err := testimonialItemEditor(pageID, block.ID, pfx, i, item).Render(ctx, &buf); err != nil {
 				return "", err
 			}

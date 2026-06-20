@@ -33,7 +33,7 @@ templ PageView(data *PageData) {
 				{{ content, err := parseBlockContent[domain.HeroContent](block.Content) }}
 				{{ if err != nil { log.Printf("parse hero block: %v", err); continue } }}
 				@blocks.HeroBlock(content)
-			case "features":
+			case "feature":
 				{{ content, err := parseBlockContent[domain.FeaturesContent](block.Content) }}
 				{{ if err != nil { log.Printf("parse features block: %v", err); continue } }}
 				@blocks.FeaturesBlock(content)
