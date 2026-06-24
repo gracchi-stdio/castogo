@@ -15,20 +15,20 @@
    with themselves (which causes a visible opacity dip / blink mid-transition). */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-    animation: none;
+  animation: none;
 }
 
 /* Admin sidebar — no animation (looks identical across pages) */
 ::view-transition-group(admin-sidebar) {
-    animation-duration: 0s;
+  animation-duration: 0s;
 }
 
 ::view-transition-old(admin-sidebar) {
-    animation: none;
+  animation: none;
 }
 
 ::view-transition-new(admin-sidebar) {
-    animation: none;
+  animation: none;
 }
 
 /* Admin title, actions, content + public content — slide-up transition.
@@ -39,92 +39,92 @@
 ::view-transition-group(admin-actions),
 ::view-transition-group(admin-content),
 ::view-transition-group(public-content) {
-    animation-duration: 0s;
+  animation-duration: 0s;
 }
 
 ::view-transition-old(admin-title),
 ::view-transition-old(admin-actions),
 ::view-transition-old(admin-content),
 ::view-transition-old(public-content) {
-    animation: 140ms ease-in both slide-out;
+  animation: 140ms ease-in both slide-out;
 }
 
 ::view-transition-new(admin-title),
 ::view-transition-new(admin-actions),
 ::view-transition-new(admin-content),
 ::view-transition-new(public-content) {
-    animation: 200ms ease-out both slide-in;
+  animation: 200ms ease-out both slide-in;
 }
 
 /* Public navbar — no animation (stays stable during page transitions) */
 ::view-transition-group(public-nav) {
-    animation-duration: 0s;
+  animation-duration: 0s;
 }
 ::view-transition-old(public-nav) {
-    animation: none;
+  animation: none;
 }
 ::view-transition-new(public-nav) {
-    animation: none;
+  animation: none;
 }
 
 ::view-transition-old(toast),
 ::view-transition-new(toast) {
-    animation: none;
-    mix-blend-mode: normal;
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 .toast-enter {
-    animation: 160ms ease-out both toast-in;
+  animation: 160ms ease-out both toast-in;
 }
 
 .toast-exit {
-    animation: 160ms ease-in both toast-out;
+  animation: 160ms ease-in both toast-out;
 }
 
 @keyframes slide-out {
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes slide-in {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 
 @keyframes toast-in {
-    from {
-        opacity: 0;
-        transform: translateY(-8px) scale(0.98);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
 }
 
 @keyframes toast-out {
-    to {
-        opacity: 0;
-        transform: translateY(-6px) scale(0.98);
-    }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
 }
 
 /* Sidebar nav link states */
 .sidebar-link-active {
-    @apply bg-accent text-accent-foreground font-medium border border-accent;
+  @apply border border-accent bg-accent font-medium text-accent-foreground;
 }
 
 .sidebar-link-inactive {
-    @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:bg-sidebar-accent focus-visible:text-sidebar-accent-foreground;
+  @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:bg-sidebar-accent focus-visible:text-sidebar-accent-foreground;
 }
 
 /* Block list drag-and-drop */
 [data-block-id] {
-    cursor: grab;
+  cursor: grab;
 }
 
 [data-block-id]:active {
-    cursor: grabbing;
+  cursor: grabbing;
 }
 
 [data-block-id] button,
@@ -132,33 +132,41 @@
 [data-block-id] input,
 [data-block-id] select,
 [data-block-id] textarea {
-    cursor: default;
+  cursor: default;
 }
 
 [data-block-id] button:active,
 [data-block-id] a:active {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .sortable-ghost {
-    opacity: 0.3;
+  opacity: 0.3;
 }
 
 .sortable-chosen {
-    cursor: grabbing !important;
+  cursor: grabbing !important;
 }
 
 .sortable-chosen * {
-    cursor: grabbing !important;
+  cursor: grabbing !important;
 }
 
 .sortable-fallback {
-    cursor: grabbing !important;
-    opacity: 0.9;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  cursor: grabbing !important;
+  opacity: 0.9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 body.is-dragging,
 body.is-dragging * {
-    cursor: grabbing !important;
+  cursor: grabbing !important;
+}
+
+/* in admin when drawer is on the header needs to be z-index removed */
+/* Datastar's data-show writes inline display: none when closed, removes it when open. Match the
+  absence of that: */
+body:has([role="dialog"][aria-modal="true"]:not([style*="display: none"]))
+  [data-admin-header] {
+  z-index: auto;
 }

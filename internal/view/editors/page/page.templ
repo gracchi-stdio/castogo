@@ -18,8 +18,12 @@ templ Page(shared *domain.AdminSharedData, args Args) {
 		if args.Page != nil {
 			@tabs.Tabs(tabs.TabsArgs{ID: "page_tabs", DefaultValue: args.DefaultTab}) {
 				@tabs.TabsList(tabs.TabsListArgs{}) {
-					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "settings"})
-					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "blocks"})
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "settings"}) {
+						Page Settings
+					}
+					@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "blocks"}) {
+						Blocks
+					}
 				}
 				@tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "settings"}) {
 					@Settings(args)

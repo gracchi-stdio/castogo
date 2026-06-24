@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="108.39782mm"
+   height="37.20586mm"
+   viewBox="0 0 108.39782 37.20586"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-60.641665,-119.0596)">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:596;font-stretch:normal;font-size:28.2223px;font-family:'Author Variable';-inkscape-font-specification:'Author Variable weight=596';writing-mode:lr-tb;direction:ltr;fill:#1a1a1a;stroke:none;stroke-width:4.99999;stroke-linecap:round;paint-order:fill markers stroke"
+       x="60.415905"
+       y="138.05984"
+       id="text2-3"><tspan
+         id="tspan1-9"
+         style="font-style:normal;font-variant:normal;font-weight:596;font-stretch:normal;font-family:'Author Variable';-inkscape-font-specification:'Author Variable weight=596';fill:#1a1a1a;stroke:none;stroke-width:5"
+         x="60.415905"
+         y="138.05984">ART</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:596;font-stretch:normal;font-size:28.2223px;font-family:'Author Variable';-inkscape-font-specification:'Author Variable weight=596';writing-mode:lr-tb;direction:ltr;fill:#ff0000;stroke:none;stroke-width:4.99999;stroke-linecap:round;paint-order:fill markers stroke"
+       x="66.977829"
+       y="156.01144"
+       id="text2-9-4"><tspan
+         id="tspan1-1-8"
+         style="font-style:normal;font-variant:normal;font-weight:596;font-stretch:normal;font-family:'Author Variable';-inkscape-font-specification:'Author Variable weight=596';fill:#ff0000;stroke:none;stroke-width:5"
+         x="66.977829"
+         y="156.01144">HISTORY</tspan></text>
+    <path
+       id="path1-1"
+       style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#ff0000;stroke-linejoin:round;enable-background:accumulate;stop-color:#000000"
+       d="m 116.24926,119.0596 -7.61918,7.61762 a 1.7521752,1.7521752 0 0 0 0,2.4784 l 7.61918,7.61711 2.47633,-2.4784 -4.62607,-4.62608 h 22.3361 c 2.13801,0 3.83309,1.69587 3.83233,3.83388 v 4.53874 l 3.50366,0.002 v -4.53874 c 10e-4,-4.03215 -3.30384,-7.34012 -7.33599,-7.34012 h -22.33765 l 4.62762,-4.62762 z" />
+  </g>
+</svg>
