@@ -3,240 +3,18 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/service"
 	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
-	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
 	"github.com/labstack/echo/v4"
 	"github.com/starfederation/datastar-go/datastar"
 )
-
-func (h *AdminHandler) pageList(c echo.Context) error {
-	pages, err := h.pageService.ListPages(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load pages")
-	}
-
-	return echo.WrapHandler(templ.Handler(pageform.PageListPage(getSharedData(c), pages)))(c)
-}
-
-func (h *AdminHandler) pageCreatePage(c echo.Context) error {
-	parentPages, err := h.pageService.ListPages(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
-	}
-
-	return echo.WrapHandler(templ.Handler(pageform.Page(getSharedData(c), pageform.Args{
-		ParentPages: parentPages,
-	})))(c)
-}
-
-type pageCreateInput struct {
-	Title     string  `json:"title" validate:"required"`
-	Slug      string  `json:"slug"`
-	Layout    string  `json:"page_layout"`
-	ParentID  float64 `json:"parent_id"`
-	ShowInNav struct {
-		Checked bool `json:"checked"`
-	} `json:"show_in_nav"`
-	IsPublished struct {
-		Checked bool `json:"checked"`
-	} `json:"is_published"`
-}
-
-type pageUpdateInput struct {
-	Title       string  `json:"title" validate:"required"`
-	Slug        string  `json:"slug"`
-	Layout      string  `json:"page_layout"`
-	ParentID    float64 `json:"parent_id"`
-	IsPublished struct {
-		Checked bool `json:"checked"`
-	} `json:"is_published"`
-}
-
-func (h *AdminHandler) pageCreateAction(c echo.Context) error {
-	var raw pageCreateInput
-	if err := readSignals(c, &raw); err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Invalid request", "error"))
-		return nil
-	}
-
-	if err := validate.Struct(raw); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
-		return nil
-	}
-
-	var parentID *int64
-	if raw.ParentID > 0 {
-		pid := int64(raw.ParentID)
-		parentID = &pid
-	}
-
-	input := service.CreatePageInput{
-		Title:    raw.Title,
-		Slug:     raw.Slug,
-		Layout:   raw.Layout,
-		ParentID: parentID,
-	}
-
-	page, err := h.pageService.CreatePage(c.Request().Context(), input)
-	if err != nil {
-		if errors.Is(err, domain.ErrReservedSlug) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "This slug is reserved and cannot be used",
-			})
-		}
-		if errors.Is(err, domain.ErrDuplicatePath) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "A page with this slug already exists",
-			})
-		}
-		if errors.Is(err, domain.ErrHomepageExists) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "A homepage already exists — only one root page may have an empty slug",
-			})
-		}
-		if errors.Is(err, domain.ErrMaxDepth) {
-			out := sse(c)
-			out.ExecuteScript(toastScript("Maximum nesting depth exceeded (2 levels max)", "error"))
-			return nil
-		}
-		out := sse(c)
-		out.ExecuteScript(toastScript("Failed to create page", "error"))
-		return nil
-	}
-
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit", page.ID)))
-	return nil
-}
-
-func (h *AdminHandler) pageEditPage(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
-	}
-
-	pageWithBlocks, err := h.pageService.GetPageWithBlocks(c.Request().Context(), id)
-	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
-			return echo.NewHTTPError(http.StatusNotFound, "Page not found")
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load page")
-	}
-
-	parentPages, err := h.pageService.ListPages(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
-	}
-
-	defaultTab := c.QueryParam("tab")
-	if defaultTab == "" {
-		defaultTab = "settings"
-	}
-
-	return echo.WrapHandler(templ.Handler(pageform.Page(
-		getSharedData(c),
-		pageform.Args{
-			Page:        pageWithBlocks.Page,
-			ParentPages: parentPages,
-			Blocks:      pageWithBlocks.Blocks,
-			DefaultTab:  defaultTab,
-		},
-	)))(c)
-}
-
-func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
-	}
-
-	var rawSignals map[string]any
-	if err := readSignals(c, &rawSignals); err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Invalid request", "error"))
-		return nil
-	}
-
-	var raw pageUpdateInput
-	rawBytes, _ := json.Marshal(rawSignals)
-	json.Unmarshal(rawBytes, &raw)
-
-	if err := validate.Struct(raw); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
-		return nil
-	}
-
-	var parentVal *int64
-	if raw.ParentID > 0 {
-		pid := int64(raw.ParentID)
-		parentVal = &pid
-	}
-
-	title := raw.Title
-	slug := raw.Slug
-	layout := raw.Layout
-	isPublished := raw.IsPublished.Checked
-
-	update := service.UpdatePageInput{
-		Title:       &title,
-		Slug:        &slug,
-		Layout:      &layout,
-		ParentID:    &parentVal,
-		IsPublished: &isPublished,
-	}
-
-	_, err = h.pageService.UpdatePage(c.Request().Context(), id, update)
-	if err != nil {
-		if errors.Is(err, domain.ErrReservedSlug) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "This slug is reserved and cannot be used",
-			})
-		}
-		if errors.Is(err, domain.ErrDuplicatePath) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "A page with this slug already exists",
-			})
-		}
-		if errors.Is(err, domain.ErrHomepageExists) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "A homepage already exists — only one root page may have an empty slug",
-			})
-		}
-		out := sse(c)
-		out.ExecuteScript(toastScript("Failed to update page", "error"))
-		return nil
-	}
-
-	// Save all blocks
-	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), id)
-	if err == nil {
-		for _, block := range pwb.Blocks {
-			content := buildBlockContent(block.ID, block.BlockType, rawSignals)
-			contentJSON, err := json.Marshal(content)
-			if err != nil {
-				continue
-			}
-			block.Content = contentJSON
-			h.pageService.SaveBlock(c.Request().Context(), block)
-		}
-	}
-
-	// Signal save success — leave block edit modes alone so the user's open
-	// blocks stay open. Toast feedback confirms the save happened.
-	sse(c).ExecuteScript(toastScript("Page saved successfully", "success"))
-	return nil
-}
 
 func (h *AdminHandler) blockReorderAction(c echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -271,20 +49,6 @@ func (h *AdminHandler) blockReorderAction(c echo.Context) error {
 		return nil
 	}
 
-	return nil
-}
-
-func (h *AdminHandler) pageDeleteAction(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
-	}
-
-	if err := h.pageService.DeletePage(c.Request().Context(), id); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete page")
-	}
-
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", "/admin/pages"))
 	return nil
 }
 
@@ -733,17 +497,4 @@ func toSlice(v any) []any {
 		return nil
 	}
 	return arr
-}
-
-func pageSlugError(err error) map[string]string {
-	switch {
-	case errors.Is(err, domain.ErrReservedSlug):
-		return map[string]string{"slug_error": "This slug is reserved and cannot be used"}
-	case errors.Is(err, domain.ErrDuplicatePath):
-		return map[string]string{"slug_error": "A page with this slug already exists"}
-	case errors.Is(err, domain.ErrHomepageExists):
-		return map[string]string{"slug_error": "A homepage already exists — only one root page may have an empty slug"}
-	}
-
-	return nil
 }

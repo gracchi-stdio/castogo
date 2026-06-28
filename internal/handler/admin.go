@@ -51,9 +51,9 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 
 	// pages
 	g.GET("/pages", h.pageList)
-	g.GET("/pages/create", h.pageCreatePage)
+	g.GET("/pages/create", h.pageCreate)
 	g.POST("/pages/create", h.pageCreateAction)
-	g.GET("/pages/:id/edit", h.pageEditPage)
+	g.GET("/pages/:id/edit", h.pageEdit)
 	g.PATCH("/pages/:id", h.pageUpdateAction)
 	g.DELETE("/pages/:id", h.pageDeleteAction)
 	g.POST("/pages/blocks/upload-image", h.blockUploadImage)

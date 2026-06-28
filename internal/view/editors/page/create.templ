@@ -1,0 +1,10 @@
+package pageform
+
+import "github.com/gracchi-stdio/castogo/internal/domain"
+import "github.com/gracchi-stdio/castogo/internal/view/layout"
+
+templ Create(shared *domain.AdminSharedData, args Args) {
+	@layout.AdminLayout("Create Page", shared, nil, nil) {
+		@Settings(args)
+	}
+}

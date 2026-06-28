@@ -14,6 +14,9 @@ type Signals struct {
 }
 
 func NewSignals(page *domain.Page) Signals {
+	if page == nil {
+		return Signals{}
+	}
 	s := Signals{
 		Title:       page.Title,
 		Slug:        page.Slug,

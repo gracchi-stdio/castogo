@@ -1,0 +1,41 @@
+package pageform
+
+import "github.com/gracchi-stdio/castogo/internal/domain"
+import "github.com/gracchi-stdio/castogo/internal/view/layout"
+import "github.com/gracchi-stdio/castogo/internal/view/components/tabs"
+import "github.com/gracchi-stdio/castogo/internal/view/components/button"
+import "github.com/gracchi-stdio/castogo/internal/view/components/icon"
+import "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
+
+templ Edit(shared *domain.AdminSharedData, args Args) {
+	@layout.AdminLayout("Edit Page", shared, editPageActions(), nil) {
+		@tabs.Tabs(tabs.TabsArgs{ID: "page_tabs", DefaultValue: args.DefaultTab}) {
+			@tabs.TabsList(tabs.TabsListArgs{}) {
+				@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "settings"}) {
+					Page Settings
+				}
+				@tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "blocks"}) {
+					Blocks
+				}
+			}
+			@tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "settings"}) {
+				@Settings(args)
+			}
+			@tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "blocks"}) {
+				@blockEditor.BlockEditor(args.Page.ID, args.Blocks)
+			}
+		}
+	}
+}
+
+templ editPageActions() {
+	<a href="/admin/pages">
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+		}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Pages
+		}
+	</a>
+}

@@ -11,7 +11,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/layout"
 )
 
-templ PageListPage(shared *domain.AdminSharedData, pages []*domain.Page) {
+templ List(shared *domain.AdminSharedData, pages []*domain.Page) {
 	@layout.AdminLayout("Pages", shared, pageListActions(), nil) {
 		if len(pages) > 0 {
 			@pageList(pages)
