@@ -6,7 +6,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
-	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
+
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/select"
@@ -18,11 +18,11 @@ templ Settings(args Args) {
 		mgr := form.SignalsWithFormId("page_settings", signals)
 		formID := "page-settings-form"
 		action := "admin/pages/create"
-		submitLabel := "Create Page"
-		if args.Page != nil {
-			action = fmt.Sprintf("admin/pages/%d", args.Page.ID)
-			submitLabel = "Update Page"
-		}
+		// submitLabel := "Create Page"
+		// if args.Page != nil {
+		// 	action = fmt.Sprintf("admin/pages/%d", args.Page.ID)
+		// 	submitLabel = "Update Page"
+		// }
 	}}
 	<div data-signals={ mgr.DataSignals }>
 		@form.Form(form.FormArgs{
@@ -37,14 +37,14 @@ templ Settings(args Args) {
 			@linkedEpisodeFragment(args.LinkedEpisode)
 		}
 	</div>
-	<div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
-		<div class="flex justify-end gap-2">
-			@formactions.FormActions(formactions.FormActionsArgs{
-				FormID: formID, 
-				SubmitLabel: submitLabel, 
-				CancelHref: "admin/pages"})
-		</div>
-	</div>
+	// <div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
+	// 	<div class="flex justify-end gap-2">
+	// 		@formactions.FormActions(formactions.FormActionsArgs{
+	// 			FormID: formID, 
+	// 			SubmitLabel: submitLabel, 
+	// 			CancelHref: "admin/pages"})
+	// 	</div>
+	// </div>
 }
 
 templ pageSettingsFields(s Signals, parentPages []*domain.Page) {

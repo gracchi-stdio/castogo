@@ -8,7 +8,7 @@ import (
 // Based on the New York v4 style from shadcn/ui
 func cardVariants(className string) string {
 	// Base classes from New York v4 - exact copy
-	baseClasses := "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"
+	baseClasses := "bg-card text-card-foreground flex flex-col gap-6 rounded-sm border py-6"
 
 	// Combine classes
 	classes := []string{baseClasses}

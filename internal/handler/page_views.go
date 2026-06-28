@@ -66,7 +66,7 @@ func (h *AdminHandler) pageEdit(c echo.Context) error {
 		defaultTab = "settings"
 	}
 
-	return echo.WrapHandler(templ.Handler(pageform.Create(
+	return echo.WrapHandler(templ.Handler(pageform.Edit(
 		getSharedData(c),
 		pageform.Args{
 			Page:        pageWithBlocks.Page,
