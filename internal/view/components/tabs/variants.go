@@ -20,7 +20,7 @@ func tabsVariants(className string) string {
 // tabsListVariants generates the appropriate CSS classes for the TabsList component
 func tabsListVariants(className string) string {
 	// Base classes from New York v4 - exact copy from shadcn/ui source
-	baseClasses := "bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]"
+	baseClasses := "bg-border text-muted-foreground border-2 inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]"
 
 	classes := []string{baseClasses}
 	if className != "" {

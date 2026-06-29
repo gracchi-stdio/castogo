@@ -217,6 +217,10 @@ func (s *PageService) GetPageWithBlocks(ctx context.Context, id int64) (*PageWit
 	return &PageWithBlocks{Page: page, Blocks: blocks}, nil
 }
 
+func (s *PageService) GetBlocksForPage(ctx context.Context, pageID int64) ([]*domain.PageBlock, error) {
+	return s.page.GetBlockByPageID(ctx, pageID)
+}
+
 func (s *PageService) SaveBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error) {
 	if block.ID == 0 {
 		return s.page.CreateBlock(ctx, block)

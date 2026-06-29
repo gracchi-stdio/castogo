@@ -10,47 +10,32 @@ import "github.com/gracchi-stdio/castogo/internal/view/components/formactions"
 
 templ Edit(shared *domain.AdminSharedData, args Args) {
   @layout.AdminLayout("Edit Page", shared, editPageActions(), nil) {
-    <div class="w-full">
-      @card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-        @card.CardHeader(card.CardHeaderArgs{}) {
-          @card.CardTitle(card.CardTitleArgs{}) {
-            Settings for { args.Page.Title }
-          }
-          @card.CardDescription(card.CardDescriptionArgs{}) {
-            Manage your team settings and preferences.
-          }
-          @card.CardAction(card.CardActionArgs{}) {
-            @button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
-              Delete
-            }
-          }
+    @tabs.Tabs(tabs.TabsArgs{ID: "page_tabs", DefaultValue: args.DefaultTab}) {
+      @tabs.TabsList(tabs.TabsListArgs{}) {
+        @tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "settings"}) {
+          Page Settings
         }
-        @card.CardContent(card.CardContentArgs{}) {
-          @tabs.Tabs(tabs.TabsArgs{ID: "page_tabs", DefaultValue: args.DefaultTab}) {
-            @tabs.TabsList(tabs.TabsListArgs{}) {
-              @tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "settings"}) {
-                Page Settings
-              }
-              @tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "blocks"}) {
-                Blocks
-              }
-            }
-            @tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "settings"}) {
-              @Settings(args)
-            }
-            @tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "blocks"}) {
-              @blockEditor.BlockEditor(args.Page.ID, args.Blocks)
-            }
+        @tabs.TabsTrigger(tabs.TabsTriggerArgs{ID: "page_tabs", Value: "blocks"}) {
+          Blocks
+        }
+      }
+      @tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "settings"}) {
+        @card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+          @card.CardContent(card.CardContentArgs{}) {
+            @Settings(args)
           }
         }
       }
-      <div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
-        <div class="flex justify-end gap-2">
-          @formactions.FormActions(formactions.FormActionsArgs{
-			FormID: "page-settings-form",
-			SubmitLabel: "Save Changes",
-			CancelHref: "admin/pages"})
-        </div>
+      @tabs.TabsContent(tabs.TabsContentArgs{ID: "page_tabs", Value: "blocks"}) {
+        @blockEditor.BlockEditor(args.Page.ID, args.Blocks)
+      }
+    }
+    <div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
+      <div class="flex justify-end gap-2">
+        @formactions.FormActions(formactions.FormActionsArgs{
+		FormID: "page-settings-form",
+		SubmitLabel: "Save Changes",
+		CancelHref: "admin/pages"})
       </div>
     </div>
   }
