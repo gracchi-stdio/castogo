@@ -9,6 +9,7 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
 	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
@@ -116,23 +117,28 @@ templ blockSummaryCard(pageID int64, block *domain.PageBlock, index int, isActiv
 // blockeditor) + Save. Save POSTs the block's signals to the per-block PATCH endpoint
 // and stays in place. Rendered into #block-form-pane by the select/add handlers.
 templ blockDetailForm(pageID int64, block *domain.PageBlock) {
-	<div class="rounded-lg border bg-card p-4">
-		<h3 class="mb-4 text-lg font-medium">{ blockEditor.TypeLabel(block.BlockType) }</h3>
-		@blockEditor.BlockForm(pageID, block)
-		<div class="mt-5 flex justify-end gap-2 border-t pt-4">
-			@button.Button(button.ButtonArgs{
-				Variant: "default",
-				Size:    "sm",
-				Type:    "button",
-				Attributes: map[string]any{
-					"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d/blocks/%d')", pageID, block.ID),
-				},
-			}) {
-				@icon.Lucide("save", "size-4 mr-1")
-				Save Changes
+	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+		@card.CardHeader(card.CardHeaderArgs{}) {
+			@card.CardTitle(card.CardTitleArgs{}) {
+				{ blockEditor.TypeLabel(block.BlockType) } | { fmt.Sprintf("Block #%d", block.ID) }
 			}
-		</div>
-	</div>
+		}
+		@card.CardContent(card.CardContentArgs{}) {
+			@blockEditor.BlockForm(pageID, block)
+			<div class="mt-5 flex justify-end gap-2 border-t pt-4">
+				@button.Button(button.ButtonArgs{
+					Variant: "default",
+					Size:    "sm",
+					Type:    "button",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+					},
+				}) {
+					Save Changes
+				}
+			</div>
+		}
+	}
 }
 
 templ addBlockControls(pageID int64) {
@@ -168,14 +174,14 @@ templ addBlockControls(pageID int64) {
 }
 
 templ blocksListEmpty() {
-	<div class="flex flex-col items-center gap-2 py-6 text-center">
+	<div class="flex flex-col items-center gap-2 py-6 text-center w-full max-w-md">
 		@icon.Lucide("layers", "size-8 text-muted-foreground/30")
 		<p class="text-sm text-muted-foreground">No blocks yet. Add one to build your page.</p>
 	</div>
 }
 
 templ blocksFormEmpty() {
-	<div class="flex h-full min-h-64 flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center">
+	<div class="flex h-full min-h-64 flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center w-full max-w-md">
 		@icon.Lucide("mouse-pointer-click", "size-8 text-muted-foreground/30")
 		<p class="text-sm text-muted-foreground">Select a block to edit its content.</p>
 	</div>
