@@ -17,6 +17,11 @@ declare global {
     // audio-metadata.ts — called from episode_new_page.templ data-on:change.
     extractAudioMetadata: (el: HTMLInputElement) => void;
 
+    // app.ts — bust Swup's cached editor page after block mutations (add/delete/reorder).
+    // The Blocks tab mutates via SSE patches, not navigation, so a cached /edit/blocks
+    // snapshot would otherwise resurface stale on the next Settings ↔ Blocks switch.
+    bustBlocksCache: () => void;
+
     // Safari-prefixed AudioContext. Optional — only present on older Safari.
     webkitAudioContext?: typeof AudioContext;
   }

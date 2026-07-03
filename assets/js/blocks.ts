@@ -13,7 +13,7 @@ export function initBlockSorter(): void {
 
   sortableInstance = Sortable.create(list, {
     animation: 150,
-    handle: "[data-block-id]",
+    handle: "[data-block-handle]",
     forceFallback: true,
     fallbackClass: "sortable-fallback",
     ghostClass: "sortable-ghost",

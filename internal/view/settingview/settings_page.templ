@@ -8,7 +8,7 @@ import (
 )
 
 templ SettingsPage(data *domain.AdminSharedData, config *domain.PodcastConfig) {
-	@layout.AdminLayout("Settings", data, nil, formactions.FormActions(formactions.FormActionsArgs{
+	@layout.AdminLayout("Settings", data, nil, nil, formactions.FormActions(formactions.FormActionsArgs{
 		FormID:      "settings-form",
 		SubmitLabel: "Save Settings",
 	})) {

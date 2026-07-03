@@ -10,7 +10,7 @@ import (
 )
 
 templ DashboardPage(shared *domain.AdminSharedData, args DashboardPageArgs) {
-	@layout.AdminLayout("Dashboard", shared, dashboardActions(), nil) {
+	@layout.AdminLayout("Dashboard", shared, dashboardActions(), nil, nil) {
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 			@statCard("headphones", strconv.Itoa(args.Total), "Total Episodes")
 			@statCard("send", strconv.Itoa(args.Published), "Published")

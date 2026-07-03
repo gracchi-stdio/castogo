@@ -30,6 +30,16 @@ templ BlockEditor(pageID int64, blocks []*domain.PageBlock) {
 	</div>
 }
 
+// BlockForm renders the editable fields for a single block, for the page-level
+// detail pane. It seeds the block's signals from stored content and renders the
+// type-specific fields — no card chrome or view/edit toggle (selection is handled
+// at the page level now). The page form supplies the Save action around it.
+templ BlockForm(pageID int64, block *domain.PageBlock) {
+	<div { blockSignalAttrs(block)... } class="space-y-3">
+		@blockEditFields(pageID, block)
+	</div>
+}
+
 templ blockList(pageID int64, blocks []*domain.PageBlock) {
 	<div id="block-list" class="space-y-2">
 		for i, block := range blocks {

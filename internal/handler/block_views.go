@@ -39,11 +39,12 @@ func (h *AdminHandler) blockList(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
 	}
 
-	blocks, err := h.pageService.GetBlocksForPage(c.Request().Context(), pageId)
+	_, err = h.pageService.GetBlocksForPage(c.Request().Context(), pageId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load pages")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load blocks")
 	}
-	return echo.WrapHandler(templ.Handler(pageform.List(getSharedData(c), pages)))(c)
+	// TODO: blocks list view not yet implemented (route unregistered).
+	return echo.NewHTTPError(http.StatusNotImplemented, "not implemented")
 }
 
 // block edit view
@@ -61,23 +62,11 @@ func (h *AdminHandler) blockEdit(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load page")
 	}
 
-	parentPages, err := h.pageService.ListPages(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
-	}
-
-	defaultTab := c.QueryParam("tab")
-	if defaultTab == "" {
-		defaultTab = "settings"
-	}
-
-	return echo.WrapHandler(templ.Handler(pageform.Edit(
+	return echo.WrapHandler(templ.Handler(pageform.EditBlocks(
 		getSharedData(c),
 		pageform.Args{
-			Page:        pageWithBlocks.Page,
-			ParentPages: parentPages,
-			Blocks:      pageWithBlocks.Blocks,
-			DefaultTab:  defaultTab,
+			Page:   pageWithBlocks.Page,
+			Blocks: pageWithBlocks.Blocks,
 		},
 	)))(c)
 }

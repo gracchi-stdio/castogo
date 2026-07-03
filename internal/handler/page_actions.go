@@ -76,22 +76,9 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 		return nil
 	}
 
-	// Save all blocks
-	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), id)
-	if err == nil {
-		for _, block := range pwb.Blocks {
-			content := buildBlockContent(block.ID, block.BlockType, rawSignals)
-			contentJSON, err := json.Marshal(content)
-			if err != nil {
-				continue
-			}
-			block.Content = contentJSON
-			h.pageService.SaveBlock(c.Request().Context(), block)
-		}
-	}
-
-	// Signal save success — leave block edit modes alone so the user's open
-	// blocks stay open. Toast feedback confirms the save happened.
+	// Settings only saves page metadata. Block content is saved per-block from the
+	// Blocks tab (blockUpdateAction) — it must not be rebuilt here, since the Settings
+	// tab no longer renders block signals and would otherwise blank every block.
 	sse(c).ExecuteScript(toastScript("Page saved successfully", "success"))
 	return nil
 }

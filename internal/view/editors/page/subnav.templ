@@ -1,0 +1,40 @@
+package pageform
+
+import (
+	"fmt"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+)
+
+templ Subnav(pageID int64, active string) {
+	<ul class="flex space-x-2 rounded-lg bg-border py-1 px-1">
+		@SubnavItem("Settings", fmt.Sprintf("/admin/pages/%d/edit", pageID), "settings", "tab-content-settings", active == "settings")
+		@SubnavItem("Blocks", fmt.Sprintf("/admin/pages/%d/edit/blocks", pageID), "layout-dashboard", "tab-content-blocks", active == "blocks")
+	</ul>
+}
+
+templ SubnavItem(label string, href string, iconName string, contentVT string, isActive bool) {
+	<li class="w-36">
+		<a href={ href } class="block">
+			@button.Button(
+				button.ButtonArgs{
+					AsChild: true,
+					Type:    "button",
+					Variant: "ghost",
+					Size:    "sm",
+					Class:   "relative w-full",
+				},
+			) {
+				if isActive {
+					<span style="view-transition-name: page-tab-indicator" class="absolute inset-0 rounded-md bg-background shadow-sm"></span>
+				}
+				<span style={ fmt.Sprintf("view-transition-name: %s", contentVT) } class="relative z-10 inline-flex items-center gap-1.5">
+					if iconName != "" {
+						@icon.Lucide(iconName, "size-4")
+					}
+					{ label }
+				</span>
+			}
+		</a>
+	</li>
+}

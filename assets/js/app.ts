@@ -68,6 +68,7 @@ const swup = new Swup({
   containers: [
     "[data-swap-title]",
     "[data-swap-actions]",
+    "[data-swap-subnav]",
     "[data-admin-content]",
     "[data-public-content]",
   ],
@@ -94,7 +95,7 @@ swup.hooks.on("visit:start", (visit) => {
   }
   const targetPath = pathnameOf(visit.to.url);
   visit.containers = targetPath.startsWith("/admin")
-    ? ["[data-swap-title]", "[data-swap-actions]", "[data-admin-content]"]
+    ? ["[data-swap-title]", "[data-swap-actions]", "[data-swap-subnav]", "[data-admin-content]"]
     : ["[data-public-content]"];
 });
 
@@ -117,6 +118,13 @@ swup.hooks.on("content:replace", (visit) => {
 // Backward compat: handlers (admin_episodes.go, admin_pages.go) call this via
 // SSE ExecuteScript. Delegates to Swup.
 window.navigateAdmin = (url: string) => swup.navigate(url);
+
+// Bust cached /edit/blocks snapshots after block mutations (add/delete/reorder).
+// The Blocks tab mutates via SSE patches, not navigation, so Swup's cached page would
+// otherwise go stale and resurface on the next Settings ↔ Blocks tab switch.
+window.bustBlocksCache = () => {
+  swup.cache.prune((url) => url.includes("/edit/blocks"));
+};
 
 // Suppress unhandled "Transition was skipped" rejections from the browser's
 // internal view transition promises. The wrapSwapWithViewTransition handler

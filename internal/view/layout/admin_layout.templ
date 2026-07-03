@@ -10,7 +10,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
 )
 
-templ AdminLayout(title string, data *domain.AdminSharedData, actions, footer templ.Component) {
+templ AdminLayout(title string, data *domain.AdminSharedData, actions, subnav, footer templ.Component) {
 	@BaseLayout("") {
 		{{
 			sidebarID := "admin_sidebar"
@@ -95,6 +95,19 @@ templ AdminLayout(title string, data *domain.AdminSharedData, actions, footer te
 							}
 						}
 					</header>
+					<!-- Sub-nav strip — outside data-admin-content so it doesn't slide with
+					     the panel, but still a Swup swap target so its active state updates
+					     on SPA nav. Always rendered (empty when nil = invisible) because
+					     Swup requires the container to exist on every admin page. -->
+					<div data-swap-subnav style="view-transition-name: admin-subnav">
+						if subnav != nil {
+							<div class="bg-muted">
+								<div class="flex items-center gap-2 px-4 py-2">
+									@subnav
+								</div>
+							</div>
+						}
+					</div>
 					<div data-admin-content style="view-transition-name: admin-content" class="flex-1 flex flex-col min-w-0">
 						<main class="flex-1 p-4 justify-between flex flex-col gap-4 bg-muted">
 							{ children... }

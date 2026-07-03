@@ -56,6 +56,43 @@
   animation: 200ms ease-out both slide-in;
 }
 
+/* Admin sub-nav strip — stable; only the sliding pill inside morphs */
+::view-transition-group(admin-subnav) {
+  animation-duration: 0s;
+}
+::view-transition-old(admin-subnav),
+::view-transition-new(admin-subnav) {
+  animation: none;
+}
+
+/* Sliding pill — the group glides it behind the (frozen) tab labels.
+   The old/new images fade rather than staying at full opacity so that on
+   cross-page navigation (where the pill exists in the old snapshot only) it
+   exits gracefully instead of lingering at full opacity for the glide's
+   full 200ms. During the in-editor glide both images are identical
+   (bg-background), so the crossfade is invisible and the pill still reads
+   as a single gliding pill. */
+::view-transition-group(page-tab-indicator) {
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+::view-transition-old(page-tab-indicator) {
+  animation: 120ms ease-in both fade-out;
+}
+::view-transition-new(page-tab-indicator) {
+  animation: 120ms ease-out both fade-in;
+}
+
+/* Tab labels — frozen (they don't move) and painted ABOVE the pill, so the
+   morphing pill never covers the text during the transition. They cross-fade
+   (default) rather than both staying visible, which avoids a doubled label. */
+::view-transition-group(tab-content-settings),
+::view-transition-group(tab-content-blocks) {
+  animation-duration: 0s;
+  z-index: 2;
+}
+
 /* Public navbar — no animation (stays stable during page transitions) */
 ::view-transition-group(public-nav) {
   animation-duration: 0s;
@@ -106,6 +143,18 @@
   to {
     opacity: 0;
     transform: translateY(-6px) scale(0.98);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }
 

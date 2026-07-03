@@ -12,7 +12,7 @@ import (
 )
 
 templ List(shared *domain.AdminSharedData, pages []*domain.Page) {
-	@layout.AdminLayout("Pages", shared, pageListActions(), nil) {
+	@layout.AdminLayout("Pages", shared, pageListActions(), nil, nil) {
 		if len(pages) > 0 {
 			@pageList(pages)
 		} else {

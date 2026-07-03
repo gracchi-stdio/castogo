@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
+	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
 	"github.com/labstack/echo/v4"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -49,6 +51,9 @@ func (h *AdminHandler) blockReorderAction(c echo.Context) error {
 		return nil
 	}
 
+	// Persisted order diverges from any cached /edit/blocks snapshot — bust it so a
+	// later tab switch re-fetches fresh.
+	sse(c).ExecuteScript("window.bustBlocksCache()")
 	return nil
 }
 
@@ -71,12 +76,32 @@ func (h *AdminHandler) blockCreateAction(c echo.Context) error {
 		Content:   json.RawMessage(`{}`),
 	}
 
-	_, err = h.pageService.SaveBlock(c.Request().Context(), block)
+	saved, err := h.pageService.SaveBlock(c.Request().Context(), block)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to create block")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit?tab=blocks", pageID)))
+	// Re-render the list with the new block and open it in the form pane — a partial
+	// SSE patch, not a reload. A Swup navigation would serve cached, pre-add HTML.
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load blocks")
+	}
+	listHTML, err := pageform.RenderBlockListFragment(pageID, pwb.Blocks, saved.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render list")
+	}
+	formHTML, err := pageform.RenderBlockDetailFragment(pageID, saved)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render block")
+	}
+
+	out := sse(c)
+	out.MarshalAndPatchSignals(map[string]any{"active_block": saved.ID})
+	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
+	out.PatchElements(formHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
+	out.ExecuteScript("window.bustBlocksCache()")
+	out.ExecuteScript(toastScript("Block added", "success"))
 	return nil
 }
 
@@ -91,11 +116,88 @@ func (h *AdminHandler) blockDeleteAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid block ID")
 	}
 
+	// active_block (seeded by blocksShell) tells us which block is open in the form pane.
+	var raw map[string]any
+	_ = readSignals(c, &raw) // optional; ignore missing/empty bodies
+	activeID := signalInt64(raw, "active_block")
+
 	if err := h.pageService.DeleteBlock(c.Request().Context(), blockID); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete block")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit?tab=blocks", pageID)))
+	// Re-render the list without the deleted block — partial SSE patch, no reload.
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load blocks")
+	}
+	listHTML, err := pageform.RenderBlockListFragment(pageID, pwb.Blocks, activeID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render list")
+	}
+
+	out := sse(c)
+	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
+
+	// If we deleted the block currently open in the form pane, clear the pane.
+	if activeID != 0 && activeID == blockID {
+		emptyHTML, err := pageform.RenderBlockFormEmptyFragment()
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render")
+		}
+		out.MarshalAndPatchSignals(map[string]any{"active_block": 0})
+		out.PatchElements(emptyHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
+	}
+	out.ExecuteScript("window.bustBlocksCache()")
+	out.ExecuteScript(toastScript("Block deleted", "success"))
+	return nil
+}
+
+// blockSelect — Blocks-tab selection: render the chosen block's form in the form pane
+// and highlight its card. No navigation — the list pane stays mounted and Swup's cache
+// is untouched; both panes are patched in place. (Datastar @get target.)
+func (h *AdminHandler) blockSelect(c echo.Context) error {
+	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
+	}
+
+	blockID, err := strconv.ParseInt(c.Param("blockId"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid block ID")
+	}
+
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "Page not found")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load page")
+	}
+
+	var block *domain.PageBlock
+	for _, b := range pwb.Blocks {
+		if b.ID == blockID {
+			block = b
+			break
+		}
+	}
+	if block == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Block not found")
+	}
+
+	listHTML, err := pageform.RenderBlockListFragment(pageID, pwb.Blocks, blockID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render list")
+	}
+	formHTML, err := pageform.RenderBlockDetailFragment(pageID, block)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render block")
+	}
+
+	out := sse(c)
+	out.MarshalAndPatchSignals(map[string]any{"active_block": blockID})
+	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
+	out.PatchElements(formHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
 	return nil
 }
 
@@ -497,4 +599,18 @@ func toSlice(v any) []any {
 		return nil
 	}
 	return arr
+}
+
+// signalInt64 reads an int64-valued signal from a Datastar signals map.
+func signalInt64(signals map[string]any, key string) int64 {
+	switch n := signals[key].(type) {
+	case float64:
+		return int64(n)
+	case int64:
+		return n
+	case string:
+		v, _ := strconv.ParseInt(n, 10, 64)
+		return v
+	}
+	return 0
 }

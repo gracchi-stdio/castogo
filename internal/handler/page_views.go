@@ -61,18 +61,11 @@ func (h *AdminHandler) pageEdit(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
 	}
 
-	defaultTab := c.QueryParam("tab")
-	if defaultTab == "" {
-		defaultTab = "settings"
-	}
-
-	return echo.WrapHandler(templ.Handler(pageform.Edit(
+	return echo.WrapHandler(templ.Handler(pageform.EditSettings(
 		getSharedData(c),
 		pageform.Args{
 			Page:        pageWithBlocks.Page,
 			ParentPages: parentPages,
-			Blocks:      pageWithBlocks.Blocks,
-			DefaultTab:  defaultTab,
 		},
 	)))(c)
 }

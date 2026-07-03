@@ -1,0 +1,239 @@
+package pageform
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+// The Blocks tab is a Datastar island: nothing inside it navigates. Selecting, adding,
+// deleting, reordering, and saving are all SSE patches against this one page. The list
+// pane (#block-list) and form pane (#block-form-pane) are stable containers — only
+// their contents change. There is no second copy of the list for Swup's cache to drift
+// from. Swup is used only for the Settings ↔ Blocks tab switch (the Subnav).
+
+// EditBlocks renders the Blocks tab: list pane + form pane (empty until a block is
+// selected). Selection state lives in the active_block signal, not the URL.
+templ EditBlocks(shared *domain.AdminSharedData, args Args) {
+	@layout.AdminLayout("Edit Page", shared, editPageActions(), Subnav(args.Page.ID, "blocks"), nil) {
+		@blocksShell(args.Page.ID, args.Blocks)
+	}
+}
+
+templ blocksShell(pageID int64, blocks []*domain.PageBlock) {
+	<div data-signals:active_block="0" class="grid gap-4 md:grid-cols-[300px_1fr]">
+		@blocksListPane(pageID, blocks)
+		<div id="block-form-pane" class="min-w-0">
+			@blocksFormEmpty()
+		</div>
+	</div>
+}
+
+templ blocksListPane(pageID int64, blocks []*domain.PageBlock) {
+	<div class="space-y-3">
+		@addBlockControls(pageID)
+		<div id="block-list" class="space-y-2">
+			@BlockListItems(pageID, blocks, 0)
+		</div>
+	</div>
+}
+
+// BlockListItems renders the cards (or the empty state) inside #block-list. Exported
+// so the select/add/delete handlers can re-render just the list via SSE PatchElements.
+// activeID is 0 on the initial render (nothing selected); handlers pass the selected
+// block's ID so its card is highlighted.
+templ BlockListItems(pageID int64, blocks []*domain.PageBlock, activeID int64) {
+	if len(blocks) == 0 {
+		@blocksListEmpty()
+	} else {
+		for i, b := range blocks {
+			@blockSummaryCard(pageID, b, i, activeID == b.ID)
+		}
+	}
+}
+
+// blockSummaryCard — one row: drag grip + select body + delete. The body is a button
+// (not a link) because selecting is a backend action, not navigation; only
+// [data-block-handle] starts a drag, so click-select and drag-reorder never clash.
+templ blockSummaryCard(pageID int64, block *domain.PageBlock, index int, isActive bool) {
+	<div
+		data-block-id={ fmt.Sprintf("%d", block.ID) }
+		class={ fmt.Sprintf("flex items-center gap-1 rounded-lg border bg-card text-card-foreground px-1.5 py-1.5%s", activeBorderClass(isActive)) }
+	>
+		@button.Button(button.ButtonArgs{
+			Variant: "ghost",
+			Size:    "icon",
+			Type:    "button",
+			Class:   "cursor-grab active:cursor-grabbing shrink-0",
+			Attributes: map[string]any{
+				"data-block-handle": "",
+				"aria-label":        "Drag to reorder",
+			},
+		}) {
+			@icon.Lucide("grip-vertical", "size-4 text-muted-foreground")
+		}
+		@button.Button(button.ButtonArgs{
+			Variant: "ghost",
+			Type:    "button",
+			Class:   "flex h-auto flex-1 items-center gap-2 min-w-0 justify-start px-2 py-1 font-normal",
+			Attributes: map[string]any{
+				"data-on:click": fmt.Sprintf("@get('/admin/pages/%d/blocks/%d/select')", pageID, block.ID),
+			},
+		}) {
+			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium text-muted-foreground">
+				{ fmt.Sprintf("%d", index+1) }
+			</span>
+			<span class="min-w-0">
+				<span class="block truncate text-sm font-medium">{ blockEditor.TypeLabel(block.BlockType) }</span>
+				<span class="block truncate text-xs text-muted-foreground">{ blockSummary(block) }</span>
+			</span>
+		}
+		@button.Button(button.ButtonArgs{
+			Variant: "ghost",
+			Size:    "icon",
+			Type:    "button",
+			Class:   "shrink-0",
+			Attributes: map[string]any{
+				"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+				"aria-label":    "Delete block",
+			},
+		}) {
+			@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+		}
+	</div>
+}
+
+// blockDetailForm — the selected block's editor: type label + field form (delegated to
+// blockeditor) + Save. Save POSTs the block's signals to the per-block PATCH endpoint
+// and stays in place. Rendered into #block-form-pane by the select/add handlers.
+templ blockDetailForm(pageID int64, block *domain.PageBlock) {
+	<div class="rounded-lg border bg-card p-4">
+		<h3 class="mb-4 text-lg font-medium">{ blockEditor.TypeLabel(block.BlockType) }</h3>
+		@blockEditor.BlockForm(pageID, block)
+		<div class="mt-5 flex justify-end gap-2 border-t pt-4">
+			@button.Button(button.ButtonArgs{
+				Variant: "default",
+				Size:    "sm",
+				Type:    "button",
+				Attributes: map[string]any{
+					"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+				},
+			}) {
+				@icon.Lucide("save", "size-4 mr-1")
+				Save Changes
+			}
+		</div>
+	</div>
+}
+
+templ addBlockControls(pageID int64) {
+	<div class="flex items-center gap-2" data-signals:new_block_type="'hero'">
+		@selectcomponent.Select(selectcomponent.SelectArgs{
+			ID:           "add-block-select",
+			DefaultValue: "hero",
+			Options: []selectcomponent.SelectOptionArgs{
+				{Value: "hero", Label: "Hero"},
+				{Value: "features", Label: "Features"},
+				{Value: "episodes_showcase", Label: "Episodes"},
+				{Value: "testimonials", Label: "Testimonials"},
+				{Value: "cta", Label: "Call to Action"},
+				{Value: "footer", Label: "Footer"},
+				{Value: "prose", Label: "Rich Text"},
+			},
+			Placeholder: "Block type",
+			Class:       "w-40",
+			OnChange:    "$new_block_type = $add_block_select.value",
+		})
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+			Type:    "button",
+			Attributes: map[string]any{
+				"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks')", pageID),
+			},
+		}) {
+			@icon.Lucide("plus", "size-4 mr-1")
+			Add Block
+		}
+	</div>
+}
+
+templ blocksListEmpty() {
+	<div class="flex flex-col items-center gap-2 py-6 text-center">
+		@icon.Lucide("layers", "size-8 text-muted-foreground/30")
+		<p class="text-sm text-muted-foreground">No blocks yet. Add one to build your page.</p>
+	</div>
+}
+
+templ blocksFormEmpty() {
+	<div class="flex h-full min-h-64 flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center">
+		@icon.Lucide("mouse-pointer-click", "size-8 text-muted-foreground/30")
+		<p class="text-sm text-muted-foreground">Select a block to edit its content.</p>
+	</div>
+}
+
+// --- helpers ---
+
+func activeBorderClass(active bool) string {
+	if active {
+		return " border-primary ring-1 ring-primary"
+	}
+	return ""
+}
+
+// RenderBlockListFragment renders the #block-list contents (cards or empty state) for
+// SSE patching after select/add/delete.
+func RenderBlockListFragment(pageID int64, blocks []*domain.PageBlock, activeID int64) (string, error) {
+	var buf bytes.Buffer
+	if err := BlockListItems(pageID, blocks, activeID).Render(context.Background(), &buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// RenderBlockDetailFragment renders the selected block's editor for SSE patching into
+// #block-form-pane.
+func RenderBlockDetailFragment(pageID int64, block *domain.PageBlock) (string, error) {
+	var buf bytes.Buffer
+	if err := blockDetailForm(pageID, block).Render(context.Background(), &buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// RenderBlockFormEmptyFragment renders the form-pane empty state for SSE patching
+// (used when the open block is deleted).
+func RenderBlockFormEmptyFragment() (string, error) {
+	var buf bytes.Buffer
+	if err := blocksFormEmpty().Render(context.Background(), &buf); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// blockSummary returns a short, type-agnostic preview of a block's stored content —
+// the first non-empty text field. Generic for now; Step 3 makes it registry-driven.
+func blockSummary(block *domain.PageBlock) string {
+	var raw map[string]any
+	if err := json.Unmarshal(block.Content, &raw); err != nil {
+		return "Empty"
+	}
+	for _, key := range []string{"headline", "section_title", "title", "subheadline", "description", "body", "copyright", "text"} {
+		if s, ok := raw[key].(string); ok {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				return s
+			}
+		}
+	}
+	return "Empty"
+}
