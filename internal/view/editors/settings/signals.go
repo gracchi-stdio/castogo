@@ -37,9 +37,7 @@ type Signals struct {
 // Nil-safe: returns zero-value Signals when config is nil (first-run case).
 func NewSignals(config *domain.PodcastConfig) Signals {
 	if config == nil {
-		return Signals{
-			Language: "en",
-		}
+		return Signals{Language: "en"}
 	}
 	return Signals{
 		Title:         config.Title,

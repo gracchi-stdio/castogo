@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"encoding/json"
+
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
@@ -16,7 +18,7 @@ import (
 templ Form(args Args) {
 	{{
 		signals := NewSignals(args.Config)
-		formSignals := form.SignalsWithFormId("settings", signals)
+		signalsJSON, _ := json.Marshal(signals)
 		categoryOpts := CategoryOptions()
 		subcategoryOpts := SubcategoryOptions(signals.Category)
 		configID := int64(0)
@@ -24,7 +26,7 @@ templ Form(args Args) {
 			configID = args.Config.ID
 		}
 	}}
-	<div data-signals={ formSignals.DataSignals }>
+	<div data-signals={ string(signalsJSON) }>
 		@loading.LoadingOverlay(loading.LoadingOverlayArgs{
 			Signal: "cover_uploading",
 			Status: "cover_status",

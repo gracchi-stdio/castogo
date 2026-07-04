@@ -1,35 +1,37 @@
 package pageform
+
 import "github.com/gracchi-stdio/castogo/internal/domain"
 import "github.com/gracchi-stdio/castogo/internal/view/layout"
 import "github.com/gracchi-stdio/castogo/internal/view/components/button"
 import "github.com/gracchi-stdio/castogo/internal/view/components/icon"
 import "github.com/gracchi-stdio/castogo/internal/view/components/card"
-import "github.com/gracchi-stdio/castogo/internal/view/components/formactions"
 
 templ EditSettings(shared *domain.AdminSharedData, args Args) {
-  @layout.AdminLayout("Edit Page", shared, editPageActions(), Subnav(args.Page.ID, "settings"), nil) {
-    @card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-      @card.CardContent(card.CardContentArgs{}) {
-        @Settings(args)
-      }
-    }
-    <div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
-      <div class="flex justify-end gap-2">
-        @formactions.FormActions(formactions.FormActionsArgs{
-		FormID: "page-settings-form",
-		SubmitLabel: "Save Changes",
-		CancelHref: "admin/pages"})
-      </div>
-    </div>
-  }
+	@layout.AdminLayout("Edit Page", shared, nil, Subnav(args.Page.ID, "settings"), nil) {
+		@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+			@card.CardContent(card.CardContentArgs{}) {
+				@Settings(args)
+			}
+		}
+		// <div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
+		// 	<div class="flex justify-end gap-2">
+		// 		@formactions.FormActions(formactions.FormActionsArgs{
+		// 			FormID:      "page-settings-form",
+		// 			SubmitLabel: "Save Changes",
+		// 			CancelHref:  "admin/pages"})
+		// 	</div>
+		// </div>
+	}
 }
 
 templ editPageActions() {
-  <a href="/admin/pages">@button.Button(button.ButtonArgs{
-	Variant: "outline",
-	Size: "sm",
-	}) {
-      @icon.Lucide("arrow-left", "size-4 mr-1")
-      Back to Pages
-    }</a>
+	<a href="/admin/pages">
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+		}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Pages
+		}
+	</a>
 }

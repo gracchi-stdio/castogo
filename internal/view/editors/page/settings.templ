@@ -1,11 +1,13 @@
 package pageform
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
 
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
@@ -15,23 +17,18 @@ import (
 templ Settings(args Args) {
 	{{
 		signals := NewSignals(args.Page)
-		mgr := form.SignalsWithFormId("page_settings", signals)
+		signalsJSON, _ := json.Marshal(signals)
 		formID := "page-settings-form"
-		action := "admin/pages/create"
-		// submitLabel := "Create Page"
-		// if args.Page != nil {
-		// 	action = fmt.Sprintf("admin/pages/%d", args.Page.ID)
-		// 	submitLabel = "Update Page"
-		// }
+		action := "/admin/pages/create"
+		if args.Page != nil {
+			action = fmt.Sprintf("/admin/pages/%d", args.Page.ID)
+		}
 	}}
-	<div data-signals={ mgr.DataSignals }>
+	<div data-signals={ string(signalsJSON) }>
 		@form.Form(form.FormArgs{
-			ID:     formID,
-			Action: action,
-			FormDataFields: []string{
-				"title", "slug", "parent_id", "is_published", "show_in_nav", 
-				"title_error", "slug_error",
-			},
+			ID:          formID,
+			Action:      action,
+			ContentType: "json",
 		}) {
 			@pageSettingsFields(signals, args.ParentPages)
 			@linkedEpisodeFragment(args.LinkedEpisode)
@@ -61,8 +58,8 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 				Placeholder: "About Us",
 				Class:       "w-full",
 				Attributes: map[string]any{
-					"data-bind": "title",
-					"data-on:input": "$title_error = ''",
+					"data-bind":              "title",
+					"data-on:input":          "$title_error = ''",
 					"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
 				}})
 		}
@@ -78,10 +75,10 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 				Placeholder: "about-us",
 				Class:       "w-full",
 				Attributes: map[string]any{
-					"data-bind": "slug",
-					"data-on:input": "$slug_error = ''",
+					"data-bind":              "slug",
+					"data-on:input":          "$slug_error = ''",
 					"data-attr:aria-invalid": "$slug_error != '' ? 'true' : ''",
-					"data-on:blur": "$slug = $slug.trim()",
+					"data-on:blur":           "$slug = $slug.trim()",
 				},
 			})
 		}
@@ -102,17 +99,24 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 		}
 		<div class="flex items-center gap-3">
 			@checkbox.Checkbox(checkbox.CheckboxArgs{
-				ID: "is_published", 
-				Name: "is_published", 
+				ID:      "is_published",
+				Name:    "is_published",
 				Checked: s.IsPublished})
 			<span class="text-sm">Published</span>
 		</div>
 		<div class="flex items-center gap-3">
 			@checkbox.Checkbox(checkbox.CheckboxArgs{
-				ID: "show_in_nav", 
-				Name: "show_in_nav", 
+				ID:      "show_in_nav",
+				Name:    "show_in_nav",
 				Checked: s.ShowInNav})
 			<span class="text-sm">Show in main navigation</span>
+		</div>
+		<div class="flex justify-end gap-2">
+			@formactions.FormActions(formactions.FormActionsArgs{
+				FormID:      "page-settings-form",
+				CancelLabel: "Back",
+				SubmitLabel: "Save Changes",
+				CancelHref:  "/admin/pages"})
 		</div>
 	</div>
 }

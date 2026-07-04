@@ -37,7 +37,9 @@ function pathnameOf(url: string): string {
 }
 
 function isReserved(pathname: string): boolean {
-  return RESERVED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  return RESERVED_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
 }
 
 // Decide whether Swup should handle a given URL. Returning true = bypass Swup,
@@ -95,7 +97,12 @@ swup.hooks.on("visit:start", (visit) => {
   }
   const targetPath = pathnameOf(visit.to.url);
   visit.containers = targetPath.startsWith("/admin")
-    ? ["[data-swap-title]", "[data-swap-actions]", "[data-swap-subnav]", "[data-admin-content]"]
+    ? [
+        "[data-swap-title]",
+        "[data-swap-actions]",
+        "[data-swap-subnav]",
+        "[data-admin-content]",
+      ]
     : ["[data-public-content]"];
 });
 
@@ -124,6 +131,17 @@ window.navigateAdmin = (url: string) => swup.navigate(url);
 // otherwise go stale and resurface on the next Settings ↔ Blocks tab switch.
 window.bustBlocksCache = () => {
   swup.cache.prune((url) => url.includes("/edit/blocks"));
+};
+
+// Bust cached /admin/pages list after page mutations (create/update/delete).
+// When editUrl is provided, also prunes the specific edit page so re-opening
+// it shows fresh data instead of the pre-save snapshot.
+window.bustPagesCache = (editUrl?: string) => {
+  swup.cache.prune((url) => {
+    if (url === "/admin/pages" || url === "/admin/pages/") return true;
+    if (editUrl && url === editUrl) return true;
+    return false;
+  });
 };
 
 // Suppress unhandled "Transition was skipped" rejections from the browser's

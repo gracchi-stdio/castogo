@@ -22,6 +22,10 @@ declare global {
     // snapshot would otherwise resurface stale on the next Settings ↔ Blocks switch.
     bustBlocksCache: () => void;
 
+    // app.ts — bust Swup's cached /admin/pages list after page mutations (create/update/delete).
+    // Optional editUrl also prunes the specific edit page so re-opening it shows fresh data.
+    bustPagesCache: (editUrl?: string) => void;
+
     // Safari-prefixed AudioContext. Optional — only present on older Safari.
     webkitAudioContext?: typeof AudioContext;
   }

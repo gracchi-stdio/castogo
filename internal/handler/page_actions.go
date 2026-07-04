@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,16 +18,11 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
 	}
 
-	var rawSignals map[string]any
-	if err := readSignals(c, &rawSignals); err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Invalid request", "error"))
+	var raw pageUpdateInput
+	if err := readSignals(c, &raw); err != nil {
+		sse(c).ExecuteScript(toastScript("Invalid request", "error"))
 		return nil
 	}
-
-	var raw pageUpdateInput
-	rawBytes, _ := json.Marshal(rawSignals)
-	json.Unmarshal(rawBytes, &raw)
 
 	if err := validate.Struct(raw); err != nil {
 		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
@@ -45,6 +39,7 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 	slug := raw.Slug
 	layout := raw.Layout
 	isPublished := raw.IsPublished.Checked
+	showInNav := raw.ShowInNav.Checked
 
 	update := service.UpdatePageInput{
 		Title:       &title,
@@ -52,6 +47,7 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 		Layout:      &layout,
 		ParentID:    &parentVal,
 		IsPublished: &isPublished,
+		ShowInNav:   &showInNav,
 	}
 
 	_, err = h.pageService.UpdatePage(c.Request().Context(), id, update)
@@ -79,7 +75,7 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 	// Settings only saves page metadata. Block content is saved per-block from the
 	// Blocks tab (blockUpdateAction) — it must not be rebuilt here, since the Settings
 	// tab no longer renders block signals and would otherwise blank every block.
-	sse(c).ExecuteScript(toastScript("Page saved successfully", "success"))
+	sse(c).ExecuteScript(fmt.Sprintf("window.bustPagesCache(%q); "+toastScript("Page saved successfully", "success"), fmt.Sprintf("/admin/pages/%d/edit", id)))
 	return nil
 }
 
@@ -128,7 +124,7 @@ func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 		return nil
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", fmt.Sprintf("/admin/pages/%d/edit", page.ID)))
+	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q); window.bustPagesCache()", fmt.Sprintf("/admin/pages/%d/edit", page.ID)))
 	return nil
 }
 
@@ -143,7 +139,7 @@ func (h *AdminHandler) pageDeleteAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete page")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q)", "/admin/pages"))
+	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q); window.bustPagesCache(%q)", "/admin/pages", fmt.Sprintf("/admin/pages/%d/edit", id)))
 	return nil
 }
 

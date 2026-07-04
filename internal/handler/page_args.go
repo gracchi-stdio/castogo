@@ -8,6 +8,9 @@ type pageUpdateInput struct {
 	IsPublished struct {
 		Checked bool `json:"checked"`
 	} `json:"is_published"`
+	ShowInNav struct {
+		Checked bool `json:"checked"`
+	} `json:"show_in_nav"`
 }
 
 type pageCreateInput struct {
