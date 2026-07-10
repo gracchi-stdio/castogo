@@ -1,128 +1,135 @@
 @layer base {
-    .theme-public {
-        background-color: hsl(var(--background));
-        color: hsl(var(--foreground));
-        scrollbar-gutter: auto;
-    }
+  .theme-public {
+    --color-primary: var(--color-red-500);
 
-    .theme-public .public-logo {
-        font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
-        letter-spacing: 0.02em;
-    }
+    color: hsl(var(--foreground));
+    scrollbar-gutter: auto;
 
-    .theme-public .prose {
-        --tw-prose-body: hsl(var(--foreground));
-        --tw-prose-headings: hsl(var(--foreground));
-        --tw-prose-lead: hsl(var(--foreground));
-        --tw-prose-links: hsl(var(--primary));
-        --tw-prose-bold: hsl(var(--foreground));
-        --tw-prose-counters: hsl(var(--muted-foreground));
-        --tw-prose-bullets: hsl(var(--muted-foreground));
-        --tw-prose-hr: hsl(var(--border));
-        --tw-prose-quotes: hsl(var(--foreground));
-        --tw-prose-quote-borders: hsl(var(--border));
-        --tw-prose-captions: hsl(var(--muted-foreground));
-        --tw-prose-code: hsl(var(--foreground));
-        --tw-prose-pre-code: hsl(var(--foreground));
-        --tw-prose-pre-bg: hsl(var(--muted));
-        --tw-prose-th-borders: hsl(var(--border));
-        --tw-prose-td-borders: hsl(var(--border));
+    &.dark {
+      --color-background: var(--color-stone-9 00);
     }
+  }
 
-    /* Brutalist pass: hard edges + no soft shadows (public only) */
-    .theme-public *,
-    .theme-public *::before,
-    .theme-public *::after {
-        border-radius: 0 !important;
-        box-shadow: none !important;
-    }
+  .theme-public .public-logo {
+    font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  .theme-public .prose {
+    --tw-prose-body: hsl(var(--foreground));
+    --tw-prose-headings: hsl(var(--foreground));
+    --tw-prose-lead: hsl(var(--foreground));
+    --tw-prose-links: hsl(var(--primary));
+    --tw-prose-bold: hsl(var(--foreground));
+    --tw-prose-counters: hsl(var(--muted-foreground));
+    --tw-prose-bullets: hsl(var(--muted-foreground));
+    --tw-prose-hr: hsl(var(--border));
+    --tw-prose-quotes: hsl(var(--foreground));
+    --tw-prose-quote-borders: hsl(var(--border));
+    --tw-prose-captions: hsl(var(--muted-foreground));
+    --tw-prose-code: hsl(var(--foreground));
+    --tw-prose-pre-code: hsl(var(--foreground));
+    --tw-prose-pre-bg: hsl(var(--muted));
+    --tw-prose-th-borders: hsl(var(--border));
+    --tw-prose-td-borders: hsl(var(--border));
+  }
+
+  /* Brutalist pass: hard edges + no soft shadows (public only) */
+  .theme-public *,
+  .theme-public *::before,
+  .theme-public *::after {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
 }
 
 /* Episode player — WaveSurfer brutalist styling */
 [data-episode-play] {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 [data-episode-play]:focus-visible {
-    outline: 2px solid hsl(var(--ring));
-    outline-offset: 2px;
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
 [data-episode-waveform] {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 /* Striped placeholder before WaveSurfer initializes */
 [data-episode-waveform]:empty {
-    background: repeating-linear-gradient(
-        90deg,
-        hsl(var(--muted-foreground) / 0.15) 0px,
-        hsl(var(--muted-foreground) / 0.15) 2px,
-        transparent 2px,
-        transparent 4px
-    );
-    background-size: 4px 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    hsl(var(--muted-foreground) / 0.15) 0px,
+    hsl(var(--muted-foreground) / 0.15) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  background-size: 4px 100%;
 }
 
 /* Loading spinner on play button */
 .episode-player--loading [data-episode-play] svg {
-    animation: episode-spin 1s linear infinite;
+  animation: episode-spin 1s linear infinite;
 }
 
 @keyframes episode-spin {
-    to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Error state */
 [data-episode-waveform].episode-player--error::after {
-    content: "Audio unavailable";
-    font-size: 0.75rem;
-    color: hsl(var(--muted-foreground));
+  content: "Audio unavailable";
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
 }
 
 /* ─── Brutalist public navigation ─── */
 
 /* Scroll collapse: hide Row 1 when scrolled */
 .public-nav[data-scrolled] .public-nav-row1 {
-    display: none;
+  display: none;
 }
 .public-nav[data-scrolled] .public-nav-row2 {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 /* Link separators */
 .public-nav-link::after {
-    content: "|";
-    margin-left: 1rem;
-    margin-right: 1rem;
-    color: hsl(var(--muted-foreground) / 0.4);
+  content: "|";
+  margin-left: 1rem;
+  margin-right: 1rem;
+  color: hsl(var(--muted-foreground) / 0.4);
 }
 .public-nav-link:last-child::after {
-    display: none;
+  display: none;
 }
 
 /* Search input */
 .public-search-input {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-    border: 2px solid transparent;
-    box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.45);
-    background: transparent;
-    padding: 0.375rem 0.75rem;
-    color: hsl(var(--foreground));
-    outline: none;
-    font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.45);
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+  color: hsl(var(--foreground));
+  outline: none;
+  font-size: 0.75rem;
 }
 .public-search-input:focus {
-    border-color: hsl(var(--primary));
-    box-shadow: inset 0 0 0 1px hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  box-shadow: inset 0 0 0 1px hsl(var(--primary));
 }
 .public-search-input::placeholder {
-    color: hsl(var(--muted-foreground));
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
 }
