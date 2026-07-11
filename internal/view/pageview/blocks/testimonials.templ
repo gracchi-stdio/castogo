@@ -7,14 +7,14 @@ import (
 )
 
 templ TestimonialsBlock(content *domain.TestimonialsContent) {
-	<section class="py-20 border-y-2 border-border">
+	<section class="py-20 border-y border-border">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="text-center mb-12">
 				if content.SectionTitle != "" {
-					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.SectionTitle }</h2>
+					<h2 class="text-3xl font-bold text-foreground font-heading balance">{ content.SectionTitle }</h2>
 				}
 				if content.SectionDescription != "" {
-					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{ content.SectionDescription }</p>
+					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto pretty">{ content.SectionDescription }</p>
 				}
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -27,13 +27,13 @@ templ TestimonialsBlock(content *domain.TestimonialsContent) {
 }
 
 templ testimonialCard(item domain.TestimonialItem) {
-	<div class="border-2 border-border bg-background p-6">
-		<p class="text-foreground leading-relaxed italic">"{ item.Quote }"</p>
-		<div class="mt-4 flex items-center gap-3">
+	<figure class="border border-border bg-background p-6">
+		<blockquote class="text-foreground leading-relaxed italic">"{ item.Quote }"</blockquote>
+		<figcaption class="mt-4 flex items-center gap-3">
 			if item.AvatarURL != "" {
-				<img src={ item.AvatarURL } alt={ item.Author } class="w-10 h-10 object-cover"/>
+				<img src={ item.AvatarURL } alt={ "Portrait of " + item.Author } class="w-10 h-10 object-cover" loading="lazy"/>
 			} else {
-				<div class="w-10 h-10 bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+				<div class="w-10 h-10 bg-primary/10 flex items-center justify-center text-sm font-medium text-primary" aria-hidden="true">
 					{ strings.ToUpper(string(item.Author[0])) }
 				</div>
 			}
@@ -43,6 +43,6 @@ templ testimonialCard(item domain.TestimonialItem) {
 					<p class="text-xs text-muted-foreground">{ item.Role }</p>
 				}
 			</div>
-		</div>
-	</div>
+		</figcaption>
+	</figure>
 }

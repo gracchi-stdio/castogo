@@ -14,6 +14,14 @@ export function updateActiveNavLinks(pathname: string): void {
     const isActive = link.getAttribute("href") === pathname;
     link.classList.toggle("text-primary", isActive);
     link.classList.toggle("text-muted-foreground", !isActive);
+    // Reflect active state for assistive tech + the CSS marker hook
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+      link.setAttribute("data-active", "");
+    } else {
+      link.removeAttribute("aria-current");
+      link.removeAttribute("data-active");
+    }
   }
 }
 

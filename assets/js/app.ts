@@ -159,6 +159,7 @@ window.addEventListener("unhandledrejection", (event) => {
 });
 
 // Initial page-load inits (Swup only fires hooks on subsequent navigations).
+updateActiveNavLinks(window.location.pathname);
 initBlockSorter();
 initEpisodePlayers();
 initPublicNavScroll();

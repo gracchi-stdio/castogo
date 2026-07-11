@@ -10,7 +10,7 @@ import (
 templ ProseBlock(content *domain.ProseContent) {
 	<section class="py-12">
 		<div class="mx-auto max-w-4xl px-6">
-			<div class="prose prose-neutral dark:prose-invert max-w-none">
+			<div class="prose prose-neutral max-w-none">
 				@templ.Raw(renderMarkdown(content.Body))
 			</div>
 		</div>

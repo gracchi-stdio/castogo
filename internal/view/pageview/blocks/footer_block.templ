@@ -7,23 +7,23 @@ import (
 )
 
 templ FooterBlock(content *domain.FooterContent) {
-	<footer class="border-t-2 border-border py-12 bg-background">
+	<footer class="border-t border-border py-12 bg-background">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="flex flex-col sm:flex-row items-center justify-between gap-6">
 				<p class="text-sm text-muted-foreground">
 					@templ.Raw(utils.RenderBrandTokens(content.Copyright))
 				</p>
 				if len(content.Links) > 0 {
-					<div class="flex items-center gap-6">
+					<nav class="flex items-center gap-6" aria-label="Footer">
 						for _, link := range content.Links {
 							<a href={ templ.SafeURL(link.URL) } class="text-sm text-muted-foreground hover:text-primary transition-colors">
 								@templ.Raw(utils.RenderBrandTokens(link.Label))
 							</a>
 						}
-					</div>
+					</nav>
 				}
 				if len(content.SocialLinks) > 0 {
-					<div class="flex items-center gap-4">
+					<div class="flex items-center gap-4" aria-label="Social links">
 						for _, social := range content.SocialLinks {
 							<a href={ templ.SafeURL(social.URL) } class="text-muted-foreground hover:text-primary transition-colors" aria-label={ social.Platform }>
 								@icon.Lucide(socialPlatformIcon(social.Platform), "size-5")

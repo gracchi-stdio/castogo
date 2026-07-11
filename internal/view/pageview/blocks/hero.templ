@@ -13,7 +13,7 @@ templ HeroBlock(content *domain.HeroContent) {
 	{{
 		bg := strings.Trim(content.BackgroundImage, "'\"")
 		overlay := strings.Trim(content.OverlayOpacity, "'\"")
-		overlayOpacity := 0.5
+		overlayOpacity := 0.35
 		if overlay != "" {
 			if v, err := strconv.ParseFloat(overlay, 64); err == nil {
 				if v < 0 {
@@ -25,19 +25,29 @@ templ HeroBlock(content *domain.HeroContent) {
 				overlayOpacity = v
 			}
 		}
-	}}
-	<section class="relative overflow-hidden border-b-2 border-border">
-		if bg != "" {
-			<div class="absolute inset-0 bg-cover bg-center" style={ fmt.Sprintf("background-image: url(%s)", bg) }>
-				<div class="absolute inset-0 bg-white dark:bg-black" style={ fmt.Sprintf("opacity: %.2f", overlayOpacity) }></div>
-			</div>
+		hasImage := bg != ""
+		var sectionStyle string
+		if hasImage {
+			sectionStyle = fmt.Sprintf(
+				"background-image: linear-gradient(hsl(var(--background) / %.2f) 0 0), linear-gradient(to top, hsl(var(--background) / 0.92) 0%%, hsl(var(--background) / 0.35) 50%%, transparent 100%%), url(%s)",
+				overlayOpacity, bg,
+			)
 		}
-		<div class={ "relative mx-auto max-w-4xl px-6 py-24 text-center", ternary(bg == "", "bg-background", "") }>
-			<h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground font-heading">
+	}}
+	<section
+		class={ "relative overflow-hidden border-b border-border", ternary(hasImage, "bg-fixed motion-reduce:bg-scroll bg-cover bg-center", "bg-background") }
+		aria-labelledby="hero-heading"
+		style={ sectionStyle }
+	>
+		<div class="relative mx-auto max-w-4xl px-6 py-24 sm:py-32 lg:py-40 text-center">
+			<h1
+				id="hero-heading"
+				class="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight font-heading balance leading-[1.1] text-foreground"
+			>
 				{ content.Headline }
 			</h1>
 			if content.Subheadline != "" {
-				<p class="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+				<p class="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto pretty">
 					{ content.Subheadline }
 				</p>
 			}

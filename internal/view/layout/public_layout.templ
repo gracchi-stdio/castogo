@@ -3,7 +3,7 @@ package layout
 import "github.com/gracchi-stdio/castogo/internal/view/utils"
 
 type PublicLayoutData struct {
-	NavData *PublicNavbarData
+	NavData  *PublicNavbarData
 	Settings *SettingsArgs
 }
 
@@ -19,11 +19,13 @@ templ PublicLayout(data *PublicLayoutData) {
 	@BaseLayout("theme-public") {
 		<div class="min-h-screen flex flex-col">
 			@PublicNavbar(data.NavData)
-			<main class="flex-1" data-public-content style="view-transition-name: public-content">
+			<main class="flex-1" id="main-content" data-public-content style="view-transition-name: public-content">
 				{ children... }
 			</main>
-			<footer class="border-t-2 border-border py-6 text-center text-sm text-muted-foreground">
-				<p>@templ.Raw(footerHTML)</p>
+			<footer class="border-t border-border py-6 text-center text-sm text-muted-foreground">
+				<p>
+					@templ.Raw(footerHTML)
+				</p>
 			</footer>
 		</div>
 	}

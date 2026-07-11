@@ -11,14 +11,14 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 	if content == nil {
 		return
 	}
-	<section id="episodes" class="py-20">
+	<section id="episodes" class="py-20" aria-labelledby="episodes-heading">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="text-center mb-12">
 				if content.SectionTitle != "" {
-					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.SectionTitle }</h2>
+					<h2 id="episodes-heading" class="text-3xl font-bold text-foreground font-heading balance">{ content.SectionTitle }</h2>
 				}
 				if content.SectionDescription != "" {
-					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{ content.SectionDescription }</p>
+					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto pretty">{ content.SectionDescription }</p>
 				}
 			</div>
 			if len(episodes) > 0 {
@@ -36,7 +36,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 					</div>
 				}
 			} else {
-				<div class="text-center py-12 border-2 border-dashed border-border">
+				<div class="text-center py-12 border border-dashed border-border">
 					<p class="text-muted-foreground">No episodes yet. Check back soon!</p>
 				</div>
 			}
@@ -45,32 +45,33 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 }
 
 templ episodeCard(ep *domain.Episode) {
-	<div class="border-2 border-border overflow-hidden hover:border-primary transition-colors">
+	<article class="border border-border overflow-hidden hover:border-primary transition-colors bg-background">
 		<div class="aspect-video bg-muted flex items-center justify-center">
 			if ep.CoverImageURL != "" {
-				<img src={ ep.CoverImageURL } alt={ ep.Title } class="w-full h-full object-cover"/>
+				<img src={ ep.CoverImageURL } alt={ "Cover for " + ep.Title } class="w-full h-full object-cover" loading="lazy"/>
 			} else {
 				@icon.Lucide("mic", "size-12 text-muted-foreground/50")
 			}
 		</div>
 		<div class="p-4">
-			<p class="text-xs text-muted-foreground mb-1">Episode { fmt.Sprintf("%d", ep.EpisodeNumber) }</p>
+			<p class="text-xs text-muted-foreground mb-1 font-mono uppercase tracking-wider">Episode { fmt.Sprintf("%d", ep.EpisodeNumber) }</p>
 			<h3 class="font-semibold text-foreground line-clamp-2">{ ep.Title }</h3>
 			if ep.Description != "" {
 				<p class="mt-2 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
 			}
 			if ep.Duration > 0 {
-				<p class="mt-3 text-xs text-muted-foreground">{ formatDuration(ep.Duration) }</p>
+				<p class="mt-3 text-xs text-muted-foreground font-mono tabular-nums">{ formatDuration(ep.Duration) }</p>
 			}
 		</div>
-	</div>
+	</article>
 }
 
 templ episodeListItem(ep *domain.Episode) {
-	<div
-		class="border-b-2 border-border py-5 group"
+	<article
+		class="relative border-b border-border py-5 group"
 		data-episode-player
 		data-audio-src={ ep.AudioSourceURL }
+		aria-label={ "Episode " + fmt.Sprintf("%d", ep.EpisodeNumber) + ": " + ep.Title }
 	>
 		<div class="flex items-center gap-4">
 			if ep.AudioSourceURL != "" {
@@ -78,12 +79,12 @@ templ episodeListItem(ep *domain.Episode) {
 					data-episode-play
 					type="button"
 					class="shrink-0 w-6 h-6 flex items-center justify-center text-foreground hover:text-primary transition-colors cursor-pointer"
-					aria-label="Play episode"
+					aria-label={ "Play episode " + fmt.Sprintf("%d", ep.EpisodeNumber) + ": " + ep.Title }
 				>
 					@icon.Lucide("play", "size-4")
 				</button>
 			}
-			<span class="text-xs text-muted-foreground font-mono tabular-nums w-6 shrink-0">
+			<span class="text-xs text-muted-foreground font-mono tabular-nums w-6 shrink-0" aria-hidden="true">
 				{ fmt.Sprintf("%02d", ep.EpisodeNumber) }
 			</span>
 			<div class="flex-1 min-w-0">
@@ -100,5 +101,5 @@ templ episodeListItem(ep *domain.Episode) {
 				<div data-episode-waveform class="w-full h-full"></div>
 			</div>
 		}
-	</div>
+	</article>
 }

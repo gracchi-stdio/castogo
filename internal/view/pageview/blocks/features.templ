@@ -6,14 +6,14 @@ import (
 )
 
 templ FeaturesBlock(content *domain.FeaturesContent) {
-	<section class="py-20 border-y-2 border-border">
+	<section class="py-20 border-y border-border">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="text-center mb-12">
 				if content.SectionTitle != "" {
-					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.SectionTitle }</h2>
+					<h2 class="text-3xl font-bold text-foreground font-heading balance">{ content.SectionTitle }</h2>
 				}
 				if content.SectionDescription != "" {
-					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{ content.SectionDescription }</p>
+					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto pretty">{ content.SectionDescription }</p>
 				}
 			</div>
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -26,7 +26,7 @@ templ FeaturesBlock(content *domain.FeaturesContent) {
 }
 
 templ featureCard(item domain.FeatureItem) {
-	<div class="border-2 border-border bg-background p-6 hover:border-primary transition-colors">
+	<article class="border border-border bg-background p-6 hover:border-primary transition-colors">
 		if item.Icon != "" {
 			<div class="mb-4 text-primary">
 				@icon.Lucide(item.Icon, "size-8")
@@ -36,5 +36,5 @@ templ featureCard(item domain.FeatureItem) {
 		if item.Description != "" {
 			<p class="mt-2 text-sm text-muted-foreground leading-relaxed">{ item.Description }</p>
 		}
-	</div>
+	</article>
 }

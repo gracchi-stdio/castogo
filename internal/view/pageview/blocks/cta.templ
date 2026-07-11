@@ -8,14 +8,14 @@ import (
 )
 
 templ CtaBlock(content *domain.CTAContent) {
-	<section class="py-20">
+	<section class="py-20" aria-labelledby="cta-heading">
 		<div class="mx-auto max-w-4xl px-6">
-			<div class="border-2 border-primary bg-background p-12 text-center">
+			<div class="border border-primary bg-background p-12 text-center">
 				if content.Headline != "" {
-					<h2 class="text-3xl font-bold text-foreground font-heading">{ content.Headline }</h2>
+					<h2 id="cta-heading" class="text-3xl font-bold text-foreground font-heading balance">{ content.Headline }</h2>
 				}
 				if content.Description != "" {
-					<p class="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">{ content.Description }</p>
+					<p class="mt-4 text-lg text-muted-foreground max-w-xl mx-auto pretty">{ content.Description }</p>
 				}
 				if content.ButtonText != "" {
 					<div class="mt-8">
