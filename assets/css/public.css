@@ -28,6 +28,7 @@
 }
 
 [data-episode-waveform] {
+  position: relative;
   cursor: pointer;
 }
 
@@ -41,6 +42,45 @@
     transparent 4px
   );
   background-size: 4px 100%;
+}
+
+/* Hover: primary highlight from start → cursor + time tooltip.
+   Visibility is driven by :hover on the waveform; JS sets fill width,
+   tooltip position, and the formatted time. */
+.episode-hover-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  background: hsl(var(--primary) / 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+[data-episode-waveform]:hover .episode-hover-fill {
+  opacity: 1;
+}
+
+.episode-hover-tip {
+  position: absolute;
+  top: calc(100% + 4px);
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+[data-episode-waveform]:hover .episode-hover-tip {
+  opacity: 1;
 }
 
 /* Loading spinner on play button */

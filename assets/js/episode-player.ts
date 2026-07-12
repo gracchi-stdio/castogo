@@ -27,14 +27,22 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+function formatClock(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
 function readThemeColors(): ThemeColors {
-  const el = document.querySelector(".theme-public") ?? document.documentElement;
+  const el =
+    document.querySelector(".theme-public") ?? document.documentElement;
   const style = getComputedStyle(el);
-  const fg = style.getPropertyValue("--muted-foreground").trim();
-  const primary = style.getPropertyValue("--primary").trim();
+  const fg = style.getPropertyValue("--muted").trim();
+  const foreground = style.getPropertyValue("--muted-foreground").trim();
   return {
-    waveColor: fg ? `hsl(${fg} / 0.25)` : "rgba(128,128,128,0.25)",
-    progressColor: primary ? `hsl(${primary})` : "hsl(0 82% 58%)",
+    waveColor: fg ? `hsl(${fg})` : "rgba(128,128,128,0.25)",
+    progressColor: foreground ? `hsl(${foreground})` : "hsl(0 82% 58%)",
   };
 }
 
@@ -101,6 +109,26 @@ function handleClick(root: HTMLElement): void {
 
     instances.set(waveformEl, ws);
 
+    // Hover: primary fill from start → cursor, plus an HH:MM:SS tooltip.
+    // CSS toggles visibility via :hover; JS only updates geometry + label.
+    const hoverFill = document.createElement("div");
+    hoverFill.className = "episode-hover-fill";
+    const hoverTip = document.createElement("div");
+    hoverTip.className = "episode-hover-tip";
+    waveformEl.append(hoverFill, hoverTip);
+
+    waveformEl.addEventListener("mousemove", (e) => {
+      const rect = waveformEl.getBoundingClientRect();
+      const ratio = Math.min(
+        1,
+        Math.max(0, (e.clientX - rect.left) / rect.width),
+      );
+      hoverFill.style.width = `${ratio * 100}%`;
+      hoverTip.style.left = `${ratio * 100}%`;
+      const dur = ws.getDuration();
+      hoverTip.textContent = formatClock((dur || 0) * ratio);
+    });
+
     ws.on("ready", () => {
       root.classList.remove("episode-player--loading");
       ws.play();
@@ -127,7 +155,9 @@ function handleClick(root: HTMLElement): void {
 }
 
 export function initEpisodePlayers(): void {
-  document.querySelectorAll<HTMLElement>("[data-episode-player]").forEach(handleClick);
+  document
+    .querySelectorAll<HTMLElement>("[data-episode-player]")
+    .forEach(handleClick);
 }
 
 export function destroyActivePlayer(): void {
