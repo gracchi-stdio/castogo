@@ -41,6 +41,11 @@ type Episode struct {
 	UpdatedAt      time.Time     `json:"updated_at"`
 }
 
+type EpisodeWithPagePath struct {
+	*Episode
+	PagePath *string `json:"page_path,omitempty"`
+}
+
 // Status derives the episode status from publish_at and archived_at.
 // No database column needed — the state machine is:
 //

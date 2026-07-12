@@ -73,7 +73,7 @@ func (s *EpisodeService) CountByStatus(ctx context.Context, status domain.Episod
 	return s.repo.CountByStatus(ctx, status)
 }
 
-func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error) {
+func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
 	if limit <= 0 {
 		limit = 20
 	}

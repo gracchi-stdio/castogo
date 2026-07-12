@@ -143,7 +143,7 @@ func (r *EpisodeRepo) CountByStatus(ctx context.Context, status domain.EpisodeSt
 	return int(count), nil
 }
 
-func (r *EpisodeRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error) {
+func (r *EpisodeRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
 	params := db.ListPublishedEpisodesParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
@@ -153,11 +153,15 @@ func (r *EpisodeRepo) ListPublished(ctx context.Context, limit, offset int) ([]*
 		return nil, fmt.Errorf("list published episodes: %w", err)
 	}
 
-	episodes := make([]*domain.Episode, len(results))
-	for i, result := range results {
-		episodes[i] = toDomainEpisode(&result)
+	out := make([]*domain.EpisodeWithPagePath, len(results))
+	for i, row := range results {
+		// episodes[i] = toDomainEpisode(&result)
+		out[i] = &domain.EpisodeWithPagePath{
+			Episode:  toDomainEpisode(&row.Episode),
+			PagePath: row.PagePath,
+		}
 	}
-	return episodes, nil
+	return out, nil
 }
 
 func (r *EpisodeRepo) GetMaxEpisodeNumber(ctx context.Context) (int, error) {

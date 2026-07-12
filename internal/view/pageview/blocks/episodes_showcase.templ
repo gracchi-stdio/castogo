@@ -7,7 +7,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 )
 
-templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []*domain.Episode) {
+templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []*domain.EpisodeWithPagePath) {
 	if content == nil {
 		return
 	}
@@ -44,7 +44,7 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 	</section>
 }
 
-templ episodeCard(ep *domain.Episode) {
+templ episodeCard(ep *domain.EpisodeWithPagePath) {
 	<article class="border border-border overflow-hidden hover:border-primary transition-colors bg-background">
 		<div class="aspect-video bg-muted flex items-center justify-center">
 			if ep.CoverImageURL != "" {
@@ -66,7 +66,7 @@ templ episodeCard(ep *domain.Episode) {
 	</article>
 }
 
-templ episodeListItem(ep *domain.Episode) {
+templ episodeListItem(ep *domain.EpisodeWithPagePath) {
 	<article
 		class="relative border-b border-border py-5 group"
 		data-episode-player
@@ -88,7 +88,13 @@ templ episodeListItem(ep *domain.Episode) {
 				{ fmt.Sprintf("%02d", ep.EpisodeNumber) }
 			</span>
 			<div class="flex-1 min-w-0">
-				<h3 class="text-foreground truncate group-hover:text-primary transition-colors">{ ep.Title }</h3>
+				if ep.PagePath != nil {
+					<a href={ "/" + *ep.PagePath }>
+						<h3 class="text-foreground truncate group-hover:text-primary transition-colors">{ ep.Title }</h3>
+					</a>
+				} else {
+					<h3 class="text-foreground truncate transition-colors">{ ep.Title }</h3>
+				}
 			</div>
 			if ep.Duration > 0 {
 				<span data-episode-time class="text-xs text-muted-foreground font-mono tabular-nums shrink-0">

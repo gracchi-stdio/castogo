@@ -23,7 +23,7 @@ type EpisodeRepository interface {
 	GetByLinkedPageID(ctx context.Context, pageID int64) (*domain.Episode, error)
 	Delete(ctx context.Context, id int64) error
 	CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error)
-	ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error)
+	ListPublished(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error)
 	GetMaxEpisodeNumber(ctx context.Context) (int, error)
 	SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error)
 }

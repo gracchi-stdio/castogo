@@ -14,7 +14,7 @@ var _ = parseBlockContent[string]
 type PageData struct {
 	Page     *domain.Page
 	Blocks   []domain.PageBlock
-	Episodes []*domain.Episode
+	Episodes []*domain.EpisodeWithPagePath
 	Nav      *layout.PublicLayoutData
 	Settings domain.PodcastConfig
 }
