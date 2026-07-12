@@ -1,50 +1,16 @@
+/*
+ * Public-site component styles (non-theme).
+ *
+ * Dark/light tokens and theme-base rules (brutalist reset, focus ring, prose
+ * binding) live in theme-public.css. Everything below reads hsl(var(--token)),
+ * so it adapts to the public palette — and to dark mode — automatically.
+ */
+
 @layer base {
+  /* Brand wordmark */
   .theme-public .public-logo {
     font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
     letter-spacing: 0.02em;
-  }
-
-  /* Hard edges — brutalist bones */
-  .theme-public *,
-  .theme-public *::before,
-  .theme-public *::after {
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
-
-  /* Accessible focus ring */
-  .theme-public :where(a, button, input, [tabindex]):focus-visible {
-    outline: 2px solid hsl(var(--ring));
-    outline-offset: 2px;
-  }
-
-  /* Contrast: ensure theme-public inherits foreground from the token */
-  .theme-public {
-    color: hsl(var(--foreground));
-  }
-}
-
-/* ─── Prose: map theme tokens to Tailwind Typography ────────────── */
-/* !important needed because @tailwindcss/typography may generate its
-   --tw-prose-* vars later in the compiled CSS source order. */
-@layer components {
-  .theme-public .prose {
-    --tw-prose-body: hsl(var(--foreground)) !important;
-    --tw-prose-headings: hsl(var(--foreground)) !important;
-    --tw-prose-lead: hsl(var(--foreground)) !important;
-    --tw-prose-links: hsl(var(--primary)) !important;
-    --tw-prose-bold: hsl(var(--foreground)) !important;
-    --tw-prose-counters: hsl(var(--muted-foreground)) !important;
-    --tw-prose-bullets: hsl(var(--muted-foreground)) !important;
-    --tw-prose-hr: hsl(var(--border)) !important;
-    --tw-prose-quotes: hsl(var(--foreground)) !important;
-    --tw-prose-quote-borders: hsl(var(--border)) !important;
-    --tw-prose-captions: hsl(var(--muted-foreground)) !important;
-    --tw-prose-code: hsl(var(--foreground)) !important;
-    --tw-prose-pre-code: hsl(var(--foreground)) !important;
-    --tw-prose-pre-bg: hsl(var(--muted)) !important;
-    --tw-prose-th-borders: hsl(var(--border)) !important;
-    --tw-prose-td-borders: hsl(var(--border)) !important;
   }
 }
 

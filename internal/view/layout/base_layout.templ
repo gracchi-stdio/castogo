@@ -4,12 +4,6 @@ import "github.com/gracchi-stdio/castogo/internal/config"
 import "github.com/gracchi-stdio/castogo/internal/view"
 
 templ BaseLayout(bodyClass string) {
-	{{
-		extraClass := ""
-		if bodyClass != "" {
-			extraClass = " " + bodyClass
-		}
-	}}
 	<!DOCTYPE html>
 	<html lang="en" class={ bodyClass }>
 		<head>
@@ -46,7 +40,7 @@ templ BaseLayout(bodyClass string) {
 				}
 			}
 		</head>
-		<body class={ "min-h-screen bg-background font-sans antialiased" + extraClass } data-signals="{theme: (localStorage.getItem('theme') || 'light')}">
+		<body class="min-h-screen bg-background font-sans antialiased" data-signals="{theme: (localStorage.getItem('theme') || 'light')}">
 			{ children... }
 		</body>
 	</html>
