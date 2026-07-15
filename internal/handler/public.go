@@ -79,7 +79,7 @@ func (h *PublicHandler) homePage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching page content")
 	}
 
-	episodes, err := h.episodesService.ListPublished(c.Request().Context(), 5, 0)
+	episodes, err := h.episodesService.ListPublishedWithPagePath(c.Request().Context(), 5, 0)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}
@@ -118,7 +118,7 @@ func (h *PublicHandler) pageResolver(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching page content")
 	}
 
-	episodes, err := h.episodesService.ListPublished(c.Request().Context(), 20, 0)
+	episodes, err := h.episodesService.ListPublishedWithPagePath(c.Request().Context(), 20, 0)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}

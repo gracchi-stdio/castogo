@@ -58,6 +58,14 @@ WHERE CASE
     ELSE false
   END;
 -- name: ListPublishedEpisodes :many
+SELECT *
+FROM episodes
+WHERE published_at IS NOT NULL
+  AND published_at <= NOW()
+  AND archived_at IS NULL
+ORDER BY published_at DESC
+LIMIT $1 OFFSET $2;
+-- name: ListPublishedEpisodesWithPagePath :many
 SELECT sqlc.embed(e),
   p.path AS page_path
 FROM episodes e

@@ -28,6 +28,7 @@ func (s *FeedService) BuildFeed(ctx context.Context) (*domain.RSS, error) {
 	}
 
 	episodes, err := s.episodeRepo.ListPublished(ctx, 500, 0)
+
 	if err != nil {
 		return nil, err
 	}

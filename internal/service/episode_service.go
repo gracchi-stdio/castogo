@@ -73,12 +73,20 @@ func (s *EpisodeService) CountByStatus(ctx context.Context, status domain.Episod
 	return s.repo.CountByStatus(ctx, status)
 }
 
-func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
+func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error) {
 	if limit <= 0 {
 		limit = 20
 	}
 
 	return s.repo.ListPublished(ctx, limit, offset)
+}
+
+func (s *EpisodeService) ListPublishedWithPagePath(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+
+	return s.repo.ListPublishedWithPagePath(ctx, limit, offset)
 }
 
 func (s *EpisodeService) GetDashboardStats(ctx context.Context) (*domain.DashboardStats, error) {
