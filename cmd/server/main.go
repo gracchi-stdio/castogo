@@ -56,6 +56,14 @@ func main() {
 	e.Validator = &CustomValidator{validator: validate}
 	e.HideBanner = false
 
+	// Echo's router treats "/admin" and "/admin/" as distinct routes, so
+	// trailing-slash URLs miss every registered route and fall through to 404.
+	// Strip the trailing slash before routing so canonical (slash-less) URLs
+	// resolve. Pre-middleware runs before the router; with no RedirectCode it
+	// rewrites the path in place (no extra round-trip, safe for POST/Datastar)
+	// and skips the root "/".
+	e.Pre(middleware.RemoveTrailingSlash())
+
 	// Database
 	db, err := postgres.NewPool(context.Background(), config.Cfg.DatabaseURL)
 	if err != nil {

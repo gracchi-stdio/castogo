@@ -6,6 +6,7 @@ import "github.com/gracchi-stdio/castogo/internal/domain"
 // Error fields use snake_case + _error suffix to align with the form field names
 // and the fieldValidationErrors helper in internal/handler/helpers.go.
 type Signals struct {
+	ID            int64  `json:"id"`
 	Title         string `json:"title"`
 	Description   string `json:"description"`
 	SiteURL       string `json:"site_url"`
@@ -40,6 +41,7 @@ func NewSignals(config *domain.PodcastConfig) Signals {
 		return Signals{Language: "en"}
 	}
 	return Signals{
+		ID:            config.ID,
 		Title:         config.Title,
 		Description:   config.Description,
 		SiteURL:       config.SiteURL,

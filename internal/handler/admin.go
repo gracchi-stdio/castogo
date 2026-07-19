@@ -40,6 +40,11 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("/episodes", h.episodesList)
 	g.GET("/episodes/create", h.episodeCreatePage)
 	g.POST("/episodes/create", h.episodeCreateAction)
+	g.GET("/episodes/:id/edit", h.episodeEdit)
+	g.POST("/episodes/:id", h.episodeUpdateAction)
+	g.POST("/episodes/:id/link-page", h.episodeLinkPage)
+	g.POST("/episodes/:id/create-companion", h.episodeCreateCompanion)
+	g.POST("/episodes/:id/unlink-page", h.episodeUnlinkPage)
 	g.PATCH("/episodes/:id/publish-at", h.episodeUpdatePublishAt)
 	g.DELETE("/episodes/:id", h.episodeDelete)
 

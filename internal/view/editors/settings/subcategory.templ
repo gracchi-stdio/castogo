@@ -24,5 +24,6 @@ templ SubcategoryFragment(options []selectcomponent.SelectOptionArgs, selected s
 		ContentClass: "max-h-32",
 		Value:        selected,
 		Disabled:     len(options) == 0,
+		OnChange:     "$subcategory = $subcategory_select.value",
 	})
 }

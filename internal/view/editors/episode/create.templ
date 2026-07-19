@@ -1,0 +1,156 @@
+package episodeForm
+
+import (
+	"encoding/json"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/loading"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+// Create renders the new-episode form (multipart — audio upload). Mirrors the
+// shared form/component library used by the page and settings editors; only the
+// submit button is custom, because it drives the upload-progress overlay.
+templ Create(shared *domain.AdminSharedData) {
+	{{
+		signals := CreateSignals{}
+		signalsJSON, _ := json.Marshal(signals)
+	}}
+	@layout.AdminLayout("New Episode", shared, createActions(), nil, nil) {
+		<div data-signals={ string(signalsJSON) }>
+			@loading.LoadingOverlay(loading.LoadingOverlayArgs{
+				Signal: "uploading",
+				Status: "uploading_status",
+			})
+			@form.Form(form.FormArgs{
+				ID:          "episode-create-form",
+				Action:      "/admin/episodes/create",
+				ContentType: "form",
+				Attributes: map[string]any{
+					"enctype": "multipart/form-data",
+				},
+			}) {
+				@card.Card(card.CardArgs{}) {
+					@card.CardContent(card.CardContentArgs{}) {
+						<div class="space-y-4">
+							@formfield.FormField(formfield.FormFieldArgs{
+								Name:        "title",
+								Label:       "Title",
+								Required:    true,
+								ErrorSignal: "title_error",
+							}) {
+								@input.Input(input.InputArgs{
+									Type:        "text",
+									ID:          "title",
+									Name:        "title",
+									Placeholder: "My Awesome Episode",
+									Class:       "w-full",
+									Attributes: map[string]any{
+										"data-on:input": "$title = el.value; $title_error = ''",
+									},
+								})
+							}
+							@formfield.FormField(formfield.FormFieldArgs{
+								Name:        "description",
+								Label:       "Description",
+								ErrorSignal: "description_error",
+							}) {
+								@textarea.Textarea(textarea.TextareaArgs{
+									ID:          "description",
+									Name:        "description",
+									Placeholder: "What's this episode about?",
+									Class:       "w-full",
+									Rows:        4,
+									Attributes: map[string]any{
+										"data-on:input": "$description = el.value; $description_error = ''",
+									},
+								})
+							}
+							@formfield.FormField(formfield.FormFieldArgs{
+								Name:        "audio_file",
+								Label:       "Audio File",
+								Required:    true,
+								ErrorSignal: "audio_file_error",
+							}) {
+								@input.Input(input.InputArgs{
+									Type:  "file",
+									ID:    "audio_file",
+									Name:  "audio_file",
+									Class: "w-full",
+									Attributes: map[string]any{
+										"accept":                "audio/*",
+										"data-on:change":        "$audio_file_error = ''; window.extractAudioMetadata(el)",
+										"data-on:audiometadata": audioMetadataHandler,
+									},
+								})
+							}
+							<!-- Audio metadata preview (display-only; server recomputes) -->
+							<div data-show="$metadata_extracted" class="p-4 rounded-md border bg-muted/50">
+								<h4 class="text-sm font-medium mb-2">Audio Metadata</h4>
+								<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+									<div>
+										<span class="text-muted-foreground">Duration</span>
+										<p class="font-medium" data-text="$audio_duration"></p>
+									</div>
+									<div>
+										<span class="text-muted-foreground">Sample Rate</span>
+										<p class="font-medium" data-text="$audio_sample_rate"></p>
+									</div>
+									<div>
+										<span class="text-muted-foreground">Channels</span>
+										<p class="font-medium" data-text="$audio_channel_count"></p>
+									</div>
+									<div>
+										<span class="text-muted-foreground">Bitrate</span>
+										<p class="font-medium" data-text="$audio_bitrate"></p>
+									</div>
+									<div>
+										<span class="text-muted-foreground">Format</span>
+										<p class="font-medium" data-text="$audio_format"></p>
+									</div>
+									<div>
+										<span class="text-muted-foreground">MIME Type</span>
+										<p class="font-medium" data-text="$audio_mime_type"></p>
+									</div>
+									<div>
+										<span class="text-muted-foreground">File Size</span>
+										<p class="font-medium" data-text="$audio_file_size"></p>
+									</div>
+								</div>
+							</div>
+							<div class="flex justify-end">
+								@button.Button(button.ButtonArgs{
+									Type: "button",
+									Attributes: map[string]any{
+										"data-on:click": "$uploading_status = 'Starting upload...'; $uploading = true; @post('/admin/episodes/create', {contentType: 'form', form: '#episode-create-form'})",
+									},
+								}) {
+									Create Episode
+								}
+							</div>
+						</div>
+					}
+				}
+			}
+		</div>
+	}
+}
+
+templ createActions() {
+	<a href="/admin/episodes">
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+		}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Episodes
+		}
+	</a>
+}

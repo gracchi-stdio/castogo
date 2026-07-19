@@ -144,6 +144,13 @@ window.bustPagesCache = (editUrl?: string) => {
   });
 };
 
+// Bust a single cached URL after an in-place SSE mutation (no navigation), e.g.
+// the episode companion-page card changes via a patch — Swup's cached snapshot
+// of that page would otherwise resurface stale on the next back-navigation.
+window.bustCache = (url: string) => {
+  swup.cache.prune((u) => u === url);
+};
+
 // Suppress unhandled "Transition was skipped" rejections from the browser's
 // internal view transition promises. The wrapSwapWithViewTransition handler
 // catches most, but some race conditions still leak through.

@@ -26,6 +26,10 @@ declare global {
     // Optional editUrl also prunes the specific edit page so re-opening it shows fresh data.
     bustPagesCache: (editUrl?: string) => void;
 
+    // app.ts — bust a single cached URL after an in-place SSE mutation (no navigation),
+    // so back-navigation shows the fresh state rather than the pre-mutation snapshot.
+    bustCache: (url: string) => void;
+
     // Safari-prefixed AudioContext. Optional — only present on older Safari.
     webkitAudioContext?: typeof AudioContext;
   }

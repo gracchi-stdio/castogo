@@ -1,0 +1,154 @@
+package episodeForm
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/dialog"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+)
+
+// PageLinkCard is the static shell for the companion-page section. The inner
+// #episode-page-link-{id} is the SSE-patch target — link/unlink/create
+// endpoints re-render PageLinkContent and swap just that node.
+templ PageLinkCard(args Args) {
+	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<h3 class="text-sm font-medium mb-3">Companion Page</h3>
+			@PageLinkContent(args)
+		}
+	}
+}
+
+// PageLinkContent is the unified companion-page control. The page <select> is
+// always present and its Value reflects the linked page, so after a
+// link/unlink/create the re-rendered select shows the current page selected.
+// Pick a page to (re)link; Unlink clears it; Create companion makes a new page
+// (which then becomes the selected value). Patched in place by the endpoints.
+templ PageLinkContent(args Args) {
+	{{
+		id := args.Episode.ID
+		dialogID := fmt.Sprintf("companion-dialog-%d", id)
+		linkedValue := ""
+		if args.LinkedPage != nil {
+			linkedValue = fmt.Sprintf("%d", args.LinkedPage.ID)
+		}
+	}}
+	<div id={ fmt.Sprintf("episode-page-link-%d", id) } data-signals={ `{"companion_title":"","companion_slug":"","companion_title_error":"","companion_slug_error":""}` } class="space-y-3">
+		<div class="space-y-2">
+			<span class="text-sm font-medium leading-none">Linked page</span>
+			@selectcomponent.Select(selectcomponent.SelectArgs{
+				ID:          "page_select",
+				Name:        "existing_page_id",
+				Placeholder: "No page linked",
+				Class:       "w-full",
+				Options:     pageOptions(args.Pages),
+				Value:       linkedValue,
+				OnChange:    fmt.Sprintf("$existing_page_id = parseInt($page_select.value) || 0; @post('/admin/episodes/%d/link-page')", id),
+			})
+		</div>
+		if args.LinkedPage != nil {
+			<div class="flex items-center justify-end gap-3">
+				<a href={ fmt.Sprintf("/admin/pages/%d/edit", args.LinkedPage.ID) } class="text-sm text-primary hover:underline">Edit page</a>
+				@button.Button(button.ButtonArgs{
+					Variant: "outline",
+					Size:    "sm",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@post('/admin/episodes/%d/unlink-page')", id),
+					},
+				}) {
+					Unlink
+				}
+			</div>
+		}
+		<div class="flex items-center gap-3 py-1">
+			<div class="h-px bg-border flex-1"></div>
+			<span class="text-xs text-muted-foreground">or</span>
+			<div class="h-px bg-border flex-1"></div>
+		</div>
+		<div class="flex items-center justify-between">
+			<span class="text-sm text-muted-foreground">No matching page?</span>
+			@dialog.DialogTrigger(dialog.DialogTriggerArgs{
+				DialogID: dialogID,
+				AsChild:  true,
+			}) {
+				@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm"}) {
+					@icon.Lucide("plus", "size-4 mr-1")
+					Create companion
+				}
+			}
+		</div>
+		@companionDialog(id, dialogID)
+	</div>
+}
+
+// companionDialog is the "create a new page and link it" modal. Only Title is
+// required; Slug is optional (auto-generated from the title when left blank).
+// No <form> element is needed — the Create button posts the signals directly.
+templ companionDialog(episodeID int64, dialogID string) {
+	@dialog.Dialog(dialog.DialogArgs{ID: dialogID}) {
+		@dialog.DialogHeader(dialog.DialogHeaderArgs{}) {
+			@dialog.DialogTitle(dialog.DialogTitleArgs{}) {
+				Create companion page
+			}
+			@dialog.DialogDescription(dialog.DialogDescriptionArgs{}) {
+				Create a new page and link it to this episode.
+			}
+		}
+		<div class="space-y-4 py-2">
+			@formfield.FormField(formfield.FormFieldArgs{
+				Name:        "title",
+				Label:       "Page Title",
+				Required:    true,
+				ErrorSignal: "companion_title_error",
+			}) {
+				@input.Input(input.InputArgs{
+					Type:  "text",
+					ID:    "companion_title",
+					Name:  "title",
+					Class: "w-full",
+					Attributes: map[string]any{
+						"data-bind":              "companion_title",
+						"data-on:input":          "$companion_title_error = ''",
+						"data-attr:aria-invalid": "$companion_title_error != '' ? 'true' : ''",
+					},
+				})
+			}
+			@formfield.FormField(formfield.FormFieldArgs{
+				Name:        "slug",
+				Label:       "Slug",
+				Description: "Leave empty to generate from the title",
+				ErrorSignal: "companion_slug_error",
+			}) {
+				@input.Input(input.InputArgs{
+					Type:  "text",
+					ID:    "companion_slug",
+					Name:  "slug",
+					Class: "w-full",
+					Attributes: map[string]any{
+						"data-bind":     "companion_slug",
+						"data-on:input": "$companion_slug_error = ''",
+					},
+				})
+			}
+		</div>
+		@dialog.DialogFooter(dialog.DialogFooterArgs{}) {
+			<div class="flex justify-end gap-2">
+				@dialog.DialogClose(dialog.DialogCloseArgs{DialogID: dialogID, Variant: "outline"}) {
+					Cancel
+				}
+				@button.Button(button.ButtonArgs{
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@post('/admin/episodes/%d/create-companion')", episodeID),
+					},
+				}) {
+					Create page
+				}
+			</div>
+		}
+	}
+}

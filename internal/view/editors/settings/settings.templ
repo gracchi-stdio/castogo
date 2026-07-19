@@ -34,10 +34,7 @@ templ Form(args Args) {
 		@form.Form(form.FormArgs{
 			ID:          "settings-form",
 			Action:      "/admin/settings",
-			ContentType: "form",
-			Attributes: map[string]any{
-				"enctype": "multipart/form-data",
-			},
+			ContentType: "json",
 		}) {
 			@card.Card(card.CardArgs{}) {
 				@card.CardContent(card.CardContentArgs{}) {
@@ -277,7 +274,7 @@ templ Form(args Args) {
 											Options:      categoryOpts,
 											ContentClass: "max-h-32",
 											Value:        signals.Category,
-											OnChange:     "@get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))",
+											OnChange:     "$category = $category_select.value; @get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))",
 										})
 									}
 									<!-- Subcategory (SSE-swapped wrapper) -->
@@ -297,6 +294,9 @@ templ Form(args Args) {
 					</div>
 				}
 			}
+			<!-- id rides in the signals for the JSON main save, but the cover-upload
+			     endpoint posts this form as multipart (named fields, not signals),
+			     so this hidden input is what carries the id there. -->
 			<input type="hidden" name="id" value={ configID }/>
 		}
 	</div>

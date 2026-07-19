@@ -20,13 +20,10 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 
 	var raw pageUpdateInput
 	if err := readSignals(c, &raw); err != nil {
-		sse(c).ExecuteScript(toastScript("Invalid request", "error"))
-		return nil
+		return toast(c, "Invalid request", "error")
 	}
-
 	if err := validate.Struct(raw); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
-		return nil
+		return patchFieldErrors(c, err, raw)
 	}
 
 	var parentVal *int64
@@ -50,47 +47,28 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 		ShowInNav:   &showInNav,
 	}
 
-	_, err = h.pageService.UpdatePage(c.Request().Context(), id, update)
-	if err != nil {
-		if errors.Is(err, domain.ErrReservedSlug) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "This slug is reserved and cannot be used",
-			})
-		}
-		if errors.Is(err, domain.ErrDuplicatePath) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "A page with this slug already exists",
-			})
-		}
-		if errors.Is(err, domain.ErrHomepageExists) {
-			return sse(c).MarshalAndPatchSignals(map[string]string{
-				"slug_error": "A homepage already exists — only one root page may have an empty slug",
-			})
-		}
-		out := sse(c)
-		out.ExecuteScript(toastScript("Failed to update page", "error"))
-		return nil
-	}
-
 	// Settings only saves page metadata. Block content is saved per-block from the
 	// Blocks tab (blockUpdateAction) — it must not be rebuilt here, since the Settings
 	// tab no longer renders block signals and would otherwise blank every block.
-	sse(c).ExecuteScript(fmt.Sprintf("window.bustPagesCache(%q); "+toastScript("Page saved successfully", "success"), fmt.Sprintf("/admin/pages/%d/edit", id)))
-	return nil
+	if _, err := h.pageService.UpdatePage(c.Request().Context(), id, update); err != nil {
+		if slugErr := pageSlugError(err); slugErr != nil {
+			return patchSignals(c, slugErr)
+		}
+		return toast(c, "Failed to update page", "error")
+	}
+
+	bustPagesCache(c, fmt.Sprintf("/admin/pages/%d/edit", id))
+	return toast(c, "Page saved successfully", "success")
 }
 
 // page create action
 func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 	var raw pageCreateInput
 	if err := readSignals(c, &raw); err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Invalid request", "error"))
-		return nil
+		return toast(c, "Invalid request", "error")
 	}
-
 	if err := validate.Struct(raw); err != nil {
-		sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, raw))
-		return nil
+		return patchFieldErrors(c, err, raw)
 	}
 
 	var parentID *int64
@@ -108,24 +86,17 @@ func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 
 	page, err := h.pageService.CreatePage(c.Request().Context(), input)
 	if err != nil {
-
-		slugError := pageSlugError(err)
-		if slugError != nil {
-			return sse(c).MarshalAndPatchSignals(slugError)
+		if slugErr := pageSlugError(err); slugErr != nil {
+			return patchSignals(c, slugErr)
 		}
-
-		// Toast Error for Max depth and else
-		out := sse(c)
 		if errors.Is(err, domain.ErrMaxDepth) {
-			out.ExecuteScript(toastScript("Maximum nesting depth exceeded (2 levels max)", "error"))
-			return nil
+			return toast(c, "Maximum nesting depth exceeded (2 levels max)", "error")
 		}
-		out.ExecuteScript(toastScript("Failed to create page", "error"))
-		return nil
+		return toast(c, "Failed to create page", "error")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q); window.bustPagesCache()", fmt.Sprintf("/admin/pages/%d/edit", page.ID)))
-	return nil
+	bustPagesCache(c, "")
+	return navigate(c, fmt.Sprintf("/admin/pages/%d/edit", page.ID), "", "")
 }
 
 // page delete action
@@ -139,8 +110,8 @@ func (h *AdminHandler) pageDeleteAction(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete page")
 	}
 
-	sse(c).ExecuteScript(fmt.Sprintf("window.navigateAdmin(%q); window.bustPagesCache(%q)", "/admin/pages", fmt.Sprintf("/admin/pages/%d/edit", id)))
-	return nil
+	bustPagesCache(c, fmt.Sprintf("/admin/pages/%d/edit", id))
+	return navigate(c, "/admin/pages", "", "")
 }
 
 // helpers

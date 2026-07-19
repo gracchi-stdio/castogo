@@ -31,73 +31,46 @@ func (h *AdminHandler) settingsPage(c echo.Context) error {
 	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), config)))(c)
 }
 
-type SettingsForm struct {
-	ID            int64  `form:"id" validate:"required"`
-	Title         string `form:"title" validate:"required"`
-	Description   string `form:"description"`
-	SiteURL       string `form:"site_url" validate:"omitempty,url"`
-	Language      string `form:"language"`
-	Copyright     string `form:"copyright"`
-	AuthorName    string `form:"author_name"`
-	AuthorEmail   string `form:"author_email" validate:"omitempty,email"`
-	CoverImageURL string `form:"cover_image_url" validate:"omitempty,url"`
-	Category      string `form:"category"`
-	Subcategory   string `form:"subcategory"`
-	OwnerName     string `form:"owner_name"`
-	OwnerEmail    string `form:"owner_email" validate:"omitempty,email"`
-}
-
 func (h *AdminHandler) settingsSave(c echo.Context) error {
-	settingInput := new(SettingsForm)
-	if err := c.Bind(settingInput); err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Failed to parse form data", "error"))
-		return nil
+	var raw settingsInput
+	if err := readSignals(c, &raw); err != nil {
+		return toast(c, "Invalid request", "error")
 	}
-	if err := c.Validate(settingInput); err != nil {
-		errorStruct := fieldValidationErrors(err, settingInput)
-		sse(c).MarshalAndPatchSignals(errorStruct)
-		return nil
+	if err := validate.Struct(raw); err != nil {
+		return patchFieldErrors(c, err, raw)
 	}
-	if settingInput.Category != "" && !domain.IsValidCategory(settingInput.Category, settingInput.Subcategory) {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Please choose a valid category and subcategory", "error"))
-		return nil
+	if raw.Category != "" && !domain.IsValidCategory(raw.Category, raw.Subcategory) {
+		return toast(c, "Please choose a valid category and subcategory", "error")
 	}
 
 	var subcategory *string
-	if settingInput.Category == "" {
+	if raw.Category == "" {
 		subcategory = nil
-	} else if domain.HasSubcategories(settingInput.Category) {
-		subcategory = stringPtrIfNonEmpty(settingInput.Subcategory)
+	} else if domain.HasSubcategories(raw.Category) {
+		subcategory = stringPtrIfNonEmpty(raw.Subcategory)
 	} else {
 		subcategory = stringPtr("")
 	}
 
 	update := &domain.UpdatePodcastConfig{
-		ID:            settingInput.ID,
-		Title:         stringPtrIfNonEmpty(settingInput.Title),
-		Description:   stringPtrIfNonEmpty(settingInput.Description),
-		SiteURL:       stringPtrIfNonEmpty(settingInput.SiteURL),
-		Language:      stringPtrIfNonEmpty(settingInput.Language),
-		Copyright:     stringPtrIfNonEmpty(settingInput.Copyright),
-		AuthorName:    stringPtrIfNonEmpty(settingInput.AuthorName),
-		AuthorEmail:   stringPtrIfNonEmpty(settingInput.AuthorEmail),
-		CoverImageURL: stringPtrIfNonEmpty(settingInput.CoverImageURL),
-		Category:      stringPtrIfNonEmpty(settingInput.Category),
+		ID:            raw.ID,
+		Title:         stringPtrIfNonEmpty(raw.Title),
+		Description:   stringPtrIfNonEmpty(raw.Description),
+		SiteURL:       stringPtrIfNonEmpty(raw.SiteURL),
+		Language:      stringPtrIfNonEmpty(raw.Language),
+		Copyright:     stringPtrIfNonEmpty(raw.Copyright),
+		AuthorName:    stringPtrIfNonEmpty(raw.AuthorName),
+		AuthorEmail:   stringPtrIfNonEmpty(raw.AuthorEmail),
+		CoverImageURL: stringPtrIfNonEmpty(raw.CoverImageURL),
+		Category:      stringPtrIfNonEmpty(raw.Category),
 		Subcategory:   subcategory,
-		OwnerName:     stringPtrIfNonEmpty(settingInput.OwnerName),
-		OwnerEmail:    stringPtrIfNonEmpty(settingInput.OwnerEmail),
+		OwnerName:     stringPtrIfNonEmpty(raw.OwnerName),
+		OwnerEmail:    stringPtrIfNonEmpty(raw.OwnerEmail),
 	}
 	if _, err := h.settingsService.UpdatePodcastConfig(c.Request().Context(), update); err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Failed to save settings. Please try again.", "error"))
-		return nil
+		return toast(c, "Failed to save settings. Please try again.", "error")
 	}
-
-	out := sse(c)
-	out.ExecuteScript(toastScript("Settings saved successfully", "success"))
-	return nil
+	return toast(c, "Settings saved successfully", "success")
 }
 
 func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {

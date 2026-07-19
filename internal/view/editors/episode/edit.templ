@@ -1,0 +1,154 @@
+package episodeForm
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+// Edit renders the episode edit page: a metadata form (JSON/signals mode,
+// mirroring the page Settings form) plus a companion-page card.
+templ Edit(shared *domain.AdminSharedData, args Args) {
+	{{
+		signals := NewSignals(args.Episode)
+		signalsJSON, _ := json.Marshal(signals)
+		id := args.Episode.ID
+	}}
+	@layout.AdminLayout("Edit Episode", shared, editActions(), nil, nil) {
+		<div data-signals={ string(signalsJSON) } class="flex flex-wrap gap-6">
+			@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+				@card.CardContent(card.CardContentArgs{}) {
+					@form.Form(form.FormArgs{
+						ID:          "episode-edit-form",
+						Action:      fmt.Sprintf("/admin/episodes/%d", id),
+						ContentType: "json",
+					}) {
+						@episodeFields(signals)
+						<div class="flex justify-end gap-2">
+							@formactions.FormActions(formactions.FormActionsArgs{
+								FormID:      "episode-edit-form",
+								CancelLabel: "Back",
+								CancelHref:  "/admin/episodes",
+								SubmitLabel: "Save Changes",
+							})
+						</div>
+					}
+				}
+			}
+			@PageLinkCard(args)
+		</div>
+	}
+}
+
+templ episodeFields(s Signals) {
+	<div class="space-y-6">
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "title",
+			Label:       "Title",
+			Required:    true,
+			ErrorSignal: "title_error"}) {
+			@input.Input(input.InputArgs{
+				Type:        "text",
+				ID:          "title",
+				Name:        "title",
+				Placeholder: "My Awesome Episode",
+				Class:       "w-full",
+				Attributes: map[string]any{
+					"data-bind":              "title",
+					"data-on:input":          "$title_error = ''",
+					"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
+				}})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "slug",
+			Label:       "Slug",
+			ErrorSignal: "slug_error",
+			Description: "Used in the URL"}) {
+			@input.Input(input.InputArgs{
+				Type:  "text",
+				ID:    "slug",
+				Name:  "slug",
+				Class: "w-full",
+				Attributes: map[string]any{
+					"data-bind":              "slug",
+					"data-on:input":          "$slug_error = ''",
+					"data-attr:aria-invalid": "$slug_error != '' ? 'true' : ''",
+					"data-on:blur":           "$slug = $slug.trim()",
+				},
+			})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:  "description",
+			Label: "Description"}) {
+			@textarea.Textarea(textarea.TextareaArgs{
+				ID:          "description",
+				Name:        "description",
+				Placeholder: "What's this episode about?",
+				Class:       "w-full",
+				Rows:        4,
+				Attributes: map[string]any{
+					"data-bind:description": "",
+				},
+			})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "episode_number",
+			Label:       "Episode Number",
+			ErrorSignal: "episode_number_error"}) {
+			@input.Input(input.InputArgs{
+				Type:  "number",
+				ID:    "episode_number",
+				Name:  "episode_number",
+				Class: "w-full",
+				Attributes: map[string]any{
+					"data-on:input":          "$episode_number = parseInt(el.value) || 0; $episode_number_error = ''",
+					"data-attr:aria-invalid": "$episode_number_error != '' ? 'true' : ''",
+				},
+			})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "publish_at",
+			Label:       "Publish Date",
+			Description: "Leave empty to keep as a draft"}) {
+			@input.Input(input.InputArgs{
+				Type:  "date",
+				ID:    "publish_at",
+				Name:  "publish_at",
+				Class: "w-full",
+				Attributes: map[string]any{
+					"data-bind": "publish_at",
+				},
+			})
+		}
+		<div class="flex items-center gap-3">
+			@checkbox.Checkbox(checkbox.CheckboxArgs{
+				ID:      "explicit",
+				Name:    "explicit",
+				Checked: s.Explicit.Checked})
+			<span class="text-sm">Explicit</span>
+		</div>
+	</div>
+}
+
+templ editActions() {
+	<a href="/admin/episodes">
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+		}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Episodes
+		}
+	</a>
+}

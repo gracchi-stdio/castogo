@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"strconv"
 
 	"github.com/gosimple/slug"
 	"github.com/gracchi-stdio/castogo/internal/domain"
@@ -303,34 +302,25 @@ func isDuplicateKeyError(err error) bool {
 	return false
 }
 
-func (s *PageService) CreateCompanionPage(ctx context.Context, episode *domain.Episode) (*domain.Page, error) {
-	slug := slug.Make(episode.Title)
-	i := 1
-	// Ensure slug is unique
-	for {
-		existing, err := s.page.GetBySlug(ctx, slug)
-		if err != nil {
-			return nil, err
-		}
-		if existing == nil {
-			break
-		}
-		slug = slug + "-" + strconv.Itoa(i)
-		i++
+// CreateCompanionPage creates a new root page and links the episode to it.
+// CreatePage handles the materialized path, layout, and duplicate-slug mapping
+// (a collision surfaces as domain.ErrDuplicatePath). Title is required; slug is
+// auto-generated from the title when blank.
+func (s *PageService) CreateCompanionPage(ctx context.Context, episodeID int64, title, pageSlug string) (*domain.Page, error) {
+	if pageSlug == "" {
+		pageSlug = slug.Make(title)
 	}
 
-	// Create page
-	page, err := s.page.Create(ctx, &domain.Page{
-		Title:     episode.Title,
-		Slug:      slug,
-		ShowInNav: false,
+	page, err := s.CreatePage(ctx, CreatePageInput{
+		Title:  title,
+		Slug:   pageSlug,
+		Layout: "landing",
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Link episode to page
-	if err := s.episode.UpdateLinkedPageID(ctx, episode.ID, &page.ID); err != nil {
+	if err := s.episode.UpdateLinkedPageID(ctx, episodeID, &page.ID); err != nil {
 		return nil, err
 	}
 
