@@ -6,8 +6,11 @@ import (
 
 // SidebarDesktopVariants returns the CSS classes for the SidebarDesktop component
 func SidebarDesktopVariants(args SidebarDesktopArgs) string {
-	// Desktop sidebar - normal flow positioning, hidden on mobile
-	baseClasses := "w-64 shrink-0 bg-sidebar text-sidebar-foreground hidden md:block"
+	// Desktop sidebar - full viewport height. The admin layout is an app shell
+	// (admin_layout.templ pins the root to h-screen and scrolls only the content
+	// area), so the sidebar is fixed by structure; h-screen just makes the
+	// full-height intent explicit so the inner overflow-auto can scroll long nav.
+	baseClasses := "h-screen w-64 shrink-0 bg-sidebar text-sidebar-foreground hidden md:block"
 
 	return utils.TwMerge(baseClasses, args.Class)
 }
