@@ -43,7 +43,7 @@ public/                      — served statically by Echo (registered LAST)
 
 - Handler signature: `func(c *echo.Context) error` — v5 passes Context by pointer (it carries a per-request `*slog.Logger`); `echo.HandlerFunc`/`echo.MiddlewareFunc` use `*Context`
 - Built on standard `net/http` — no adaptor needed for Datastar SDK or any stdlib middleware
-- Request: `c.Request()` returns `*http.Request`; `c.Response()` returns the raw `http.ResponseWriter` directly (v5 folded away the `*echo.Response` wrapper from this call). To read `.Status`/`.Size`/`.Committed`, use `resp, _ := echo.UnwrapResponse(c.Response())`
+- Request: `c.Request()` returns `*http.Request`; `c.Response()` returns the `*echo.Response` wrapper (`c.orgResponse`), NOT the raw `http.ResponseWriter`. The wrapper embeds the raw writer and a `Committed` flag. To read `.Status`/`.Size`/`.Committed`, use `resp, _ := echo.UnwrapResponse(c.Response())`; to reach the raw writer itself, use `resp.ResponseWriter`.
 - JSON binding: `c.Bind(&x)` (reads from JSON body, query params, or path params)
 - Templ pages: `echo.WrapHandler(templ.Handler(view.Page()))`
 - Route groups: `e.Group("/admin", middleware)` for protected routes
@@ -64,14 +64,16 @@ If Echo has a middleware for it, use it. Don't reinvent authentication, rate lim
 
 ## Datastar + Echo Pattern
 
-In v5 `c.Response()` returns the raw `http.ResponseWriter` directly, so Datastar's SSE generator takes it as-is. (In v4 you had to reach for `c.Response().Writer` to get past Echo's `*echo.Response` wrapper, whose `Flush()` conflicted with `http.ResponseController.Flush()` — that workaround is gone in v5.) Writing through the raw writer bypasses Echo's status tracking, so the request logger treats `status == 0` as 200.
+In v5 `c.Response()` returns the `*echo.Response` wrapper, NOT the raw writer. Passing the wrapper straight to `datastar.NewSSE` desyncs Echo's `Committed` flag: `NewSSE` flushes the *underlying* writer via `http.ResponseController` (which unwraps `*echo.Response`), committing it without going through `(*echo.Response).WriteHeader`, so `Committed` stays `false` — then Datastar's `Write` triggers a second `WriteHeader` on the already-committed writer, logging `http: superfluous response.WriteHeader call`. So the helper must unwrap to the raw writer and mark the wrapper `Committed` itself. (In v4 the equivalent was reaching for `c.Response().Writer`; v5's `Unwrap()` makes `UnwrapResponse` the clean way to do it.) Writing through the raw writer bypasses Echo's status tracking, so the request logger treats `status == 0` as 200.
 
 Shared helpers in `internal/handler/helpers.go`:
 
 ```go
 // sse returns a Datastar SSE generator wired through the raw response writer.
 func sse(c *echo.Context) *datastar.ServerSentEventGenerator {
-    return datastar.NewSSE(c.Response(), c.Request())
+    resp, _ := echo.UnwrapResponse(c.Response())
+    resp.Committed = true
+    return datastar.NewSSE(resp.ResponseWriter, c.Request())
 }
 
 // readSignals reads Datastar signals from the request body into target.

@@ -40,14 +40,16 @@ func RequestLogger(skipper func(*echo.Context) bool) echo.MiddlewareFunc {
 				return err
 			}
 
-			// In v5, c.Response() is the raw http.ResponseWriter; reach the
-			// echo.Response wrapper via UnwrapResponse to read its Status field.
+			// In v5, c.Response() returns the *echo.Response wrapper (not the raw
+			// writer). Reach it via UnwrapResponse to read its Status field. SSE
+			// handlers write through the raw writer and mark the wrapper Committed
+			// without setting Status, so Status stays 0 — treat that as 200.
 			var status int
 			if resp, _ := echo.UnwrapResponse(c.Response()); resp != nil {
 				status = resp.Status
 			}
 			if status == 0 {
-				status = 200 // SSE via raw writer bypasses Echo's status tracking
+				status = 200
 			}
 
 			method := c.Request().Method

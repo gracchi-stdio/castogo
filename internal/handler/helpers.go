@@ -15,10 +15,25 @@ import (
 
 var validate = validator.New()
 
-// sse returns a Datastar SSE generator wired through Echo's raw response writer.
-// In v5, c.Response() returns the http.ResponseWriter directly (no .Writer field).
+// sse returns a Datastar SSE generator wired through the raw response writer.
+//
+// In Echo v5, c.Response() returns the *echo.Response wrapper (c.orgResponse),
+// NOT the raw http.ResponseWriter. Passing the wrapper straight to
+// datastar.NewSSE desyncs Echo's Committed flag: NewSSE flushes the *underlying*
+// writer via http.ResponseController (which unwraps *echo.Response), committing
+// it without going through (*echo.Response).WriteHeader — so Committed stays
+// false. When Datastar then Writes through the wrapper, the wrapper sees
+// Committed==false and calls WriteHeader(200) again on the already-committed
+// writer, producing "http: superfluous response.WriteHeader call".
+//
+// Fix: unwrap to the raw writer and hand that to Datastar, and mark the Echo
+// response Committed so the framework (and post-handler middleware) won't try
+// to write a default response afterward. The request logger reads Status==0 as
+// 200, so leaving Status unset is fine.
 func sse(c *echo.Context) *datastar.ServerSentEventGenerator {
-	return datastar.NewSSE(c.Response(), c.Request())
+	resp, _ := echo.UnwrapResponse(c.Response())
+	resp.Committed = true
+	return datastar.NewSSE(resp.ResponseWriter, c.Request())
 }
 
 // readSignals reads Datastar signals from the request body into target.

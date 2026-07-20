@@ -70,6 +70,7 @@ SELECT sqlc.embed(e),
   p.path AS page_path
 FROM episodes e
   LEFT JOIN pages p ON p.id = e.linked_page_id
+    AND p.is_published = true
 WHERE e.published_at IS NOT NULL
   AND e.published_at <= NOW()
   AND e.archived_at IS NULL
