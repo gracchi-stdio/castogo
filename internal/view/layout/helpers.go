@@ -24,6 +24,13 @@ func sidebarSections(currentPath string) []sidebar.SidebarSection {
 			},
 		},
 		{
+			Title: "Docs",
+			Items: []sidebar.SidebarItem{
+				{Title: "Developer", Href: "/admin/docs/developer", Icon: "code"},
+				{Title: "User", Href: "/admin/docs/user", Icon: "book-open"},
+			},
+		},
+		{
 			Title: "System",
 			Items: []sidebar.SidebarItem{
 				{Title: "Settings", Href: "/admin/settings", Icon: "settings"},

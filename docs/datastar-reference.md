@@ -176,16 +176,16 @@ Adopt after literal HTML strings work — debug one thing at a time.
 
 ## Echo + Datastar Pattern
 
-Datastar's SDK calls `http.ResponseController.Flush()` internally, which conflicts with Echo's `Response.Flush()` (calls `WriteHeader` if not committed). Fix: pass the **raw writer** `c.Response().Writer`.
+Datastar's SDK calls `http.ResponseController.Flush()` internally. In v5 `c.Response()` already returns the raw `http.ResponseWriter`, so pass it directly. (In v4 you had to reach for `c.Response().Writer` to get past Echo's `*echo.Response` wrapper, whose `Flush()` conflicted with `http.ResponseController.Flush()` — that workaround is gone in v5.)
 
 Shared helpers (in `internal/handler/helpers.go`):
 
 ```go
-func sse(c echo.Context) *datastar.ServerSentEventGenerator {
-    return datastar.NewSSE(c.Response().Writer, c.Request())
+func sse(c *echo.Context) *datastar.ServerSentEventGenerator {
+    return datastar.NewSSE(c.Response(), c.Request())
 }
 
-func readSignals(c echo.Context, target any) error {
+func readSignals(c *echo.Context, target any) error {
     return datastar.ReadSignals(c.Request(), target)
 }
 ```
@@ -219,7 +219,7 @@ if err := readSignals(c, input); err != nil {
 Session before SSE — `sess.Save()` adds Set-Cookie header, then `sse(c)` commits everything:
 
 ```go
-sess.Save(c.Request(), c.Response().Writer)
+sess.Save(c.Request(), c.Response())
 sse(c).Redirect("/admin")
 ```
 

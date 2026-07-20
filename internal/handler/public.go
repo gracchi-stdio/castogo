@@ -13,8 +13,8 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/layout"
 	"github.com/gracchi-stdio/castogo/internal/view/pageview"
 	"github.com/gracchi-stdio/castogo/internal/view/searchview"
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo-contrib/v5/session"
+	"github.com/labstack/echo/v5"
 )
 
 type PublicHandler struct {
@@ -63,7 +63,7 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	e.GET("/*", h.pageResolver)
 }
 
-func (h *PublicHandler) homePage(c echo.Context) error {
+func (h *PublicHandler) homePage(c *echo.Context) error {
 	// Homepage is the root page — the one with empty slug and path ""
 	page, err := h.pageService.GetPageByPath(c.Request().Context(), "")
 	if err != nil {
@@ -100,7 +100,7 @@ func (h *PublicHandler) homePage(c echo.Context) error {
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
 }
 
-func (h *PublicHandler) pageResolver(c echo.Context) error {
+func (h *PublicHandler) pageResolver(c *echo.Context) error {
 	// Echo stores wildcard params as "*", not the named version
 	slug := strings.Trim(c.Param("*"), "/")
 
@@ -144,7 +144,7 @@ type LoginInput struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 
-func (h *PublicHandler) login(c echo.Context) error {
+func (h *PublicHandler) login(c *echo.Context) error {
 	input := new(LoginInput)
 	if err := readSignals(c, input); err != nil {
 		sse(c).MarshalAndPatchSignals(map[string]string{"error": "Invalid request"})
@@ -165,7 +165,7 @@ func (h *PublicHandler) login(c echo.Context) error {
 	sess, _ := session.Get("session", c)
 	sess.Values["user_id"] = user.ID.String()
 
-	if err := sess.Save(c.Request(), c.Response().Writer); err != nil {
+	if err := sess.Save(c.Request(), c.Response()); err != nil {
 		log.Printf("session save error: %v", err)
 	}
 
@@ -173,15 +173,15 @@ func (h *PublicHandler) login(c echo.Context) error {
 	return nil
 }
 
-func (h *PublicHandler) logout(c echo.Context) error {
+func (h *PublicHandler) logout(c *echo.Context) error {
 	sess, _ := session.Get("session", c)
 	sess.Options.MaxAge = -1
-	sess.Save(c.Request(), c.Response().Writer)
+	sess.Save(c.Request(), c.Response())
 	sse(c).Redirect("/login")
 	return nil
 }
 
-func (h *PublicHandler) buildPublicNav(c echo.Context) *layout.PublicLayoutData {
+func (h *PublicHandler) buildPublicNav(c *echo.Context) *layout.PublicLayoutData {
 	pages, err := h.pageService.GetTopLevelPublished(c.Request().Context())
 	if err != nil {
 		pages = nil
@@ -215,7 +215,7 @@ func (h *PublicHandler) buildPublicNav(c echo.Context) *layout.PublicLayoutData 
 	return data
 }
 
-func (h *PublicHandler) searchPage(c echo.Context) error {
+func (h *PublicHandler) searchPage(c *echo.Context) error {
 	query := strings.TrimSpace(c.QueryParam("q"))
 	searchType := c.QueryParam("type")
 	if searchType == "" {

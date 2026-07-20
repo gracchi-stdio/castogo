@@ -5,17 +5,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gracchi-stdio/castogo/internal/repository"
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo-contrib/v5/session"
+	"github.com/labstack/echo/v5"
 )
 
-func redirectLogin(c echo.Context) error {
+func redirectLogin(c *echo.Context) error {
 	return c.Redirect(http.StatusFound, "/login")
 }
 
 func AuthMiddleware(userRepo repository.UserRepository) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			sess, _ := session.Get("session", c)
 
 			idStr, _ := sess.Values["user_id"].(string)

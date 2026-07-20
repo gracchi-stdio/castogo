@@ -8,11 +8,11 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // update page action
-func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
+func (h *AdminHandler) pageUpdateAction(c *echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -62,7 +62,7 @@ func (h *AdminHandler) pageUpdateAction(c echo.Context) error {
 }
 
 // page create action
-func (h *AdminHandler) pageCreateAction(c echo.Context) error {
+func (h *AdminHandler) pageCreateAction(c *echo.Context) error {
 	var raw pageCreateInput
 	if err := readSignals(c, &raw); err != nil {
 		return toast(c, "Invalid request", "error")
@@ -100,7 +100,7 @@ func (h *AdminHandler) pageCreateAction(c echo.Context) error {
 }
 
 // page delete action
-func (h *AdminHandler) pageDeleteAction(c echo.Context) error {
+func (h *AdminHandler) pageDeleteAction(c *echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")

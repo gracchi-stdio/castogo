@@ -9,19 +9,20 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
 var validate = validator.New()
 
 // sse returns a Datastar SSE generator wired through Echo's raw response writer.
-func sse(c echo.Context) *datastar.ServerSentEventGenerator {
-	return datastar.NewSSE(c.Response().Writer, c.Request())
+// In v5, c.Response() returns the http.ResponseWriter directly (no .Writer field).
+func sse(c *echo.Context) *datastar.ServerSentEventGenerator {
+	return datastar.NewSSE(c.Response(), c.Request())
 }
 
 // readSignals reads Datastar signals from the request body into target.
-func readSignals(c echo.Context, target any) error {
+func readSignals(c *echo.Context, target any) error {
 	return datastar.ReadSignals(c.Request(), target)
 }
 
@@ -98,7 +99,7 @@ func validationMsg(field, tag, param string) string {
 	}
 }
 
-func getSharedData(c echo.Context) *domain.AdminSharedData {
+func getSharedData(c *echo.Context) *domain.AdminSharedData {
 	user, ok := c.Get("user").(*domain.User)
 	if !ok || user == nil {
 		return nil
@@ -146,27 +147,27 @@ func toastScript(message, variant string) string {
 // sse() primitives above — no behavior change, just less boilerplate.
 
 // toast emits a toast notification over SSE.
-func toast(c echo.Context, message, variant string) error {
+func toast(c *echo.Context, message, variant string) error {
 	sse(c).ExecuteScript(toastScript(message, variant))
 	return nil
 }
 
 // patchFieldErrors converts a validator error into per-field "<field>_error"
 // signals and patches them over SSE.
-func patchFieldErrors(c echo.Context, err error, form any) error {
+func patchFieldErrors(c *echo.Context, err error, form any) error {
 	sse(c).MarshalAndPatchSignals(fieldValidationErrors(err, form))
 	return nil
 }
 
 // patchSignals patches arbitrary signal key/values over SSE.
-func patchSignals(c echo.Context, signals map[string]string) error {
+func patchSignals(c *echo.Context, signals map[string]string) error {
 	sse(c).MarshalAndPatchSignals(signals)
 	return nil
 }
 
 // navigate runs window.navigateAdmin(url) over SSE, optionally followed by a
 // toast. Pass message="" to navigate silently.
-func navigate(c echo.Context, url, message, variant string) error {
+func navigate(c *echo.Context, url, message, variant string) error {
 	script := fmt.Sprintf("window.navigateAdmin(%q)", url)
 	if message != "" {
 		script += "; " + toastScript(message, variant)
@@ -178,7 +179,7 @@ func navigate(c echo.Context, url, message, variant string) error {
 // bustPagesCache prunes Swup's cached /admin/pages entry (and the specific
 // editUrl when non-empty) so post-mutation navigation shows fresh content.
 // An empty url is safe — the JS treats a falsy editUrl as list-only.
-func bustPagesCache(c echo.Context, url string) error {
+func bustPagesCache(c *echo.Context, url string) error {
 	sse(c).ExecuteScript(fmt.Sprintf("window.bustPagesCache(%q)", url))
 	return nil
 }
@@ -186,7 +187,7 @@ func bustPagesCache(c echo.Context, url string) error {
 // bustCache prunes a single URL from Swup's cache. Use after an in-place SSE
 // mutation (no navigation) that changes a page's content, so back-navigation
 // shows the fresh state rather than the pre-mutation snapshot.
-func bustCache(c echo.Context, url string) error {
+func bustCache(c *echo.Context, url string) error {
 	sse(c).ExecuteScript(fmt.Sprintf("window.bustCache(%q)", url))
 	return nil
 }

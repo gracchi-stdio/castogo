@@ -19,14 +19,14 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/service"
 	episodeForm "github.com/gracchi-stdio/castogo/internal/view/editors/episode"
 	"github.com/gracchi-stdio/castogo/internal/view/episodeview"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
 // episodeCreateAction handles POST /admin/episodes/create — multipart (audio).
 // The decode → validate → process/upload → create flow follows the standard
 // recipe; the audio pipeline is extracted into processAndUploadAudio.
-func (h *AdminHandler) episodeCreateAction(c echo.Context) error {
+func (h *AdminHandler) episodeCreateAction(c *echo.Context) error {
 	if err := c.Request().ParseMultipartForm(100 << 20); err != nil {
 		patchSignals(c, map[string]string{"uploading": ""})
 		return toast(c, "Failed to parse form", "error")
@@ -137,7 +137,7 @@ func isAllowedAudioExt(ext string) bool {
 
 // episodeUpdateAction handles POST /admin/episodes/:id — metadata only.
 // Publish date, episode audio, and page linkage each have dedicated endpoints.
-func (h *AdminHandler) episodeUpdateAction(c echo.Context) error {
+func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
@@ -183,7 +183,7 @@ func (h *AdminHandler) episodeUpdateAction(c echo.Context) error {
 // quick set-publish-date action from the list row's calendar sheet. Reads the
 // calendar's namespaced signal (publish-cal-{id} → publish_cal_{id}.dateValue)
 // and patches the row in place.
-func (h *AdminHandler) episodeUpdatePublishAt(c echo.Context) error {
+func (h *AdminHandler) episodeUpdatePublishAt(c *echo.Context) error {
 	id := parseInt64(c.Param("id"))
 	signalKey := fmt.Sprintf("publish_cal_%d", id)
 
@@ -223,7 +223,7 @@ func (h *AdminHandler) episodeUpdatePublishAt(c echo.Context) error {
 	return nil
 }
 
-func (h *AdminHandler) episodeDelete(c echo.Context) error {
+func (h *AdminHandler) episodeDelete(c *echo.Context) error {
 	id := parseInt64(c.Param("id"))
 
 	if err := h.episodeService.Delete(c.Request().Context(), id); err != nil {
@@ -237,7 +237,7 @@ func (h *AdminHandler) episodeDelete(c echo.Context) error {
 
 // episodeLinkPage links an existing page to the episode, then patches the
 // companion-page card in place.
-func (h *AdminHandler) episodeLinkPage(c echo.Context) error {
+func (h *AdminHandler) episodeLinkPage(c *echo.Context) error {
 	id := parseInt64(c.Param("id"))
 
 	var raw episodeLinkPageInput
@@ -255,7 +255,7 @@ func (h *AdminHandler) episodeLinkPage(c echo.Context) error {
 
 // episodeCreateCompanion creates a new page (from the dialog's title/slug) and
 // links the episode to it, then patches the companion-page card in place.
-func (h *AdminHandler) episodeCreateCompanion(c echo.Context) error {
+func (h *AdminHandler) episodeCreateCompanion(c *echo.Context) error {
 	id := parseInt64(c.Param("id"))
 
 	var raw episodeCreateCompanionInput
@@ -291,7 +291,7 @@ func (h *AdminHandler) episodeCreateCompanion(c echo.Context) error {
 
 // episodeUnlinkPage removes the episode↔page link, then patches the
 // companion-page card back to its unlinked state.
-func (h *AdminHandler) episodeUnlinkPage(c echo.Context) error {
+func (h *AdminHandler) episodeUnlinkPage(c *echo.Context) error {
 	id := parseInt64(c.Param("id"))
 
 	if err := h.episodeService.UnlinkPage(c.Request().Context(), id); err != nil {
@@ -302,7 +302,7 @@ func (h *AdminHandler) episodeUnlinkPage(c echo.Context) error {
 
 // patchPageLink reloads the episode + pages, rebuilds the companion-page view
 // model, and swaps the #episode-page-link-{id} fragment in place over SSE.
-func (h *AdminHandler) patchPageLink(c echo.Context, id int64) error {
+func (h *AdminHandler) patchPageLink(c *echo.Context, id int64) error {
 	episode, err := h.episodeService.GetByID(c.Request().Context(), id)
 	if err != nil {
 		return toast(c, "Failed to refresh", "error")

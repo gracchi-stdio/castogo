@@ -126,7 +126,7 @@ func (f *Feed) Write(w io.Writer) error {
 This is better than `xml.Marshal` because:
 - No intermediate `[]byte` or `string` allocation
 - Streams directly to the HTTP response writer
-- Works with Echo's `c.Response().Writer`
+- Works with Echo's `c.Response()` (v5 returns the raw `http.ResponseWriter`)
 
 ---
 

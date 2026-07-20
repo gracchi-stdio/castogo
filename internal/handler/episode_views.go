@@ -10,11 +10,11 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/repository"
 	episodeForm "github.com/gracchi-stdio/castogo/internal/view/editors/episode"
 	"github.com/gracchi-stdio/castogo/internal/view/episodeview"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // episodesList renders the admin episode list.
-func (h *AdminHandler) episodesList(c echo.Context) error {
+func (h *AdminHandler) episodesList(c *echo.Context) error {
 	searchString := c.QueryParam("filter")
 	offset := 0
 	if offsetParam := c.QueryParam("offset"); offsetParam != "" {
@@ -33,12 +33,12 @@ func (h *AdminHandler) episodesList(c echo.Context) error {
 }
 
 // episodeCreatePage renders the new-episode form.
-func (h *AdminHandler) episodeCreatePage(c echo.Context) error {
+func (h *AdminHandler) episodeCreatePage(c *echo.Context) error {
 	return echo.WrapHandler(templ.Handler(episodeForm.Create(getSharedData(c))))(c)
 }
 
 // episodeEdit renders the episode edit page (metadata form + companion-page card).
-func (h *AdminHandler) episodeEdit(c echo.Context) error {
+func (h *AdminHandler) episodeEdit(c *echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")

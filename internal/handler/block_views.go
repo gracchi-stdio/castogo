@@ -17,11 +17,11 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // create block view
-func (h *AdminHandler) blockCreate(c echo.Context) error {
+func (h *AdminHandler) blockCreate(c *echo.Context) error {
 	parentPages, err := h.pageService.ListPages(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
@@ -33,7 +33,7 @@ func (h *AdminHandler) blockCreate(c echo.Context) error {
 }
 
 // block list view
-func (h *AdminHandler) blockList(c echo.Context) error {
+func (h *AdminHandler) blockList(c *echo.Context) error {
 	pageId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -48,7 +48,7 @@ func (h *AdminHandler) blockList(c echo.Context) error {
 }
 
 // block edit view
-func (h *AdminHandler) blockEdit(c echo.Context) error {
+func (h *AdminHandler) blockEdit(c *echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")

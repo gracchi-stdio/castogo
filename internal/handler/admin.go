@@ -6,7 +6,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/view/dashboardview"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type AdminHandler struct {
@@ -70,9 +70,15 @@ func (h *AdminHandler) RegisterRoutes(g *echo.Group) {
 	g.DELETE("/pages/:id/blocks/:blockId", h.blockDeleteAction)
 	g.POST("/pages/:id/blocks/:blockId/items", h.blockAddItemAction)
 	g.DELETE("/pages/:id/blocks/:blockId/items/:index", h.blockRemoveItemAction)
+
+	// docs (rendered from embedded markdown in docs/dev and docs/user)
+	g.GET("/docs/developer", h.docsDeveloperIndex)
+	g.GET("/docs/developer/:slug", h.docsDeveloperShow)
+	g.GET("/docs/user", h.docsUserIndex)
+	g.GET("/docs/user/:slug", h.docsUserShow)
 }
 
-func (h *AdminHandler) dashboard(c echo.Context) error {
+func (h *AdminHandler) dashboard(c *echo.Context) error {
 	stats, err := h.episodeService.GetDashboardStats(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load dashboard stats")

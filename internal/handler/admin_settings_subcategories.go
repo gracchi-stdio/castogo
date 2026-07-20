@@ -3,11 +3,11 @@ package handler
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/editors/settings"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func (h *AdminHandler) subcategoriesSSE(c echo.Context) error {
+func (h *AdminHandler) subcategoriesSSE(c *echo.Context) error {
 	category := c.QueryParam("category")
 	selected := c.QueryParam("subcategory")
 	// Guard against "undefined" string literal from race conditions in JS signal init order

@@ -4,7 +4,7 @@ Self-hosted podcast hosting platform. Manages podcast metadata, episodes (with d
 
 ## Tech Stack
 
-- Go 1.26.2, Echo v4, PostgreSQL 17, sqlc, pgx/v5
+- Go 1.26.2, Echo v5, PostgreSQL 17, sqlc, pgx/v5
 - Frontend: Tailwind v4 (via Vite), Datastar (runtime), Templ (type-safe HTML templates)
 - Config: `github.com/caarlos0/env/v11` — global `config.Cfg`, `config.Cfg.IsDev`
 - Task runner: `just` (justfile) — run `just` to list commands
@@ -39,41 +39,43 @@ public/                      — served statically by Echo (registered LAST)
   └─ .vite/manifest.json     — Vite manifest for asset resolution
 ```
 
-## Echo v4 Rules
+## Echo v5 Rules
 
-- Handler signature: `func(c echo.Context) error`
+- Handler signature: `func(c *echo.Context) error` — v5 passes Context by pointer (it carries a per-request `*slog.Logger`); `echo.HandlerFunc`/`echo.MiddlewareFunc` use `*Context`
 - Built on standard `net/http` — no adaptor needed for Datastar SDK or any stdlib middleware
-- Request: `c.Request()` returns `*http.Request`, `c.Response()` returns `*echo.Response` (wraps `http.ResponseWriter`)
+- Request: `c.Request()` returns `*http.Request`; `c.Response()` returns the raw `http.ResponseWriter` directly (v5 folded away the `*echo.Response` wrapper from this call). To read `.Status`/`.Size`/`.Committed`, use `resp, _ := echo.UnwrapResponse(c.Response())`
 - JSON binding: `c.Bind(&x)` (reads from JSON body, query params, or path params)
 - Templ pages: `echo.WrapHandler(templ.Handler(view.Page()))`
 - Route groups: `e.Group("/admin", middleware)` for protected routes
-- Static files: `e.Static("/", "public")` — register LAST so it doesn't swallow routes
-- Import: `github.com/labstack/echo/v4`, middleware: `github.com/labstack/echo/v4/middleware`
-- Sessions: `github.com/labstack/echo-contrib/session` (gorilla/sessions)
+- Static files: served via `middleware.StaticWithConfig` (not route-based `e.Static`, which would shadow the `/*pageSlug` wildcard); v5 defaults to rejecting encoded path separators (GHSA-vfp3-v2gw-7wfq)
+- Graceful shutdown: `e.Start(addr)` traps SIGINT/SIGTERM and drains with a 10s `GracefulTimeout` itself — there is no `e.Shutdown` in v5 (use `echo.StartConfig{GracefulTimeout: ...}.Start(ctx, e)` to override)
+- Custom error handler: classify status via the `echo.HTTPStatusCoder` interface — `echo.ErrNotFound` is a distinct type (`*httpError`) from `*echo.HTTPError` in v5, so a `*echo.HTTPError` assertion misses it. `echo.DefaultHTTPErrorHandler(exposeError bool)` is a factory, not a method
+- Import: `github.com/labstack/echo/v5`, middleware: `github.com/labstack/echo/v5/middleware`
+- Sessions: `github.com/labstack/echo-contrib/v5/session` (gorilla/sessions)
 
 ## Echo-First
 
 Use Echo's built-in middleware before writing from scratch. Check these first:
-- `github.com/labstack/echo/v4/middleware/` — CORS, CSRF, logger, recover, rate limiter, compress, static, redirect, basic auth, JWT, key auth
-- `github.com/labstack/echo-contrib/` — session (gorilla/sessions), prometheus, jaeger, cassandra
+- `github.com/labstack/echo/v5/middleware/` — CORS, CSRF, recover, rate limiter, compress, static, redirect, basic auth, JWT, key auth, request logger (`middleware.Logger` was removed in v5; this project uses a custom `handler.RequestLogger`)
+- `github.com/labstack/echo-contrib/v5/` — session (gorilla/sessions), prometheus, jaeger, cassandra
 - `github.com/gorilla/sessions` — session stores (cookie, redis, filesystem)
 
 If Echo has a middleware for it, use it. Don't reinvent authentication, rate limiting, CORS, CSRF protection, etc.
 
 ## Datastar + Echo Pattern
 
-Datastar's SDK (`datastar.NewSSE`) calls `http.ResponseController.Flush()` which conflicts with Echo's `Response.Flush()` (calls `WriteHeader` if not committed). Solution: pass the **raw writer** `c.Response().Writer` instead of Echo's `Response` wrapper.
+In v5 `c.Response()` returns the raw `http.ResponseWriter` directly, so Datastar's SSE generator takes it as-is. (In v4 you had to reach for `c.Response().Writer` to get past Echo's `*echo.Response` wrapper, whose `Flush()` conflicted with `http.ResponseController.Flush()` — that workaround is gone in v5.) Writing through the raw writer bypasses Echo's status tracking, so the request logger treats `status == 0` as 200.
 
 Shared helpers in `internal/handler/helpers.go`:
 
 ```go
-// sse returns a Datastar SSE generator wired through Echo's raw response writer.
-func sse(c echo.Context) *datastar.ServerSentEventGenerator {
-    return datastar.NewSSE(c.Response().Writer, c.Request())
+// sse returns a Datastar SSE generator wired through the raw response writer.
+func sse(c *echo.Context) *datastar.ServerSentEventGenerator {
+    return datastar.NewSSE(c.Response(), c.Request())
 }
 
 // readSignals reads Datastar signals from the request body into target.
-func readSignals(c echo.Context, target any) error {
+func readSignals(c *echo.Context, target any) error {
     return datastar.ReadSignals(c.Request(), target)
 }
 ```
@@ -87,13 +89,13 @@ sse(c).PatchElements(html)
 
 Session saving before SSE (Set-Cookie header committed together with SSE response):
 ```go
-sess.Save(c.Request(), c.Response().Writer)
+sess.Save(c.Request(), c.Response())
 sse(c).Redirect("/admin")
 ```
 
 ## Session & Auth
 
-- Sessions: `session.Get("session", c)` from `echo-contrib/session`
+- Sessions: `session.Get("session", c)` from `echo-contrib/v5/session`
 - UUID stored as string in session: `sess.Values["user_id"] = user.ID.String()`
   - `gob` (used by securecookie) doesn't support `[16]byte` — must store as string
 - Session options: `Path: "/"`, `HttpOnly: true`, `SameSite: Lax`, `MaxAge: 30 days`
@@ -113,7 +115,7 @@ This is a guided learning project, not vibe coding. For each new feature or step
 
 - `internal/db/` is generated by sqlc — never edit directly
 - Edit `sql/queries/*.sql`, then run `just generate`
-- Sessions via `echo-contrib/session` (gorilla/sessions) — cookie store for now, PostgreSQL later
+- Sessions via `echo-contrib/v5/session` (gorilla/sessions) — cookie store for now, PostgreSQL later
 - sqlc config: `emit_json_tags`, `emit_empty_slices`, `emit_pointers_for_null_types`
 
 ## Domain Errors

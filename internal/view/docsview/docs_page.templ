@@ -1,0 +1,74 @@
+package docsview
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/docs"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+templ DocsPage(shared *domain.AdminSharedData, title string, args DocsPageArgs) {
+	@layout.AdminLayout(title, shared, nil, docsSubnav(args.Section), nil) {
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+			@docsNav(args)
+			<div class="min-w-0">
+				if args.Current == nil {
+					@card.Card(card.CardArgs{}) {
+						@card.CardContent(card.CardContentArgs{Class: "py-12 text-center text-muted-foreground"}) {
+							<p>No documents in this section yet.</p>
+						}
+					}
+				} else {
+					if args.Current.Description != "" {
+						<p class="mb-4 text-sm text-muted-foreground">{ args.Current.Description }</p>
+					}
+					<div class="prose prose-public max-w-none">
+						@templ.Raw(args.Current.HTMLBody)
+					</div>
+				}
+			</div>
+		</div>
+	}
+}
+
+// docsSubnav is the Developer/User tab strip rendered into the admin layout's
+// subnav slot. Modeled on editors/page/subnav.templ, minus the view-transition
+// indicator (this switches whole sections, not in-page tabs).
+templ docsSubnav(current docs.Section) {
+	<div class="flex gap-1 rounded-lg bg-border p-1">
+		@subnavItem("Developer", "/admin/docs/developer", current == docs.SectionDeveloper)
+		@subnavItem("User", "/admin/docs/user", current == docs.SectionUser)
+	</div>
+}
+
+templ subnavItem(label string, href string, isActive bool) {
+	<a
+		href={ href }
+		class={ "flex-1 rounded-md px-3 py-1.5 text-center text-sm transition-colors " + ternary(isActive, "bg-background font-medium text-foreground shadow-sm", "text-muted-foreground hover:text-foreground") }
+	>
+		{ label }
+	</a>
+}
+
+templ docsNav(args DocsPageArgs) {
+	<nav class="self-start lg:sticky lg:top-20">
+		<ul class="space-y-1">
+			for _, item := range args.Items {
+				@navItem(args.Section, item, args.Current != nil && args.Current.Slug == item.Slug)
+			}
+		</ul>
+	</nav>
+}
+
+templ navItem(section docs.Section, item docs.DocMeta, isActive bool) {
+	<li>
+		<a
+			href={ fmt.Sprintf("/admin/docs/%s/%s", section, item.Slug) }
+			class={ "block rounded-md px-3 py-1.5 text-sm transition-colors " + ternary(isActive, "bg-accent font-medium text-accent-foreground", "text-muted-foreground hover:bg-accent/50 hover:text-foreground") }
+		>
+			{ item.Title }
+		</a>
+	</li>
+}

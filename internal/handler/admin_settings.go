@@ -11,7 +11,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/settingview"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func stringPtrIfNonEmpty(value string) *string {
@@ -25,13 +25,13 @@ func stringPtr(value string) *string {
 	return &value
 }
 
-func (h *AdminHandler) settingsPage(c echo.Context) error {
+func (h *AdminHandler) settingsPage(c *echo.Context) error {
 	config, _ := h.settingsService.GetPodcastConfig(c.Request().Context())
 	// config might be nil (first run) — template handles nil gracefully
 	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), config)))(c)
 }
 
-func (h *AdminHandler) settingsSave(c echo.Context) error {
+func (h *AdminHandler) settingsSave(c *echo.Context) error {
 	var raw settingsInput
 	if err := readSignals(c, &raw); err != nil {
 		return toast(c, "Invalid request", "error")
@@ -73,7 +73,7 @@ func (h *AdminHandler) settingsSave(c echo.Context) error {
 	return toast(c, "Settings saved successfully", "success")
 }
 
-func (h *AdminHandler) settingsUploadCoverImage(c echo.Context) error {
+func (h *AdminHandler) settingsUploadCoverImage(c *echo.Context) error {
 	// Parse multipart form data (max 10MB)
 	if err := c.Request().ParseMultipartForm(10 << 20); err != nil {
 		out := sse(c)

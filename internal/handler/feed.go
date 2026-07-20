@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-func (h *PublicHandler) RSSFeed(c echo.Context) error {
+func (h *PublicHandler) RSSFeed(c *echo.Context) error {
 	feed, err := h.feedService.BuildFeed(c.Request().Context())
 	if err != nil {
 		return err
@@ -15,5 +15,5 @@ func (h *PublicHandler) RSSFeed(c echo.Context) error {
 	c.Response().Header().Set(echo.HeaderContentType, "application/rss+xml; charset=utf-8")
 	c.Response().WriteHeader(http.StatusOK)
 
-	return feed.Write(c.Response().Writer)
+	return feed.Write(c.Response())
 }

@@ -127,7 +127,7 @@ Also add two helpers:
 
 **File:** `internal/handler/admin_settings.go`
 
-Add handler method `settingsSubcategories(c echo.Context) error`:
+Add handler method `settingsSubcategories(c *echo.Context) error`:
 
 1. Read `category` from query params: `c.QueryParam("category")`
 2. Look up subcategories from the domain map using `SubcategoriesFor()`

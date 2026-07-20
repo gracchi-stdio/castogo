@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -30,9 +30,9 @@ func statusColor(code int) string {
 	}
 }
 
-func RequestLogger(skipper func(echo.Context) bool) echo.MiddlewareFunc {
+func RequestLogger(skipper func(*echo.Context) bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			start := time.Now()
 			err := next(c)
 
@@ -40,7 +40,12 @@ func RequestLogger(skipper func(echo.Context) bool) echo.MiddlewareFunc {
 				return err
 			}
 
-			status := c.Response().Status
+			// In v5, c.Response() is the raw http.ResponseWriter; reach the
+			// echo.Response wrapper via UnwrapResponse to read its Status field.
+			var status int
+			if resp, _ := echo.UnwrapResponse(c.Response()); resp != nil {
+				status = resp.Status
+			}
 			if status == 0 {
 				status = 200 // SSE via raw writer bypasses Echo's status tracking
 			}

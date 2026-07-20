@@ -14,11 +14,11 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
 	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func (h *AdminHandler) blockReorderAction(c echo.Context) error {
+func (h *AdminHandler) blockReorderAction(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -57,7 +57,7 @@ func (h *AdminHandler) blockReorderAction(c echo.Context) error {
 	return nil
 }
 
-func (h *AdminHandler) blockCreateAction(c echo.Context) error {
+func (h *AdminHandler) blockCreateAction(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -105,7 +105,7 @@ func (h *AdminHandler) blockCreateAction(c echo.Context) error {
 	return nil
 }
 
-func (h *AdminHandler) blockDeleteAction(c echo.Context) error {
+func (h *AdminHandler) blockDeleteAction(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -155,7 +155,7 @@ func (h *AdminHandler) blockDeleteAction(c echo.Context) error {
 // blockSelect — Blocks-tab selection: render the chosen block's form in the form pane
 // and highlight its card. No navigation — the list pane stays mounted and Swup's cache
 // is untouched; both panes are patched in place. (Datastar @get target.)
-func (h *AdminHandler) blockSelect(c echo.Context) error {
+func (h *AdminHandler) blockSelect(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -201,7 +201,7 @@ func (h *AdminHandler) blockSelect(c echo.Context) error {
 	return nil
 }
 
-func (h *AdminHandler) blockUpdateAction(c echo.Context) error {
+func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -383,7 +383,7 @@ func buildBlockContent(blockID int64, blockType string, signals map[string]any) 
 	return content
 }
 
-func (h *AdminHandler) blockUploadImage(c echo.Context) error {
+func (h *AdminHandler) blockUploadImage(c *echo.Context) error {
 	if err := c.Request().ParseMultipartForm(10 << 20); err != nil {
 		out := sse(c)
 		out.ExecuteScript(toastScript("Failed to parse form data", "error"))
@@ -429,7 +429,7 @@ func (h *AdminHandler) blockUploadImage(c echo.Context) error {
 	return nil
 }
 
-func (h *AdminHandler) blockAddItemAction(c echo.Context) error {
+func (h *AdminHandler) blockAddItemAction(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
@@ -507,7 +507,7 @@ func (h *AdminHandler) blockAddItemAction(c echo.Context) error {
 	return nil
 }
 
-func (h *AdminHandler) blockRemoveItemAction(c echo.Context) error {
+func (h *AdminHandler) blockRemoveItemAction(c *echo.Context) error {
 	pageID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")

@@ -8,13 +8,14 @@ import (
 	"os/signal"
 	"reflect"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-playground/validator/v10"
-	echosession "github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echosession "github.com/labstack/echo-contrib/v5/session"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/handler"
@@ -54,7 +55,6 @@ func main() {
 
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validate}
-	e.HideBanner = false
 
 	// Echo's router treats "/admin" and "/admin/" as distinct routes, so
 	// trailing-slash URLs miss every registered route and fall through to 404.
@@ -70,7 +70,7 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
-	skipHealth := func(c echo.Context) bool {
+	skipHealth := func(c *echo.Context) bool {
 		return c.Request().URL.Path == "/healthcheck"
 	}
 
@@ -115,22 +115,34 @@ func main() {
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)
 
-	e.GET("/healthcheck", func(c echo.Context) error {
+	e.GET("/healthcheck", func(c *echo.Context) error {
 		if err := db.Ping(c.Request().Context()); err != nil {
 			return c.JSON(503, map[string]string{"status": "unhealthy", "error": err.Error()})
 		}
 		return c.JSON(200, map[string]string{"db": "ok"})
 	})
 
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		if he, ok := err.(*echo.HTTPError); ok && he.Code == 404 {
-			// render your custom 404 templ template
-			c.Response().Status = http.StatusNotFound
+	// DefaultHTTPErrorHandler is a factory in v5 (no longer a method on *Echo);
+	// capture the default handler once so the fallback below can call it.
+	defaultErrHandler := echo.DefaultHTTPErrorHandler(false)
+	e.HTTPErrorHandler = func(c *echo.Context, err error) {
+		// In v5 echo.ErrNotFound is a distinct type (*httpError) from *echo.HTTPError,
+		// so check the status code via the HTTPStatusCoder interface that both
+		// implement, rather than asserting *echo.HTTPError.
+		code := http.StatusInternalServerError
+		if coder, ok := err.(echo.HTTPStatusCoder); ok {
+			code = coder.StatusCode()
+		}
+		if code == http.StatusNotFound {
+			// render the custom 404 templ template
+			if resp, _ := echo.UnwrapResponse(c.Response()); resp != nil {
+				resp.Status = http.StatusNotFound
+			}
 			echo.WrapHandler(templ.Handler(notfoundview.NotFoundView()))(c)
 			return
 		}
 		// fall through to Echo's default error handler
-		e.DefaultHTTPErrorHandler(err, c)
+		defaultErrHandler(c, err)
 	}
 
 	// Static files — use middleware (not route-based e.Static) so it falls through
@@ -153,25 +165,17 @@ func main() {
 	worker := service.NewAnalyticsWorker(analyticsService, 5*time.Hour)
 
 	// graceful shutdown on SIGINT/SIGTERM
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	worker.Start(ctx)
 
-	go func() {
-		if err := e.Start(":" + config.Cfg.Port); err != nil {
-			e.Logger.Error("failed to start server", "error", err)
-		}
-	}()
-
-	// Block until we receive a shutdown signal (e.g. Ctrl+C)
-	<-ctx.Done()
-	log.Println("Shutting down...")
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	e.Shutdown(shutdownCtx)
+	// In v5, e.Start traps SIGINT/SIGTERM itself and performs graceful HTTP
+	// shutdown (default 10s GracefulTimeout) before returning — e.Shutdown()
+	// was removed, so the manual signal/shutdown dance is no longer needed.
+	if err := e.Start(":" + config.Cfg.Port); err != nil {
+		e.Logger.Error("failed to start server", "error", err)
+	}
 
 	worker.Stop()
 
