@@ -2,9 +2,12 @@ package handler
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -26,9 +29,12 @@ func stringPtr(value string) *string {
 }
 
 func (h *AdminHandler) settingsPage(c *echo.Context) error {
-	config, _ := h.settingsService.GetPodcastConfig(c.Request().Context())
-	// config might be nil (first run) — template handles nil gracefully
-	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), config)))(c)
+	cfg, err := h.settingsService.GetPodcastConfig(c.Request().Context())
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load settings")
+	}
+	// cfg is nil on first run (no config row yet) — the template handles nil.
+	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), cfg)))(c)
 }
 
 func (h *AdminHandler) settingsSave(c *echo.Context) error {
@@ -85,6 +91,18 @@ func (h *AdminHandler) settingsUploadCoverImage(c *echo.Context) error {
 		return nil
 	}
 
+	// Validate the config id up front so we don't upload a cover we can't attach.
+	configID, err := strconv.ParseInt(c.FormValue("id"), 10, 64)
+	if err != nil {
+		out := sse(c)
+		out.MarshalAndPatchSignals(map[string]string{
+			"cover_uploading": "false",
+			"cover_status":    "",
+		})
+		out.ExecuteScript(toastScript("Invalid settings ID", "error"))
+		return nil
+	}
+
 	// read file
 	file, header, err := c.Request().FormFile("cover_image")
 	if err != nil {
@@ -112,7 +130,7 @@ func (h *AdminHandler) settingsUploadCoverImage(c *echo.Context) error {
 
 	// generating unique filename
 	b := make([]byte, 4)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	filename := fmt.Sprintf("%s/setting_cover_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), b, ext)
 
 	// upload
@@ -132,7 +150,7 @@ func (h *AdminHandler) settingsUploadCoverImage(c *echo.Context) error {
 	// save on database — only update the cover_image_url column
 	sse(c).MarshalAndPatchSignals(map[string]string{"cover_status": "Saving changes..."})
 	settings := domain.UpdatePodcastConfig{
-		ID:            parseInt64(c.FormValue("id")),
+		ID:            configID,
 		CoverImageURL: &url,
 	}
 	if _, err := h.settingsService.UpdatePodcastConfig(c.Request().Context(), &settings); err != nil {

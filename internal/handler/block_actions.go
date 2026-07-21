@@ -212,10 +212,11 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid block ID")
 	}
 
+	out := sse(c)
+
 	// Load current blocks first — block type comes from the database (source of truth)
 	pageWithBlocks, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
 	if err != nil {
-		out := sse(c)
 		out.ExecuteScript(toastScript("Failed to load page", "error"))
 		return nil
 	}
@@ -228,14 +229,12 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 		}
 	}
 	if currentBlock == nil {
-		out := sse(c)
 		out.ExecuteScript(toastScript("Block not found", "error"))
 		return nil
 	}
 
 	var raw map[string]any
 	if err := readSignals(c, &raw); err != nil {
-		out := sse(c)
 		out.ExecuteScript(toastScript("Invalid request", "error"))
 		return nil
 	}
@@ -244,20 +243,18 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 	content := buildBlockContent(blockID, currentBlock.BlockType, raw)
 	contentJSON, err := json.Marshal(content)
 	if err != nil {
-		out := sse(c)
 		out.ExecuteScript(toastScript("Failed to encode block content", "error"))
 		return nil
 	}
 
 	currentBlock.Content = contentJSON
 	if _, err := h.pageService.SaveBlock(c.Request().Context(), currentBlock); err != nil {
-		out := sse(c)
 		out.ExecuteScript(toastScript("Failed to save block", "error"))
 		return nil
 	}
 
 	// Stay in edit mode so the user can keep iterating. Toast confirms the save.
-	sse(c).ExecuteScript(toastScript("Block saved", "success"))
+	out.ExecuteScript(toastScript("Block saved", "success"))
 	return nil
 }
 
@@ -413,7 +410,7 @@ func (h *AdminHandler) blockUploadImage(c *echo.Context) error {
 	}
 
 	b := make([]byte, 4)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	filename := fmt.Sprintf("%s/block_img_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), b, ext)
 
 	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)

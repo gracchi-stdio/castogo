@@ -1,0 +1,138 @@
+package episodeForm
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/loading"
+)
+
+// AudioCard is the static shell for the episode audio section on the edit page.
+// The inner #episode-audio-{id} (the root of AudioCardContent) is the SSE-patch
+// target — episodeReplaceAudio re-renders AudioCardContent and swaps just that
+// node, mirroring the companion-page PageLinkCard / PageLinkContent split.
+templ AudioCard(episode *domain.Episode) {
+	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+		@card.CardContent(card.CardContentArgs{}) {
+			<h3 class="text-sm font-medium mb-3">Audio File</h3>
+			@AudioCardContent(episode)
+		}
+	}
+}
+
+// AudioCardContent is the patchable audio control. It shows the current audio
+// (server-derived metadata) when one exists, plus a "replace audio" upload that
+// re-runs the processing pipeline. The upload state ($uploading, $audio_*
+// preview signals) lives in the page-level Signals, declared once on edit.templ.
+templ AudioCardContent(episode *domain.Episode) {
+	{{
+		id := episode.ID
+		meta := episode.AudioMetadata
+		hasAudio := episode.AudioSourceURL != ""
+		label := audioActionLabel(hasAudio)
+	}}
+	<div id={ fmt.Sprintf("episode-audio-%d", id) }>
+		@loading.LoadingOverlay(loading.LoadingOverlayArgs{
+			Signal: "uploading",
+			Status: "uploading_status",
+		})
+		if hasAudio {
+			<div class="p-4 rounded-md border bg-muted/50 mb-4">
+				<div class="flex items-center gap-2 mb-3">
+					@icon.Lucide("file-audio", "size-4 shrink-0 text-muted-foreground")
+					<span class="text-sm font-medium break-all">{ audioFilename(episode.AudioSourceURL) }</span>
+				</div>
+				<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+					<div>
+						<span class="text-muted-foreground">Duration</span>
+						<p class="font-medium">{ formatDuration(meta.Duration) }</p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">Format</span>
+						<p class="font-medium">{ meta.Format }</p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">File size</span>
+						<p class="font-medium">{ formatFileSize(meta.FileSize) }</p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">Bitrate</span>
+						<p class="font-medium">{ fmt.Sprintf("%d kbps", meta.BitRate) }</p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">Sample rate</span>
+						<p class="font-medium">{ fmt.Sprintf("%d Hz", meta.SampleRate) }</p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">Channels</span>
+						<p class="font-medium">{ fmt.Sprintf("%d", meta.ChannelCount) }</p>
+					</div>
+				</div>
+			</div>
+		}
+		@form.Form(form.FormArgs{
+			ID:          fmt.Sprintf("episode-audio-form-%d", id),
+			Action:      fmt.Sprintf("/admin/episodes/%d/audio", id),
+			ContentType: "form",
+			Attributes: map[string]any{
+				"enctype": "multipart/form-data",
+			},
+		}) {
+			@formfield.FormField(formfield.FormFieldArgs{
+				Name:        "audio_file",
+				Label:       label,
+				ErrorSignal: "audio_file_error",
+			}) {
+				@input.Input(input.InputArgs{
+					Type:  "file",
+					ID:    "audio_file",
+					Name:  "audio_file",
+					Class: "w-full",
+					Attributes: map[string]any{
+						"accept":                "audio/*",
+						"data-on:change":        "$audio_file_error = ''; window.extractAudioMetadata(el)",
+						"data-on:audiometadata": audioMetadataHandler,
+					},
+				})
+			}
+			<!-- Selected-file preview (display-only; server recomputes on replace) -->
+			<div data-show="$metadata_extracted" class="mt-3 p-3 rounded-md border bg-muted/50">
+				<p class="text-xs text-muted-foreground mb-2">Selected file</p>
+				<div class="grid grid-cols-2 gap-2 text-sm">
+					<div>
+						<span class="text-muted-foreground">Duration</span>
+						<p class="font-medium" data-text="$audio_duration"></p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">Format</span>
+						<p class="font-medium" data-text="$audio_format"></p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">File size</span>
+						<p class="font-medium" data-text="$audio_file_size"></p>
+					</div>
+					<div>
+						<span class="text-muted-foreground">Bitrate</span>
+						<p class="font-medium" data-text="$audio_bitrate"></p>
+					</div>
+				</div>
+			</div>
+			<div class="flex justify-end mt-4">
+				@button.Button(button.ButtonArgs{
+					Type: "button",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("$uploading_status = 'Starting upload...'; $uploading = true; @post('/admin/episodes/%d/audio', {contentType: 'form', form: '#episode-audio-form-%d'})", id, id),
+					},
+				}) {
+					{ label }
+				}
+			</div>
+		}
+	</div>
+}

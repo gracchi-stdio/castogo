@@ -1,12 +1,3 @@
-// Package handler implements the HTTP handlers and route registration for the
-//
-// Handlers are built on Echo v4 and cover:
-//   - Admin dashboard, settings, and CMS (pages, episodes)
-//   - Authentication and session-based authorization
-//   - Public page rendering and RSS feed generation
-//
-// Shared helpers (sse, readSignals, validate, fieldValidationErrors) provide
-// Datastar SSE integration and request validation used across all handlers.
 package handler
 
 import (

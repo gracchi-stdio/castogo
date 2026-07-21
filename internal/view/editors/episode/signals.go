@@ -20,9 +20,25 @@ type Signals struct {
 	// separate "mode" signal to keep in sync across SSE patches.
 	ExistingPageID int64 `json:"existing_page_id"`
 
-	TitleError       string `json:"title_error,omitempty"`
-	SlugError        string `json:"slug_error,omitempty"`
-	EpisodeNumberErr string `json:"episode_number_error,omitempty"`
+	TitleError       string `json:"title_error"`
+	SlugError        string `json:"slug_error"`
+	EpisodeNumberErr string `json:"episode_number_error"`
+
+	// Audio replacement (edit form). The audio_* fields are display-only —
+	// populated client-side by window.extractAudioMetadata for a preview of the
+	// newly selected file; the server recomputes the real metadata from the
+	// processed audio. Mirrors CreateSignals so the two forms stay in sync.
+	Uploading         bool   `json:"uploading"`
+	UploadingStatus   string `json:"uploading_status"`
+	AudioFileError    string `json:"audio_file_error"`
+	MetadataExtracted bool   `json:"metadata_extracted"`
+	AudioDuration     string `json:"audio_duration"`
+	AudioSampleRate   string `json:"audio_sample_rate"`
+	AudioChannelCount string `json:"audio_channel_count"`
+	AudioBitrate      string `json:"audio_bitrate"`
+	AudioFormat       string `json:"audio_format"`
+	AudioMimeType     string `json:"audio_mime_type"`
+	AudioFileSize     string `json:"audio_file_size"`
 }
 
 // NewSignals builds the initial signal state from an existing episode.
@@ -57,9 +73,9 @@ type CreateSignals struct {
 	Description       string `json:"description"`
 	Uploading         bool   `json:"uploading"`
 	UploadingStatus   string `json:"uploading_status"`
-	TitleError        string `json:"title_error,omitempty"`
-	DescriptionError  string `json:"description_error,omitempty"`
-	AudioFileError    string `json:"audio_file_error,omitempty"`
+	TitleError        string `json:"title_error"`
+	DescriptionError  string `json:"description_error"`
+	AudioFileError    string `json:"audio_file_error"`
 	MetadataExtracted bool   `json:"metadata_extracted"`
 	AudioDuration     string `json:"audio_duration"`
 	AudioSampleRate   string `json:"audio_sample_rate"`

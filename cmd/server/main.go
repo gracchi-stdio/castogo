@@ -6,13 +6,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/a-h/templ"
-	"github.com/go-playground/validator/v10"
 	echosession "github.com/labstack/echo-contrib/v5/session"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -27,34 +24,13 @@ import (
 	_ "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor/types" // initialize block types
 )
 
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i any) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return err
-	}
-	return nil
-}
-
 func main() {
 	err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	validate := validator.New()
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("form"), ",", 2)[0]
-		if name == "-" || name == "" {
-			return fld.Name
-		}
-		return name
-	})
-
 	e := echo.New()
-	e.Validator = &CustomValidator{validator: validate}
 
 	// Echo's router treats "/admin" and "/admin/" as distinct routes, so
 	// trailing-slash URLs miss every registered route and fall through to 404.
@@ -80,10 +56,20 @@ func main() {
 		log.Fatalf("failed to create session store: %v", err)
 	}
 
-	// Middleware
+	// Middleware. RequestID runs before the request logger so each log line
+	// carries a correlation id; Recover wraps everything so a panic in any
+	// downstream handler/middleware is caught.
 	e.Use(middleware.Recover())
+	e.Use(middleware.RequestID())
 	e.Use(handler.RequestLogger(skipHealth))
 	e.Use(echosession.Middleware(sessionStore))
+
+	// Echo's default IPExtractor trusts the X-Forwarded-For header blindly,
+	// which any client can forge. ExtractIPDirect reads the actual peer address
+	// — the secure choice when not behind a trusted proxy. If castogo is ever
+	// deployed behind a reverse proxy/CDN (e.g. Bunny), switch to
+	// echo.ExtractIPFromXFFHeader() so the forwarded-for chain is honored.
+	e.IPExtractor = echo.ExtractIPDirect()
 
 	// Repositories
 	userRepo := postgres.NewUserRepo(db)

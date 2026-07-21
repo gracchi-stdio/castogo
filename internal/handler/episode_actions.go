@@ -179,12 +179,94 @@ func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
 	return toast(c, "Episode saved successfully", "success")
 }
 
+// episodeReplaceAudio handles POST /admin/episodes/:id/audio — a multipart
+// upload that re-runs the audio pipeline (normalize → upload) and overwrites the
+// episode's AudioSourceURL, AudioMetadata, and Duration. It mirrors
+// episodeCreateAction's audio handling but patches the audio card in place over
+// SSE instead of navigating, following the same per-action-endpoint pattern as
+// link-page / publish-at. The metadata save endpoint stays JSON-only; audio,
+// being multipart, gets its own endpoint.
+func (h *AdminHandler) episodeReplaceAudio(c *echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
+	}
+
+	if err := c.Request().ParseMultipartForm(100 << 20); err != nil {
+		patchSignals(c, map[string]string{"uploading": ""})
+		return toast(c, "Failed to parse form", "error")
+	}
+
+	file, header, err := c.Request().FormFile("audio_file")
+	if err != nil {
+		return patchSignals(c, map[string]string{"audio_file_error": "Audio file is required", "uploading": ""})
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if !isAllowedAudioExt(ext) {
+		return patchSignals(c, map[string]string{"audio_file_error": "Unsupported file type. Use mp3, wav, m4a, ogg, or flac.", "uploading": ""})
+	}
+
+	// Reuse the episode's slug for the CDN key (stable, readable path); the
+	// random suffix in episodeAudioFilename avoids colliding with the prior file.
+	episode, err := h.episodeService.GetByID(c.Request().Context(), id)
+	if err != nil {
+		return toast(c, "Failed to load episode", "error")
+	}
+
+	patchSignals(c, map[string]string{"uploading_status": "Processing audio..."})
+	cdnURL, audioMeta, err := h.processAndUploadAudio(c.Request().Context(), file, ext, episode.Slug)
+	if err != nil {
+		log.Printf("episode %d audio replace failed: %v", id, err)
+		patchSignals(c, map[string]string{"uploading": ""})
+		return toast(c, "Failed to process audio file", "error")
+	}
+
+	updated, err := h.episodeService.Update(c.Request().Context(), &domain.UpdateEpisode{
+		ID:             id,
+		AudioSourceURL: &cdnURL,
+		AudioMetadata:  &audioMeta,
+		Duration:       &audioMeta.Duration,
+	})
+	if err != nil {
+		log.Printf("update episode %d audio failed: %v", id, err)
+		patchSignals(c, map[string]string{"uploading": ""})
+		return toast(c, "Failed to update episode", "error")
+	}
+
+	// Re-render the card so the "current audio" section reflects the new
+	// server-derived metadata + filename, then clear upload/preview state.
+	sse(c).PatchElementTempl(episodeForm.AudioCardContent(updated),
+		datastar.WithSelectorID(fmt.Sprintf("episode-audio-%d", id)),
+		datastar.WithModeOuter())
+	patchSignals(c, map[string]string{
+		"uploading":           "",
+		"uploading_status":    "",
+		"audio_file_error":    "",
+		"metadata_extracted":  "false",
+		"audio_duration":      "",
+		"audio_sample_rate":   "",
+		"audio_channel_count": "",
+		"audio_bitrate":       "",
+		"audio_format":        "",
+		"audio_mime_type":     "",
+		"audio_file_size":     "",
+	})
+	toast(c, "Audio updated", "success")
+	bustCache(c, fmt.Sprintf("/admin/episodes/%d/edit", id))
+	return nil
+}
+
 // episodeUpdatePublishAt handles PATCH /admin/episodes/:id/publish-at — the
 // quick set-publish-date action from the list row's calendar sheet. Reads the
 // calendar's namespaced signal (publish-cal-{id} → publish_cal_{id}.dateValue)
 // and patches the row in place.
 func (h *AdminHandler) episodeUpdatePublishAt(c *echo.Context) error {
-	id := parseInt64(c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
+	}
 	signalKey := fmt.Sprintf("publish_cal_%d", id)
 
 	var raw map[string]any
@@ -224,7 +306,10 @@ func (h *AdminHandler) episodeUpdatePublishAt(c *echo.Context) error {
 }
 
 func (h *AdminHandler) episodeDelete(c *echo.Context) error {
-	id := parseInt64(c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
+	}
 
 	if err := h.episodeService.Delete(c.Request().Context(), id); err != nil {
 		log.Printf("delete episode failed: %v", err)
@@ -238,7 +323,10 @@ func (h *AdminHandler) episodeDelete(c *echo.Context) error {
 // episodeLinkPage links an existing page to the episode, then patches the
 // companion-page card in place.
 func (h *AdminHandler) episodeLinkPage(c *echo.Context) error {
-	id := parseInt64(c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
+	}
 
 	var raw episodeLinkPageInput
 	if err := readSignals(c, &raw); err != nil {
@@ -256,7 +344,10 @@ func (h *AdminHandler) episodeLinkPage(c *echo.Context) error {
 // episodeCreateCompanion creates a new page (from the dialog's title/slug) and
 // links the episode to it, then patches the companion-page card in place.
 func (h *AdminHandler) episodeCreateCompanion(c *echo.Context) error {
-	id := parseInt64(c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
+	}
 
 	var raw episodeCreateCompanionInput
 	if err := readSignals(c, &raw); err != nil {
@@ -292,7 +383,10 @@ func (h *AdminHandler) episodeCreateCompanion(c *echo.Context) error {
 // episodeUnlinkPage removes the episode↔page link, then patches the
 // companion-page card back to its unlinked state.
 func (h *AdminHandler) episodeUnlinkPage(c *echo.Context) error {
-	id := parseInt64(c.Param("id"))
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid episode ID")
+	}
 
 	if err := h.episodeService.UnlinkPage(c.Request().Context(), id); err != nil {
 		return toast(c, "Failed to unlink page", "error")

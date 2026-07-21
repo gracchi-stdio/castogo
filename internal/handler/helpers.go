@@ -1,3 +1,10 @@
+// Package handler implements the HTTP handlers and route registration for the
+// Podlog podcast platform on Echo v5: the admin dashboard, settings, and the
+// block-based page CMS; episode management; session-based auth; public page
+// rendering, search, and RSS feed generation.
+//
+// Shared helpers (sse, readSignals, validate, fieldValidationErrors) provide
+// Datastar SSE integration and request validation used across all handlers.
 package handler
 
 import (
@@ -128,11 +135,6 @@ func getSharedData(c *echo.Context) *domain.AdminSharedData {
 
 func parseInt(s string) int {
 	v, _ := strconv.Atoi(s)
-	return v
-}
-
-func parseInt64(s string) int64 {
-	v, _ := strconv.ParseInt(s, 10, 64)
 	return v
 }
 

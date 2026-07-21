@@ -2,6 +2,7 @@ package episodeForm
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
@@ -24,6 +25,56 @@ func pageOptions(pages []*domain.Page) []selectcomponent.SelectOptionArgs {
 		})
 	}
 	return opts
+}
+
+// formatDuration turns a duration in seconds into a compact m:ss / h:m string.
+// Mirrors the helpers in episodeview and pageview/blocks (per-package convention).
+func formatDuration(seconds int) string {
+	if seconds <= 0 {
+		return "—"
+	}
+	m := seconds / 60
+	s := seconds % 60
+	if m >= 60 {
+		h := m / 60
+		return fmt.Sprintf("%dh %dm", h, m%60)
+	}
+	return fmt.Sprintf("%d:%02d", m, s)
+}
+
+// formatFileSize humanizes a byte count (e.g. 12.3 MB). Returns "—" for <= 0.
+func formatFileSize(bytes int64) string {
+	if bytes <= 0 {
+		return "—"
+	}
+	const unit = 1024
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// audioFilename returns the basename of an AudioSourceURL for display. Falls
+// back to the full URL if parsing yields nothing.
+func audioFilename(url string) string {
+	if url == "" {
+		return "—"
+	}
+	base := path.Base(url)
+	if base == "." || base == "/" || base == "" {
+		return url
+	}
+	return base
+}
+
+// audioActionLabel returns the verb for the audio card's primary action.
+func audioActionLabel(hasAudio bool) string {
+	if hasAudio {
+		return "Replace Audio"
+	}
+	return "Add Audio"
 }
 
 // audioMetadataHandler is the data-on:audiometadata expression for the create

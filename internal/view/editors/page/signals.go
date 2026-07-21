@@ -9,8 +9,8 @@ type Signals struct {
 	IsPublished bool   `json:"is_published"`
 	ShowInNav   bool   `json:"show_in_nav"`
 
-	TitleError string `json:"title_error,omitempty"`
-	SlugError  string `json:"slug_error,omitempty"`
+	TitleError string `json:"title_error"`
+	SlugError  string `json:"slug_error"`
 }
 
 func NewSignals(page *domain.Page) Signals {
