@@ -40,7 +40,7 @@ templ Create(shared *domain.AdminSharedData) {
 					"enctype": "multipart/form-data",
 				},
 			}) {
-				<div class="flex flex-wrap gap-6">
+				<div class="flex flex-wrap flex-col gap-6">
 					@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
 						@card.CardContent(card.CardContentArgs{}) {
 							<div class="space-y-4">

@@ -12,6 +12,7 @@ import "@fontsource-variable/playfair-display";
 import "@fontsource/oswald";
 
 import Swup from "swup";
+import SwupFormsPlugin from "@swup/forms-plugin";
 import SwupPreloadPlugin from "@swup/preload-plugin";
 
 // Paths that always full-reload. They change the app shell (login ↔ admin ↔ public)
@@ -40,6 +41,13 @@ function isReserved(pathname: string): boolean {
   return RESERVED_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
+}
+
+// The page editor's Settings↔Blocks tabs differ only by a trailing /blocks.
+// Stripping it gives the "page" a tab switch stays within, so a Settings→Blocks
+// move counts as same-page (not a real navigation).
+function pageBase(path: string): string {
+  return path.replace(/\/blocks\/?$/, "");
 }
 
 // Decide whether Swup should handle a given URL. Returning true = bypass Swup,
@@ -74,7 +82,7 @@ const swup = new Swup({
     "[data-admin-content]",
     "[data-public-content]",
   ],
-  plugins: [new SwupPreloadPlugin()],
+  plugins: [new SwupPreloadPlugin(), new SwupFormsPlugin()],
   ignoreVisit,
   // Use the browser's native View Transitions API for animations. Swup will wrap
   // its renderPage call in document.startViewTransition() automatically — the
@@ -104,6 +112,22 @@ swup.hooks.on("visit:start", (visit) => {
         "[data-admin-content]",
       ]
     : ["[data-public-content]"];
+
+  const fromPath = pathnameOf(visit.from.url);
+
+  // Same-path refinements (filter/search, or a POST that returns to the same
+  // page) shouldn't animate at all — only the body changes. Skip the native View
+  // Transition so the swap is instant.
+  if (fromPath === targetPath) {
+    visit.animation.native = false;
+  }
+
+  // Same-page transitions (the page editor's Settings↔Blocks tabs) freeze the
+  // header so it doesn't slide. Different-page navigations — including forms —
+  // keep the slide, since the header genuinely changes between them. See the
+  // .freeze-header rules in app.css.
+  const freezeHeader = pageBase(fromPath) === pageBase(targetPath);
+  document.documentElement.classList.toggle("freeze-header", freezeHeader);
 });
 
 // content:replace fires inside Swup's startViewTransition callback (because

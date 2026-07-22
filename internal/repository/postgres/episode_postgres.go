@@ -25,7 +25,6 @@ func (r *EpisodeRepo) Create(ctx context.Context, ep *domain.Episode) (*domain.E
 	params := db.CreateEpisodeParams{
 		Title:          ep.Title,
 		Slug:           ep.Slug,
-		EpisodeNumber:  int32(ep.EpisodeNumber),
 		Description:    ep.Description,
 		Duration:       int32(ep.Duration),
 		Explicit:       ep.Explicit,
@@ -65,6 +64,7 @@ func (r *EpisodeRepo) GetBySlug(ctx context.Context, slug string) (*domain.Episo
 func (r *EpisodeRepo) List(ctx context.Context, filter repository.EpisodeFilter) ([]*domain.Episode, error) {
 	params := db.ListEpisodesParams{
 		Search:     filter.Search,
+		Status:     filter.Status,
 		PageOffset: int32(filter.Offset),
 		PageLimit:  int32(filter.Limit),
 	}
@@ -81,12 +81,6 @@ func (r *EpisodeRepo) List(ctx context.Context, filter repository.EpisodeFilter)
 }
 
 func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*domain.Episode, error) {
-	var episodeNumber *int32
-	if ep.EpisodeNumber != nil {
-		v := int32(*ep.EpisodeNumber)
-		episodeNumber = &v
-	}
-
 	var duration *int32
 	if ep.Duration != nil {
 		v := int32(*ep.Duration)
@@ -112,7 +106,6 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*do
 		ID:             ep.ID,
 		Title:          ep.Title,
 		Slug:           ep.Slug,
-		EpisodeNumber:  episodeNumber,
 		Description:    ep.Description,
 		Duration:       duration,
 		Explicit:       ep.Explicit,
@@ -181,12 +174,19 @@ func (r *EpisodeRepo) ListPublishedWithPagePath(ctx context.Context, limit, offs
 	return out, nil
 }
 
-func (r *EpisodeRepo) GetMaxEpisodeNumber(ctx context.Context) (int, error) {
-	max, err := r.q.GetMaxEpisodeNumber(ctx)
+// ListForRanking returns all non-archived episodes with a publish_at, in
+// chronological order. The service layer derives each episode's number from
+// the row position (1-based). See service.publishOrderRanks.
+func (r *EpisodeRepo) ListForRanking(ctx context.Context) ([]*domain.Episode, error) {
+	results, err := r.q.ListEpisodesForRanking(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("get max episode number: %w", err)
+		return nil, fmt.Errorf("list episodes for ranking: %w", err)
 	}
-	return int(max), nil
+	out := make([]*domain.Episode, len(results))
+	for i, result := range results {
+		out[i] = toDomainEpisode(&result)
+	}
+	return out, nil
 }
 
 func (r *EpisodeRepo) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error) {

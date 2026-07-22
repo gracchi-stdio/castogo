@@ -1,0 +1,31 @@
+package audio
+
+// Audio renders a native HTML5 audio player with controls. See args.go for why
+// native controls are used over the WaveSurfer-based public player.
+templ Audio(args AudioArgs) {
+	{{ preload := args.Preload }}
+	{{
+		if preload == "" {
+			preload = "auto"
+		}
+	}}
+	<audio
+		data-slot="audio"
+		controls
+		preload={ preload }
+		class={ "w-full " + args.Class }
+		if args.ID != "" {
+			id={ args.ID }
+		}
+		{ args.Attributes... }
+	>
+		if args.Src != "" {
+			<source
+				src={ args.Src }
+				if args.MimeType != "" {
+					type={ args.MimeType }
+				}
+			/>
+		}
+	</audio>
+}

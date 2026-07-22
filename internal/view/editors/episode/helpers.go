@@ -2,7 +2,9 @@ package episodeForm
 
 import (
 	"fmt"
+	"net/url"
 	"path"
+	"time"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
@@ -91,3 +93,54 @@ $audio_mime_type = evt.detail.audio_mime_type;
 $audio_file_size = evt.detail.audio_file_size;
 $metadata_extracted = true;
 `
+
+// statusColor maps an episode status to badge Tailwind classes (with dark-mode
+// variants). Ported from the former episodeview package.
+func statusColor(status domain.EpisodeStatus) string {
+	switch status {
+	case domain.EpisodeStatusPublished:
+		return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+	case domain.EpisodeStatusDraft:
+		return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+	case domain.EpisodeStatusScheduled:
+		return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+	case domain.EpisodeStatusArchived:
+		return "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+	default:
+		return "bg-secondary text-secondary-foreground"
+	}
+}
+
+// publishDateValue formats a publish-at time as a YYYY-MM-DD calendar value, or
+// "" when unset. Ported from the former episodeview package.
+func publishDateValue(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("2006-01-02")
+}
+
+// episodeListURL builds the admin episode list URL with the given status/search
+// query params, omitting empty values so "All + no search" yields a clean path.
+func episodeListURL(status, search string) string {
+	q := url.Values{}
+	if status != "" {
+		q.Set("status", status)
+	}
+	if search != "" {
+		q.Set("filter", search)
+	}
+	if enc := q.Encode(); enc != "" {
+		return "/admin/episodes?" + enc
+	}
+	return "/admin/episodes"
+}
+
+// pillClass returns Tailwind classes for a filter pill, highlighting the active
+// one with the primary token.
+func pillClass(active bool) string {
+	if active {
+		return "inline-flex items-center rounded-md px-2.5 py-1 text-sm bg-primary text-primary-foreground"
+	}
+	return "inline-flex items-center rounded-md px-2.5 py-1 text-sm text-muted-foreground hover:bg-accent"
+}

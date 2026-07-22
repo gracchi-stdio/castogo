@@ -7,7 +7,7 @@ import "github.com/gracchi-stdio/castogo/internal/view/components/icon"
 import "github.com/gracchi-stdio/castogo/internal/view/components/card"
 
 templ EditSettings(shared *domain.AdminSharedData, args Args) {
-	@layout.AdminLayout("Edit Page", shared, nil, Subnav(args.Page.ID, "settings"), nil) {
+	@layout.AdminLayout("Edit Page", shared, editPageActions(), Subnav(args.Page.ID, "settings"), nil) {
 		@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
 			@card.CardContent(card.CardContentArgs{}) {
 				@Settings(args)

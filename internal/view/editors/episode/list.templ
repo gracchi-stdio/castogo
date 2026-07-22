@@ -1,4 +1,4 @@
-package episodeview
+package episodeForm
 
 import (
 	"fmt"
@@ -11,23 +11,69 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/sheet"
 	"github.com/gracchi-stdio/castogo/internal/view/layout"
 	"github.com/gracchi-stdio/castogo/internal/view/utils"
 )
 
-templ EpisodesListPage(shared *domain.AdminSharedData, episodes []*domain.Episode) {
+// List renders the admin episode list with a server-side filter bar (status
+// pills + title search). Status and Search are URL params handled by
+// AdminHandler.episodesList, so filtering is bookmarkable and correct beyond the
+// 100-row cap (status is derived from published_at/archived_at in SQL — see
+// ListEpisodes).
+templ List(shared *domain.AdminSharedData, args ListArgs) {
 	@layout.AdminLayout("Episodes", shared, episodesListActions(), nil, nil) {
-		if len(episodes) > 0 {
-			@episodesList(episodes)
+		@filterBar(args)
+		if len(args.Episodes) > 0 {
+			@episodeList(args.Episodes)
 		} else {
-			@episodesListEmpty()
+			@episodesListEmpty(args)
 		}
 	}
 }
 
-templ episodesList(episodes []*domain.Episode) {
-	@card.Card(card.CardArgs{}) {
+// filterBar renders the status pill nav (links that swap the status query param,
+// preserving any active search) and a GET search form (preserving any active
+// status via a hidden field, since a GET form replaces its action's query).
+templ filterBar(args ListArgs) {
+	{{
+		pills := []struct {
+			Label string
+			Value string
+		}{
+			{"All", ""},
+			{"Draft", string(domain.EpisodeStatusDraft)},
+			{"Scheduled", string(domain.EpisodeStatusScheduled)},
+			{"Published", string(domain.EpisodeStatusPublished)},
+			{"Archived", string(domain.EpisodeStatusArchived)},
+		}
+	}}
+	<div class="flex flex-wrap items-center gap-3 mb-4">
+		<nav class="flex items-center gap-1">
+			for _, p := range pills {
+				<a href={ episodeListURL(p.Value, args.Search) } class={ pillClass(args.Status == p.Value) }>
+					{ p.Label }
+				</a>
+			}
+		</nav>
+		<form method="get" action="/admin/episodes" data-swup-form class="ml-auto">
+			if args.Status != "" {
+				@input.Input(input.InputArgs{Type: "hidden", Name: "status", Value: args.Status})
+			}
+			@input.Input(input.InputArgs{
+				Type:        "search",
+				Name:        "filter",
+				Value:       args.Search,
+				Placeholder: "Search title...",
+				Class:       "w-48",
+			})
+		</form>
+	</div>
+}
+
+templ episodeList(episodes []*domain.Episode) {
+	@card.Card(card.CardArgs{Class: "flex-1"}) {
 		@card.CardContent(card.CardContentArgs{}) {
 			<table class="w-full table-auto">
 				<thead>
@@ -50,6 +96,8 @@ templ episodesList(episodes []*domain.Episode) {
 	}
 }
 
+// EpisodeRow is exported because AdminHandler.episodeUpdatePublishAt re-renders
+// it over SSE (outer-swap of #episode-row-{id}) after a publish-date change.
 templ EpisodeRow(episode *domain.Episode) {
 	{{ rowID := fmt.Sprintf("episode-row-%d", episode.ID) }}
 	<tr class="border-t hover:bg-muted/50 transition-colors" id={ rowID }>
@@ -58,7 +106,11 @@ templ EpisodeRow(episode *domain.Episode) {
 				{ strconv.Itoa(episode.EpisodeNumber) }
 			}
 		</td>
-		<td class="py-3 px-2 font-medium">{ episode.Title }</td>
+		<td class="py-3 px-2 font-medium">
+			<a href={ fmt.Sprintf("/admin/episodes/%d/edit", episode.ID) } class="hover:underline">
+				{ episode.Title }
+			</a>
+		</td>
 		<td class="py-3 px-2">
 			@statusBadge(episode.Status())
 		</td>
@@ -122,12 +174,10 @@ templ publishAtCell(episode *domain.Episode) {
 						— currently
 						@statusBadge(episode.Status())
 					</p>
-					<!-- Selected date display -->
 					<div class="flex items-center gap-2 text-sm">
 						<span class="text-muted-foreground">Selected:</span>
 						<span class="font-medium" data-text={ signals.Signal("dateValue") + " ? new Date(" + signals.Signal("dateValue") + " + 'T12:00:00Z').toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC'}) : 'None'" }></span>
 					</div>
-					<!-- Calendar inline — no popover needed inside a sheet -->
 					@calendar.Calendar(calendar.CalendarArgs{
 						ID:           calID,
 						Mode:         "single",
@@ -193,17 +243,29 @@ templ episodeActionsDropdown(episode *domain.Episode) {
 	}
 }
 
-templ episodesListEmpty() {
-	@card.Card(card.CardArgs{}) {
+// episodesListEmpty shows a create prompt for a truly empty list, or a
+// "no matches / clear filters" prompt when a filter is active.
+templ episodesListEmpty(args ListArgs) {
+	@card.Card(card.CardArgs{Class: "flex-1"}) {
 		@card.CardContent(card.CardContentArgs{Class: "flex flex-col items-center gap-4 py-8"}) {
-			@icon.Lucide("headphones", "size-12 text-muted-foreground/30")
-			<p class="text-muted-foreground">No episodes yet. Create your first episode to get started.</p>
-			<a href="/admin/episodes/create">
-				@button.Button(button.ButtonArgs{Variant: "default"}) {
-					@icon.Lucide("circle-plus", "size-4 mr-1")
-					New Episode
-				}
-			</a>
+			if args.Status == "" && args.Search == "" {
+				@icon.Lucide("headphones", "size-12 text-muted-foreground/30")
+				<p class="text-muted-foreground">No episodes yet. Create your first episode to get started.</p>
+				<a href="/admin/episodes/create">
+					@button.Button(button.ButtonArgs{Variant: "default"}) {
+						@icon.Lucide("circle-plus", "size-4 mr-1")
+						New Episode
+					}
+				</a>
+			} else {
+				@icon.Lucide("search", "size-12 text-muted-foreground/30")
+				<p class="text-muted-foreground">No episodes match your filter.</p>
+				<a href="/admin/episodes">
+					@button.Button(button.ButtonArgs{Variant: "outline"}) {
+						Clear filters
+					}
+				</a>
+			}
 		}
 	}
 }

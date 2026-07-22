@@ -23,14 +23,6 @@ func (s *EpisodeService) Create(ctx context.Context, ep *domain.Episode) (*domai
 		ep.Slug = slug.Make(ep.Title)
 	}
 
-	if ep.EpisodeNumber == 0 {
-		max, err := s.repo.GetMaxEpisodeNumber(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("get next episode number: %w", err)
-		}
-		ep.EpisodeNumber = max + 1
-	}
-
 	created, err := s.repo.Create(ctx, ep)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique") {
@@ -58,7 +50,32 @@ func (s *EpisodeService) List(ctx context.Context, filter repository.EpisodeFilt
 		filter.Limit = 100
 	}
 
-	return s.repo.List(ctx, filter)
+	eps, err := s.repo.List(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.applyEpisodeNumbers(ctx, eps); err != nil {
+		return nil, err
+	}
+	return eps, nil
+}
+
+// episodeRanks returns a map of episode ID -> 1-based chronological rank, built
+// from ListForRanking (all non-archived episodes with a publish_at, in order).
+// Episode numbers are derived, not stored — see episode_numbering.go.
+func (s *EpisodeService) episodeRanks(ctx context.Context) (map[int64]int, error) {
+	return episodeNumberRanks(ctx, s.repo)
+}
+
+// applyEpisodeNumbers sets each episode's EpisodeNumber from the global rank
+// map. Episodes absent from the map (drafts, archived) keep number 0.
+func (s *EpisodeService) applyEpisodeNumbers(ctx context.Context, eps []*domain.Episode) error {
+	ranks, err := s.episodeRanks(ctx)
+	if err != nil {
+		return err
+	}
+	applyEpisodeNumbers(eps, ranks)
+	return nil
 }
 
 func (s *EpisodeService) Update(ctx context.Context, ep *domain.UpdateEpisode) (*domain.Episode, error) {
@@ -78,7 +95,14 @@ func (s *EpisodeService) ListPublished(ctx context.Context, limit, offset int) (
 		limit = 20
 	}
 
-	return s.repo.ListPublished(ctx, limit, offset)
+	eps, err := s.repo.ListPublished(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.applyEpisodeNumbers(ctx, eps); err != nil {
+		return nil, err
+	}
+	return eps, nil
 }
 
 func (s *EpisodeService) ListPublishedWithPagePath(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
@@ -86,7 +110,18 @@ func (s *EpisodeService) ListPublishedWithPagePath(ctx context.Context, limit, o
 		limit = 20
 	}
 
-	return s.repo.ListPublishedWithPagePath(ctx, limit, offset)
+	ewps, err := s.repo.ListPublishedWithPagePath(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	ranks, err := s.episodeRanks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, ewp := range ewps {
+		ewp.EpisodeNumber = ranks[ewp.ID]
+	}
+	return ewps, nil
 }
 
 func (s *EpisodeService) GetDashboardStats(ctx context.Context) (*domain.DashboardStats, error) {
@@ -122,7 +157,14 @@ func (s *EpisodeService) SearchPublished(ctx context.Context, query string, limi
 	if limit <= 0 {
 		limit = 20
 	}
-	return s.repo.SearchPublished(ctx, query, limit, offset)
+	eps, err := s.repo.SearchPublished(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.applyEpisodeNumbers(ctx, eps); err != nil {
+		return nil, err
+	}
+	return eps, nil
 }
 
 func (s *EpisodeService) LinkPage(ctx context.Context, episodeID, pageID int64) error {

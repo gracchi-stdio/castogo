@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -32,6 +33,14 @@ func (s *FeedService) BuildFeed(ctx context.Context) (*domain.RSS, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Episode numbers are derived from publish order; assign them before
+	// building items so <itunes:episode> reflects the chronological rank.
+	ranks, err := episodeNumberRanks(ctx, s.episodeRepo)
+	if err != nil {
+		return nil, fmt.Errorf("compute episode numbers: %w", err)
+	}
+	applyEpisodeNumbers(episodes, ranks)
 
 	// Build category with optional subcategory
 	var category *domain.ITunesCategory
@@ -88,7 +97,9 @@ func (s *FeedService) buildItem(ep *domain.Episode, config *domain.PodcastConfig
 		Description: ep.Description,
 		GUID: domain.GUID{
 			IsPermaLink: "false",
-			Value:       "podlog-ep-" + strconv.Itoa(ep.EpisodeNumber),
+			// Stable on the immutable episode id — NOT the number, which is now
+			// derived from publish order and would change if dates change.
+			Value: "podlog-ep-" + strconv.FormatInt(ep.ID, 10),
 		},
 		PubDate: &domain.PubDate{Time: pubTime},
 		Enclosure: domain.Enclosure{

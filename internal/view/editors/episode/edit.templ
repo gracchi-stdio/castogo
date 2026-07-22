@@ -106,25 +106,9 @@ templ episodeFields(s Signals) {
 			})
 		}
 		@formfield.FormField(formfield.FormFieldArgs{
-			Name:        "episode_number",
-			Label:       "Episode Number",
-			ErrorSignal: "episode_number_error"}) {
-			@input.Input(input.InputArgs{
-				Type:  "number",
-				ID:    "episode_number",
-				Name:  "episode_number",
-				Class: "w-full",
-				Attributes: map[string]any{
-					"data-bind":              "episode_number",
-					"data-on:input":          "$episode_number_error = ''",
-					"data-attr:aria-invalid": "$episode_number_error != '' ? 'true' : ''",
-				},
-			})
-		}
-		@formfield.FormField(formfield.FormFieldArgs{
 			Name:        "publish_at",
 			Label:       "Publish Date",
-			Description: "Leave empty to keep as a draft"}) {
+			Description: "Sets the episode order; leave empty to keep as a draft"}) {
 			@input.Input(input.InputArgs{
 				Type:  "date",
 				ID:    "publish_at",

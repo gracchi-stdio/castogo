@@ -9,27 +9,34 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/repository"
 	episodeForm "github.com/gracchi-stdio/castogo/internal/view/editors/episode"
-	"github.com/gracchi-stdio/castogo/internal/view/episodeview"
 	"github.com/labstack/echo/v5"
 )
 
-// episodesList renders the admin episode list.
+// episodesList renders the admin episode list. Status and filter are URL params
+// (status pills + search form); status is translated to SQL predicates on
+// published_at/archived_at in ListEpisodes since status is derived, not stored.
 func (h *AdminHandler) episodesList(c *echo.Context) error {
-	searchString := c.QueryParam("filter")
+	status := c.QueryParam("status")
+	search := c.QueryParam("filter")
 	offset := 0
 	if offsetParam := c.QueryParam("offset"); offsetParam != "" {
 		offset = parseInt(offsetParam)
 	}
 
 	episodes, err := h.episodeService.List(c.Request().Context(), repository.EpisodeFilter{
-		Search: searchString,
+		Search: search,
+		Status: status,
 		Limit:  100,
 		Offset: offset,
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load episodes")
 	}
-	return echo.WrapHandler(templ.Handler(episodeview.EpisodesListPage(getSharedData(c), episodes)))(c)
+	return echo.WrapHandler(templ.Handler(episodeForm.List(getSharedData(c), episodeForm.ListArgs{
+		Episodes: episodes,
+		Status:   status,
+		Search:   search,
+	})))(c)
 }
 
 // episodeCreatePage renders the new-episode form.

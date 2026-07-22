@@ -56,6 +56,25 @@
   animation: 200ms ease-out both slide-in;
 }
 
+/* Per-visit header freeze: on same-page (tab) transitions the heading shouldn't
+   shift — only the body content changes. The .freeze-header class is toggled on
+   :root per-visit in app.ts (visit:start); when present, the title + actions
+   skip their slide (the group resolves at duration 0s so the old and new
+   snapshots never overlap/ghost) while the content and tab pill keep animating.
+   Different-page navigations — including forms — leave the class off, so the
+   heading slides there. */
+:root.freeze-header::view-transition-group(admin-title),
+:root.freeze-header::view-transition-group(admin-actions) {
+  animation-duration: 0s;
+}
+
+:root.freeze-header::view-transition-old(admin-title),
+:root.freeze-header::view-transition-new(admin-title),
+:root.freeze-header::view-transition-old(admin-actions),
+:root.freeze-header::view-transition-new(admin-actions) {
+  animation: none;
+}
+
 /* Admin sub-nav strip — stable; only the sliding pill inside morphs */
 ::view-transition-group(admin-subnav) {
   animation-duration: 0s;

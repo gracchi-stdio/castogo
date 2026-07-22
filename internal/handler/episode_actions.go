@@ -18,7 +18,6 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	episodeForm "github.com/gracchi-stdio/castogo/internal/view/editors/episode"
-	"github.com/gracchi-stdio/castogo/internal/view/episodeview"
 	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -154,16 +153,14 @@ func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
 	title := raw.Title
 	slugVal := raw.Slug
 	description := raw.Description
-	episodeNumber := raw.EpisodeNumber
 	explicit := raw.Explicit.Checked
 
 	update := &domain.UpdateEpisode{
-		ID:            id,
-		Title:         &title,
-		Slug:          &slugVal,
-		Description:   &description,
-		EpisodeNumber: &episodeNumber,
-		Explicit:      &explicit,
+		ID:          id,
+		Title:       &title,
+		Slug:        &slugVal,
+		Description: &description,
+		Explicit:    &explicit,
 	}
 	if raw.PublishAt != "" {
 		t, err := time.Parse("2006-01-02", raw.PublishAt)
@@ -299,7 +296,7 @@ func (h *AdminHandler) episodeUpdatePublishAt(c *echo.Context) error {
 		return toast(c, "Failed to update publish date", "error")
 	}
 
-	sse(c).PatchElementTempl(episodeview.EpisodeRow(updated),
+	sse(c).PatchElementTempl(episodeForm.EpisodeRow(updated),
 		datastar.WithSelectorID(fmt.Sprintf("episode-row-%d", id)),
 		datastar.WithModeOuter())
 	return nil

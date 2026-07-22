@@ -6,11 +6,10 @@ import "github.com/gracchi-stdio/castogo/internal/domain"
 // Error fields use snake_case + _error suffix to align with the form field names
 // and the fieldValidationErrors helper in internal/handler/helpers.go.
 type Signals struct {
-	Title         string `json:"title"`
-	Slug          string `json:"slug"`
-	Description   string `json:"description"`
-	EpisodeNumber int    `json:"episode_number"`
-	Explicit      struct {
+	Title       string `json:"title"`
+	Slug        string `json:"slug"`
+	Description string `json:"description"`
+	Explicit    struct {
 		Checked bool `json:"checked"`
 	} `json:"explicit"`
 	PublishAt string `json:"publish_at"` // "2006-01-02" or ""
@@ -20,9 +19,8 @@ type Signals struct {
 	// separate "mode" signal to keep in sync across SSE patches.
 	ExistingPageID int64 `json:"existing_page_id"`
 
-	TitleError       string `json:"title_error"`
-	SlugError        string `json:"slug_error"`
-	EpisodeNumberErr string `json:"episode_number_error"`
+	TitleError string `json:"title_error"`
+	SlugError  string `json:"slug_error"`
 
 	// Audio replacement (edit form). The audio_* fields are display-only —
 	// populated client-side by window.extractAudioMetadata for a preview of the
@@ -47,10 +45,9 @@ func NewSignals(episode *domain.Episode) Signals {
 		return Signals{}
 	}
 	s := Signals{
-		Title:         episode.Title,
-		Slug:          episode.Slug,
-		Description:   episode.Description,
-		EpisodeNumber: episode.EpisodeNumber,
+		Title:       episode.Title,
+		Slug:        episode.Slug,
+		Description: episode.Description,
 		Explicit: struct {
 			Checked bool `json:"checked"`
 		}{Checked: episode.Explicit},

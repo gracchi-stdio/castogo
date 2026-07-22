@@ -32,7 +32,6 @@ func toDomainEpisode(e *db.Episode) *domain.Episode {
 		Title:          e.Title,
 		Slug:           e.Slug,
 		Description:    e.Description,
-		EpisodeNumber:  int(e.EpisodeNumber),
 		Duration:       int(e.Duration),
 		Explicit:       e.Explicit,
 		CoverImageURL:  stringValue(e.CoverImageUrl),

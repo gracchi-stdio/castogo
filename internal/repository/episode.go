@@ -9,6 +9,7 @@ import (
 
 type EpisodeFilter struct {
 	Search string
+	Status string // empty = all statuses; otherwise an EpisodeStatus value (draft, scheduled, published, archived)
 	Limit  int
 	Offset int
 }
@@ -25,6 +26,6 @@ type EpisodeRepository interface {
 	CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error)
 	ListPublishedWithPagePath(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error)
 	ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error)
-	GetMaxEpisodeNumber(ctx context.Context) (int, error)
+	ListForRanking(ctx context.Context) ([]*domain.Episode, error)
 	SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error)
 }

@@ -3,11 +3,10 @@ package handler
 // episodeUpdateInput is the typed Datastar signal payload for POST /admin/episodes/:id.
 // JSON tags match editors/episode.Signals so readSignals decodes cleanly.
 type episodeUpdateInput struct {
-	Title         string `json:"title" validate:"required"`
-	Slug          string `json:"slug"`
-	Description   string `json:"description"`
-	EpisodeNumber int    `json:"episode_number"`
-	Explicit      struct {
+	Title       string `json:"title" validate:"required"`
+	Slug        string `json:"slug"`
+	Description string `json:"description"`
+	Explicit    struct {
 		Checked bool `json:"checked"`
 	} `json:"explicit"`
 	PublishAt string `json:"publish_at"` // "2006-01-02" or ""

@@ -73,7 +73,6 @@ type UpdateEpisode struct {
 	ID             int64          `json:"id"`
 	Title          *string        `json:"title,omitempty"`
 	Slug           *string        `json:"slug,omitempty"`
-	EpisodeNumber  *int           `json:"episode_number,omitempty"`
 	Description    *string        `json:"description,omitempty"`
 	Duration       *int           `json:"duration,omitempty"`
 	Explicit       *bool          `json:"explicit,omitempty"`

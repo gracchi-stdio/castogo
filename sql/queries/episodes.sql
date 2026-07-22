@@ -2,7 +2,6 @@
 INSERT INTO episodes (
     title,
     slug,
-    episode_number,
     description,
     duration,
     explicit,
@@ -19,9 +18,8 @@ VALUES (
     $5,
     $6,
     $7,
-    $8,
     sqlc.narg('audio_metadata'),
-    $9
+    $8
   )
 RETURNING *;
 -- name: GetEpisodeByID :one
@@ -39,7 +37,23 @@ WHERE (
     @search = ''
     OR title ILIKE '%' || @search || '%'
   )
-ORDER BY episode_number DESC
+  AND (
+    @status = ''
+    OR CASE @status::text
+      WHEN 'draft' THEN published_at IS NULL
+        AND archived_at IS NULL
+      WHEN 'scheduled' THEN published_at IS NOT NULL
+        AND published_at > NOW()
+        AND archived_at IS NULL
+      WHEN 'published' THEN published_at IS NOT NULL
+        AND published_at <= NOW()
+        AND archived_at IS NULL
+      WHEN 'archived' THEN archived_at IS NOT NULL
+      ELSE false
+    END
+  )
+ORDER BY published_at DESC NULLS LAST,
+  created_at DESC
 LIMIT @page_limit OFFSET @page_offset;
 -- name: CountEpisodesByStatus :one
 SELECT COUNT(*) AS count
@@ -80,7 +94,6 @@ LIMIT $1 OFFSET $2;
 UPDATE episodes
 SET title = COALESCE(sqlc.narg('title'), title),
   slug = COALESCE(sqlc.narg('slug'), slug),
-  episode_number = COALESCE(sqlc.narg('episode_number'), episode_number),
   description = COALESCE(sqlc.narg('description'), description),
   duration = COALESCE(sqlc.narg('duration'), duration),
   explicit = COALESCE(sqlc.narg('explicit'), explicit),
@@ -104,9 +117,15 @@ WHERE linked_page_id = $1;
 -- name: DeleteEpisode :exec
 DELETE FROM episodes
 WHERE id = $1;
--- name: GetMaxEpisodeNumber :one
-SELECT COALESCE(MAX(episode_number), 0)::bigint
-FROM episodes;
+-- name: ListEpisodesForRanking :many
+-- All non-archived episodes with a publish_at, in chronological order. The
+-- service layer derives each episode's number (1-based) from row position here.
+SELECT *
+FROM episodes
+WHERE published_at IS NOT NULL
+  AND archived_at IS NULL
+ORDER BY published_at ASC,
+  id ASC;
 -- name: SearchPublishedEpisodes :many
 SELECT *
 FROM episodes
