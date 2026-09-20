@@ -51,7 +51,7 @@ templ pageRow(page *domain.Page) {
 			</a>
 		</td>
 		<td class="py-3 px-2 text-muted-foreground font-mono text-sm">
-			/{ page.Path }
+			{ page.Path }
 		</td>
 		<td class="py-3 px-2">
 			@publishStatusBadge(page.IsPublished)
@@ -94,7 +94,7 @@ templ pageActionsDropdown(page *domain.Page) {
 					Edit
 				</a>
 			}
-			if page.Path != "home" {
+			if page.Slug != "" {
 				@dropdown.DropdownMenuSeparator(dropdown.DropdownMenuSeparatorArgs{ID: ddID})
 				@dropdown.DropdownMenuItem(dropdown.DropdownMenuItemArgs{
 					ID:      ddID,

@@ -14,7 +14,7 @@ import (
 // Shared by the initial render (pageOptions) and the post-link signal patch in
 // the handler (patchPageLink) so the two never drift.
 func PageLabel(p *domain.Page) string {
-	return p.Title + " (/" + p.Path + ")"
+	return p.Title + " (" + p.Path + ")"
 }
 
 // pageOptions builds select options for the "link an existing page" dropdown.

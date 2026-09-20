@@ -2,6 +2,7 @@
 import "./audio-metadata";
 import { initBlockSorter } from "./blocks";
 import { initEpisodePlayers, destroyActivePlayer } from "./episode-player";
+import { initMarkdownEditors } from "./markdown-editor";
 import { toastManager } from "./toast";
 import { updateActiveNavLinks, initPublicNavScroll } from "./nav";
 
@@ -194,3 +195,19 @@ updateActiveNavLinks(window.location.pathname);
 initBlockSorter();
 initEpisodePlayers();
 initPublicNavScroll();
+initMarkdownEditors();
+
+// Re-scan for markdown toolbars whenever the DOM changes. A prose block's textarea
+// + toolbar can be injected by either Swup (a Settings↔Blocks navigation) or a
+// Datastar SSE patch (selecting/adding/deleting a block re-renders #block-list or
+// #block-form-pane) — two independent mutation sources. initMarkdownEditors is
+// idempotent, and rAF-coalescing collapses bursts into one scan per frame.
+let mdScanQueued = false;
+new MutationObserver(() => {
+  if (mdScanQueued) return;
+  mdScanQueued = true;
+  requestAnimationFrame(() => {
+    mdScanQueued = false;
+    initMarkdownEditors();
+  });
+}).observe(document.body, { childList: true, subtree: true });

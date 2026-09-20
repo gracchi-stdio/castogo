@@ -1,14 +1,14 @@
 -- Seed a sample public page for previewing theme + blocks.
 WITH inserted_page AS (
     INSERT INTO pages (title, slug, parent_id, layout, is_published, metadata, path, sort_order)
-    VALUES ('Sample Page', 'sample', NULL, 'default', true, '{}'::jsonb, 'sample', 0)
+    VALUES ('Sample Page', 'sample', NULL, 'default', true, '{}'::jsonb, '/sample', 0)
     ON CONFLICT (path) DO NOTHING
     RETURNING id
 ),
 page AS (
     SELECT id FROM inserted_page
     UNION ALL
-    SELECT id FROM pages WHERE path = 'sample'
+    SELECT id FROM pages WHERE path = '/sample'
 ),
 seed_target AS (
     SELECT id FROM page

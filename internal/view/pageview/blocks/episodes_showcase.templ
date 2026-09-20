@@ -89,7 +89,7 @@ templ episodeListItem(ep *domain.EpisodeWithPagePath) {
 			</span>
 			<div class="flex-1 min-w-0">
 				if ep.PagePath != nil {
-					<a href={ "/" + *ep.PagePath }>
+					<a href={ *ep.PagePath }>
 						<h3 class="text-foreground truncate group-hover:text-primary transition-colors">{ ep.Title }</h3>
 					</a>
 				} else {

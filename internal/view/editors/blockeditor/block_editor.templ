@@ -240,18 +240,56 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 		case "footer":
 			@footerEditor(pageID, block, pfx)
 		case "prose":
-			<div class="space-y-3">
-				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) {
-						Content (Markdown)
-					}
-					@textarea.Textarea(textarea.TextareaArgs{
-						Placeholder: "Write your content in markdown…",
-						Class:       "w-full min-h-48",
-						Attributes:  bindAttr(pfx, "body"),
-					})
-				</div>
+			{{
+				textareaID := pfx + "body_input"
+				taAttrs := bindAttr(pfx, "body")
+				taAttrs["id"] = textareaID
+			}}
+			<div class="space-y-1.5">
+				@label.Label(label.LabelArgs{}) {
+					Content (Markdown)
+				}
+				@markdownToolbar(textareaID)
+				@textarea.Textarea(textarea.TextareaArgs{
+					Placeholder: "Write your content in markdown…",
+					Class:       "w-full min-h-48 font-mono",
+					Attributes:  taAttrs,
+				})
 			</div>
+	}
+}
+
+// markdownToolbar renders the formatting toolbar above a bound markdown textarea.
+// The buttons carry no data-on:* (so Datastar ignores them); assets/js/markdown-
+// editor.ts attaches a delegated click listener to [data-md-toolbar] and acts on
+// each button's data-md-action, targeting the textarea named by data-md-target.
+templ markdownToolbar(target string) {
+	<div class="flex flex-wrap items-center gap-0.5 rounded-md border bg-background p-1" data-md-toolbar data-md-target={ target }>
+		@mdButton("bold", "Bold") { @icon.Lucide("bold", "size-4") }
+		@mdButton("italic", "Italic") { @icon.Lucide("italic", "size-4") }
+		@mdButton("code", "Inline code") { @icon.Lucide("code", "size-4") }
+		<span class="mx-1 h-5 w-px bg-border"></span>
+		@mdButton("h1", "Heading 1") { @icon.Lucide("heading-1", "size-4") }
+		@mdButton("h2", "Heading 2") { @icon.Lucide("heading-2", "size-4") }
+		<span class="mx-1 h-5 w-px bg-border"></span>
+		@mdButton("bullet-list", "Bulleted list") { @icon.Lucide("list", "size-4") }
+		@mdButton("numbered-list", "Numbered list") { @icon.Lucide("list-ordered", "size-4") }
+		@mdButton("quote", "Quote") { @icon.Lucide("quote", "size-4") }
+		<span class="mx-1 h-5 w-px bg-border"></span>
+		@mdButton("link", "Link") { @icon.Lucide("link", "size-4") }
+	</div>
+}
+
+templ mdButton(action string, title string) {
+	@button.Button(button.ButtonArgs{
+		Variant: "ghost",
+		Size:    "icon",
+		Attributes: map[string]any{
+			"data-md-action": action,
+			"title":          title,
+		},
+	}) {
+		{ children... }
 	}
 }
 

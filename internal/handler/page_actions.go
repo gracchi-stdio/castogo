@@ -78,10 +78,12 @@ func (h *AdminHandler) pageCreateAction(c *echo.Context) error {
 	}
 
 	input := service.CreatePageInput{
-		Title:    raw.Title,
-		Slug:     raw.Slug,
-		Layout:   raw.Layout,
-		ParentID: parentID,
+		Title:       raw.Title,
+		Slug:        raw.Slug,
+		Layout:      raw.Layout,
+		ParentID:    parentID,
+		IsPublished: &raw.IsPublished.Checked,
+		ShowInNav:   &raw.ShowInNav.Checked,
 	}
 
 	page, err := h.pageService.CreatePage(c.Request().Context(), input)

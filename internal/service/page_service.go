@@ -78,10 +78,17 @@ func (s *PageService) CreatePage(ctx context.Context, input CreatePageInput) (*d
 		}
 	}
 
-	path := input.Slug
+	// Path is the full URL path: root pages are "/"+slug (the homepage's empty
+	// slug yields "/"), children nest below their parent's path.
+	path := "/" + input.Slug
 	if input.ParentID != nil {
 		parent, err := s.page.GetByID(ctx, *input.ParentID)
 		if err != nil {
+			return nil, domain.ErrInvalidParent
+		}
+		if parent.Slug == "" {
+			// The homepage is the site root ("/") — nesting under it would
+			// produce "//slug" paths.
 			return nil, domain.ErrInvalidParent
 		}
 		if parent.ParentID != nil {
@@ -170,8 +177,16 @@ func (s *PageService) UpdatePage(ctx context.Context, id int64, input UpdatePage
 
 	if needsPathUpdate {
 		if updated.ParentID != nil {
+			if *updated.ParentID == existing.ID {
+				return nil, domain.ErrInvalidParent
+			}
 			parent, err := s.page.GetByID(ctx, *updated.ParentID)
 			if err != nil {
+				return nil, domain.ErrInvalidParent
+			}
+			if parent.Slug == "" {
+				// The homepage is the site root ("/") — nesting under it would
+				// produce "//slug" paths.
 				return nil, domain.ErrInvalidParent
 			}
 			if parent.ParentID != nil {
@@ -179,7 +194,7 @@ func (s *PageService) UpdatePage(ctx context.Context, id int64, input UpdatePage
 			}
 			updated.Path = parent.Path + "/" + updated.Slug
 		} else {
-			updated.Path = updated.Slug
+			updated.Path = "/" + updated.Slug
 		}
 	}
 
@@ -259,6 +274,7 @@ func applyUpdates(existing *domain.Page, input UpdatePageInput) *domain.Page {
 		Layout:      existing.Layout,
 		ParentID:    existing.ParentID,
 		IsPublished: existing.IsPublished,
+		ShowInNav:   existing.ShowInNav,
 		Path:        existing.Path,
 		Metadata:    existing.Metadata,
 		SortOrder:   existing.SortOrder,
@@ -277,6 +293,9 @@ func applyUpdates(existing *domain.Page, input UpdatePageInput) *domain.Page {
 	}
 	if input.IsPublished != nil {
 		p.IsPublished = *input.IsPublished
+	}
+	if input.ShowInNav != nil {
+		p.ShowInNav = *input.ShowInNav
 	}
 	if input.Metadata != nil {
 		p.Metadata = *input.Metadata

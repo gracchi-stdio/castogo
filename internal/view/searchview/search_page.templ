@@ -99,13 +99,7 @@ templ SearchPage(data *SearchPageData) {
 }
 
 templ searchPageResult(page *domain.Page) {
-	{{
-		url := "/" + page.Path
-		if page.Path == "" {
-			url = "/"
-		}
-	}}
-	<a href={ templ.SafeURL(url) } data-public-nav-link class="block border-b border-border/40 py-4 group">
+	<a href={ templ.SafeURL(page.Path) } data-public-nav-link class="block border-b border-border/40 py-4 group">
 		<div class="flex items-center gap-3">
 			<span class="font-mono text-xs uppercase tracking-widest text-muted-foreground">PAGE</span>
 		</div>

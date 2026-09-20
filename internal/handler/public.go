@@ -64,8 +64,8 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 }
 
 func (h *PublicHandler) homePage(c *echo.Context) error {
-	// Homepage is the root page — the one with empty slug and path ""
-	page, err := h.pageService.GetPageByPath(c.Request().Context(), "")
+	// Homepage is the root page — the one with empty slug, whose path is "/"
+	page, err := h.pageService.GetPageByPath(c.Request().Context(), "/")
 	if err != nil {
 		return echo.ErrNotFound
 	}
@@ -101,10 +101,12 @@ func (h *PublicHandler) homePage(c *echo.Context) error {
 }
 
 func (h *PublicHandler) pageResolver(c *echo.Context) error {
-	// Echo stores wildcard params as "*", not the named version
-	slug := strings.Trim(c.Param("*"), "/")
+	// Echo stores wildcard params as "*", not the named version. Wildcard
+	// values have no leading slash — add it back so the lookup matches the
+	// stored full-URL path.
+	path := "/" + strings.Trim(c.Param("*"), "/")
 
-	page, err := h.pageService.GetPageByPath(c.Request().Context(), slug)
+	page, err := h.pageService.GetPageByPath(c.Request().Context(), path)
 	if err != nil {
 		return echo.ErrNotFound
 	}
@@ -194,13 +196,9 @@ func (h *PublicHandler) buildPublicNav(c *echo.Context) *layout.PublicLayoutData
 
 	var navLinks []layout.NavLink
 	for _, p := range pages {
-		url := "/" + p.Path
-		if p.Path == "" {
-			url = "/"
-		}
 		navLinks = append(navLinks, layout.NavLink{
 			Label: p.Title,
-			URL:   url,
+			URL:   p.Path,
 		})
 	}
 
