@@ -247,6 +247,28 @@ func (s *PageService) DeleteBlock(ctx context.Context, id int64) error {
 }
 
 func (s *PageService) ReorderBlocks(ctx context.Context, pageID int64, blockIDs []int64) error {
+	blocks, err := s.page.GetBlockByPageID(ctx, pageID)
+	if err != nil {
+		return err
+	}
+	validIDs := make(map[int64]struct{}, len(blocks))
+	for _, block := range blocks {
+		validIDs[block.ID] = struct{}{}
+	}
+	if len(blockIDs) != len(validIDs) {
+		return domain.ErrInvalidInput
+	}
+	seen := make(map[int64]struct{}, len(blockIDs))
+	for _, id := range blockIDs {
+		if _, ok := validIDs[id]; !ok {
+			return domain.ErrInvalidInput
+		}
+		if _, duplicate := seen[id]; duplicate {
+			return domain.ErrInvalidInput
+		}
+		seen[id] = struct{}{}
+	}
+
 	for i, id := range blockIDs {
 		if err := s.page.UpdateBlockOrder(ctx, id, i); err != nil {
 			return err

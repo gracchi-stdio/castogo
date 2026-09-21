@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"html/template"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,11 +12,16 @@ import (
 // slide is one parsed slide: an optional reveal time (seconds into the episode
 // audio) and pre-rendered markdown HTML.
 type slide struct {
-	timeSec *int
-	html    template.HTML
+	timeSec   *int
+	fitClass  string
+	html      template.HTML
 }
 
 const timeDirective = "time:"
+
+var imageAttributePattern = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)\{([^}]*)\}`)
+var renderedImagePattern = regexp.MustCompile(`(?s)<img\b([^>]*)>`)
+var standaloneImageParagraphPattern = regexp.MustCompile(`(?s)<p>\s*(<img\b[^>]*>)\s*</p>`)
 
 // parseSlides splits Slidev-style markdown into slides. "---" lines delimit
 // the deck; directives ("time: 03:12") may either open a slide's content or —
@@ -69,15 +75,87 @@ func buildSlide(lines []string) slide {
 			}
 			continue
 		}
+		if strings.HasPrefix(t, "{.") && strings.HasSuffix(t, "}") {
+			s.fitClass = slideFitClass(t)
+			continue
+		}
 		if t == "" {
 			continue
 		}
 		break // first content line ends the directive block
 	}
 	if body := strings.TrimSpace(strings.Join(lines[i:], "\n")); body != "" {
-		s.html = template.HTML(renderMarkdown(body))
+		s.html = renderSlideMarkdown(body)
 	}
 	return s
+}
+
+// renderSlideMarkdown supports Comark-style attributes attached to markdown
+// images, for example: ![Artwork](image.jpg){.object-contain}.
+func renderSlideMarkdown(src string) template.HTML {
+	fitClasses := make([]string, 0)
+	cleaned := imageAttributePattern.ReplaceAllStringFunc(src, func(match string) string {
+		parts := imageAttributePattern.FindStringSubmatch(match)
+		fitClasses = append(fitClasses, imageFitClass(parts[3]))
+		return match[:strings.LastIndex(match, "{")]
+	})
+
+	rendered := renderMarkdown(cleaned)
+	imageIndex := 0
+	rendered = renderedImagePattern.ReplaceAllStringFunc(rendered, func(match string) string {
+		if imageIndex >= len(fitClasses) || fitClasses[imageIndex] == "" {
+			imageIndex++
+			return match
+		}
+		class := fitClasses[imageIndex]
+		imageIndex++
+		parts := renderedImagePattern.FindStringSubmatch(match)
+		return `<img class="` + class + `"` + parts[1] + `>`
+	})
+	// Goldmark represents a standalone Markdown image as a paragraph. Promote
+	// only image-only paragraphs so slide media has figure semantics without
+	// changing paragraphs that mix prose and images.
+	rendered = standaloneImageParagraphPattern.ReplaceAllString(rendered, `<figure class="slide-image">$1</figure>`)
+	return template.HTML(rendered)
+}
+
+// slideFitClass reads a standalone {.object-contain} style directive from a
+// slide. Only image-fit classes are accepted so arbitrary markdown cannot
+// change the presentation layout.
+func slideFitClass(line string) string {
+	classes := strings.Fields(strings.TrimSuffix(strings.TrimPrefix(line, "{"), "}"))
+	for _, class := range classes {
+		if fit := imageFitClass(class); fit != "" {
+			return fit
+		}
+	}
+	return ""
+}
+
+func imageFitClass(attrs string) string {
+	if classStart := strings.Index(attrs, "class="); classStart >= 0 {
+		quoted := strings.TrimSpace(attrs[classStart+len("class="):])
+		if len(quoted) >= 2 && (quoted[0] == '"' || quoted[0] == '\'') {
+			if end := strings.IndexByte(quoted[1:], quoted[0]); end >= 0 {
+				attrs += " " + quoted[1:end+1]
+			}
+		}
+	}
+	for _, attr := range strings.Fields(attrs) {
+		switch strings.TrimPrefix(attr, ".") {
+		case "object-contain":
+			return "slide-fit-contain"
+		case "object-cover":
+			return "slide-fit-cover"
+		case "object-fill":
+			return "slide-fit-fill"
+		case "object-none":
+			return "slide-fit-none"
+		case "object-scale-down":
+			return "slide-fit-scale-down"
+		}
+	}
+	return ""
 }
 
 // parseSlideTime accepts right-aligned clock parts, leniently: "45" = 45s,
@@ -111,7 +189,7 @@ templ SlideshowBlock(src string, audioID string) {
 				for _, s := range slides {
 					{{ timeAttr := "" }}
 					{{ if s.timeSec != nil { timeAttr = strconv.Itoa(*s.timeSec) } }}
-					<figure data-slide data-slide-time={ timeAttr } class="snap-center shrink-0 w-full cursor-pointer border border-border bg-background p-6">
+					<figure data-slide data-slide-time={ timeAttr } class={ "snap-center shrink-0 w-full cursor-pointer border border-border bg-background p-6 " + s.fitClass }>
 						<div class="slide-markdown">@templ.Raw(s.html)</div>
 					</figure>
 				}

@@ -178,6 +178,7 @@ func toDomainPage(p *db.Page) *domain.Page {
 		Layout:      p.Layout,
 		ParentID:    p.ParentID,
 		IsPublished: p.IsPublished,
+		ShowInNav:   p.ShowInNav,
 		Metadata:    p.Metadata,
 		SortOrder:   int(p.SortOrder),
 		Path:        p.Path,

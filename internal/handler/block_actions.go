@@ -126,12 +126,27 @@ func (h *AdminHandler) blockDeleteAction(c *echo.Context) error {
 	_ = readSignals(c, &raw) // optional; ignore missing/empty bodies
 	activeID := signalInt64(raw, "active_block")
 
+	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Page not found")
+	}
+	belongsToPage := false
+	for _, block := range pwb.Blocks {
+		if block.ID == blockID {
+			belongsToPage = true
+			break
+		}
+	}
+	if !belongsToPage {
+		return echo.NewHTTPError(http.StatusNotFound, "Block not found")
+	}
+
 	if err := h.pageService.DeleteBlock(c.Request().Context(), blockID); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete block")
 	}
 
 	// Re-render the list without the deleted block — partial SSE patch, no reload.
-	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	pwb, err = h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load blocks")
 	}

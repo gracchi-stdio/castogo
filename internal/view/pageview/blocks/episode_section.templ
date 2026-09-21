@@ -5,6 +5,9 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/audio"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 )
 
 // LinkedEpisodeSection renders the "listen" section for an episode linked to
@@ -24,12 +27,61 @@ templ LinkedEpisodeSection(ep *domain.Episode) {
 			</div>
 			if ep.AudioSourceURL != "" {
 				<div class="max-w-2xl mx-auto mb-12">
-					@audio.Audio(audio.AudioArgs{Src: ep.AudioSourceURL, MimeType: ep.AudioMetadata.MimeType, ID: audioID, Class: "w-full"})
+					@audio.Audio(audio.AudioArgs{Src: ep.AudioSourceURL, MimeType: ep.AudioMetadata.MimeType, ID: audioID, Class: "sr-only", Attributes: map[string]any{
+						"data-page-audio": "",
+						"data-episode-title": ep.Title,
+						"aria-label": fmt.Sprintf("Audio for %s", ep.Title),
+					}})
 				</div>
 			}
 			@SlideshowBlock(ep.SlidesMD, audioID)
 		</div>
 	</section>
+}
+
+templ EpisodePlayerDock() {
+	<div class="episode-dock" data-episode-dock data-player-state="closed" aria-label="Episode player">
+		<div class="episode-dock__panel">
+			<div class="episode-dock__topline">
+				<div class="min-w-0">
+					<p class="episode-dock__eyebrow">Now listening</p>
+					<p class="episode-dock__title" data-player-title>Choose an episode</p>
+				</div>
+				<div class="episode-dock__actions">
+					@button.Button(button.ButtonArgs{Variant: "ghost", Size: "icon", Type: "button", Class: "episode-dock__action", Attributes: map[string]any{
+						"data-player-expand": "", "aria-label": "Expand player", "title": "Expand player",
+					}}) { @icon.Lucide("panel-top", "size-4") }
+					@button.Button(button.ButtonArgs{Variant: "ghost", Size: "icon", Type: "button", Class: "episode-dock__action", Attributes: map[string]any{
+						"data-player-hide": "", "aria-label": "Hide player", "title": "Hide player",
+					}}) { @icon.Lucide("x", "size-4") }
+				</div>
+			</div>
+			<div class="episode-dock__controls">
+				@button.Button(button.ButtonArgs{Variant: "default", Size: "icon", Type: "button", Class: "episode-dock__play", Attributes: map[string]any{
+					"data-player-play": "", "aria-label": "Play episode", "title": "Play episode",
+				}}) { @icon.Lucide("play", "size-4") }
+				<div class="episode-dock__timeline">
+					@input.Input(input.InputArgs{Type: "range", Class: "episode-dock__range", Attributes: map[string]any{
+						"data-player-progress": "", "min": "0", "max": "100", "value": "0", "step": "0.1", "aria-label": "Seek episode",
+					}})
+					<div class="episode-dock__times"><span data-player-current>0:00</span><span data-player-duration>0:00</span></div>
+				</div>
+				@button.Button(button.ButtonArgs{Variant: "ghost", Size: "sm", Type: "button", Class: "episode-dock__speed", Attributes: map[string]any{
+					"data-player-speed": "", "aria-label": "Playback speed", "title": "Playback speed",
+				}}) { 1x }
+			</div>
+			<div class="episode-dock__slides" data-player-slides aria-live="polite"></div>
+			<div class="episode-dock__details" data-player-details>
+				<p>Playback controls</p>
+				<p class="text-muted-foreground">Use the timeline to move through the episode.</p>
+			</div>
+		</div>
+		@button.Button(button.ButtonArgs{Variant: "outline", Size: "sm", Type: "button", Class: "episode-dock__reopen", Attributes: map[string]any{
+			"data-player-show": "", "aria-label": "Show episode player", "title": "Show episode player",
+		}}) {
+			@icon.Lucide("headphones", "size-4") <span data-player-reopen-label>Show player</span>
+		}
+	</div>
 }
 
 func episodeLabel(n int) string {

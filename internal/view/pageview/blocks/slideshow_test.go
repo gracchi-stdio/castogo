@@ -73,3 +73,47 @@ func TestParseSlidesEmptyAndBlank(t *testing.T) {
 		t.Errorf("single-slide deck mis-parsed: %+v", slides)
 	}
 }
+
+func TestParseSlidesFitDirective(t *testing.T) {
+	slides := parseSlides("{.object-cover}\n\n![Artwork](https://example.com/art.jpg)\n---\n{.object-fill}\n\nText")
+	if len(slides) != 2 {
+		t.Fatalf("parseSlides returned %d slides, want 2", len(slides))
+	}
+	if slides[0].fitClass != "slide-fit-cover" {
+		t.Errorf("slide 0 fitClass = %q, want slide-fit-cover", slides[0].fitClass)
+	}
+	if strings.Contains(string(slides[0].html), "object-cover") {
+		t.Error("fit directive leaked into rendered markdown")
+	}
+	if slides[1].fitClass != "slide-fit-fill" {
+		t.Errorf("slide 1 fitClass = %q, want slide-fit-fill", slides[1].fitClass)
+	}
+}
+
+func TestRenderSlideMarkdownComarkImageAttributes(t *testing.T) {
+	html := string(renderSlideMarkdown("![Artwork](https://example.com/art.jpg){.object-contain}"))
+	if strings.Contains(html, "{.object-cover}") {
+		t.Fatal("Comark image attributes leaked into rendered HTML")
+	}
+	if !strings.Contains(html, `<img class="slide-fit-contain"`) {
+		t.Fatalf("rendered image = %q, want slide-fit-contain class", html)
+	}
+	if !strings.Contains(html, `<figure class="slide-image"><img class="slide-fit-contain"`) {
+		t.Fatalf("rendered image = %q, want semantic media figure", html)
+	}
+
+	paragraph := string(renderSlideMarkdown("A caption with ![Artwork](https://example.com/art.jpg)"))
+	if strings.Contains(paragraph, `<figure class="slide-image">`) {
+		t.Fatalf("mixed image paragraph = %q, should remain a paragraph", paragraph)
+	}
+
+	html = string(renderSlideMarkdown(`![Artwork](https://example.com/art.jpg){.object-cover}`))
+	if !strings.Contains(html, `<img class="slide-fit-cover"`) {
+		t.Fatalf("cover image = %q, want slide-fit-cover class", html)
+	}
+
+	html = string(renderSlideMarkdown(`![Artwork](https://example.com/art.jpg){class="object-contain"}`))
+	if !strings.Contains(html, `<img class="slide-fit-contain"`) {
+		t.Fatalf("explicit class image = %q, want slide-fit-contain class", html)
+	}
+}

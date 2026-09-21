@@ -30,6 +30,9 @@ templ PageView(data *PageData) {
 		}
 	}}
 	@layout.PublicLayout(&publicLayoutData) {
+		for _, ep := range data.LinkedEpisodes {
+			@blocks.LinkedEpisodeSection(ep)
+		}
 		for _, block := range data.Blocks {
 			switch block.BlockType {
 			case "hero":
@@ -62,8 +65,7 @@ templ PageView(data *PageData) {
 				@blocks.ProseBlock(content)
 			}
 		}
-		for _, ep := range data.LinkedEpisodes {
-			@blocks.LinkedEpisodeSection(ep)
-		}
+		@blocks.EpisodePlayerDock()
+
 	}
 }

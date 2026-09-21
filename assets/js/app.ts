@@ -3,6 +3,7 @@ import "./audio-metadata";
 import { initBlockSorter } from "./blocks";
 import { initEpisodePlayers, destroyActivePlayer } from "./episode-player";
 import { initEpisodeSlideshows } from "./episode-slides";
+import { initPagePlayer } from "./page-player";
 import { initMarkdownEditors } from "./markdown-editor";
 import { toastManager } from "./toast";
 import { updateActiveNavLinks, initPublicNavScroll } from "./nav";
@@ -145,6 +146,7 @@ swup.hooks.on("content:replace", (visit) => {
   if (document.querySelector("[data-public-content]")) {
     initEpisodePlayers();
     initEpisodeSlideshows();
+    initPagePlayer();
     initPublicNavScroll();
   }
 });
@@ -197,6 +199,7 @@ updateActiveNavLinks(window.location.pathname);
 initBlockSorter();
 initEpisodePlayers();
 initEpisodeSlideshows();
+initPagePlayer();
 initPublicNavScroll();
 initMarkdownEditors();
 

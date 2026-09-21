@@ -112,6 +112,356 @@
   padding-bottom: 0.5rem;
 }
 
+/* ─── Docked page player ─────────────────────────────────────── */
+html:has(.theme-public),
+html:has(.theme-public) body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.theme-public,
+.theme-public body,
+.theme-public [data-public-content] {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.episode-dock {
+  position: fixed;
+  z-index: 2147483647;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  width: min(34rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+  box-sizing: border-box;
+  color: hsl(var(--foreground));
+  pointer-events: none;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.episode-dock__panel,
+.episode-dock__reopen {
+  pointer-events: auto;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.96);
+  backdrop-filter: blur(16px);
+}
+
+.episode-dock__panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.8rem;
+  transform-origin: bottom right;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.episode-dock__topline,
+.episode-dock__controls,
+.episode-dock__times,
+.episode-dock__actions {
+  display: flex;
+  align-items: center;
+}
+
+.episode-dock__topline {
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.55rem;
+}
+
+.episode-dock__eyebrow {
+    color: hsl(var(--primary));
+    font: 600 0.625rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.episode-dock__title {
+    overflow: hidden;
+    margin-top: 0.25rem;
+    font: 600 0.9rem/1.25 var(--font-heading), Georgia, serif;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.episode-dock__action {
+  width: 2rem;
+  height: 2rem;
+}
+
+.episode-dock__controls {
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.7rem;
+}
+
+.episode-dock__play {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.episode-dock__timeline {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.episode-dock__range {
+  display: block;
+  min-width: 0;
+    width: 100%;
+    height: 1.1rem;
+    padding: 0;
+    accent-color: hsl(var(--primary));
+    cursor: pointer;
+}
+
+.episode-dock__times {
+    justify-content: space-between;
+    color: hsl(var(--muted-foreground));
+    font: 0.625rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.episode-dock__speed {
+    min-width: 2.8rem;
+    font: 600 0.7rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.episode-dock__details {
+    display: none;
+    margin-top: 0.8rem;
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.72rem;
+    line-height: 1.45;
+}
+
+.episode-dock__details p:first-child {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+}
+
+.episode-dock__reopen {
+    display: none;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.75rem;
+    margin-left: auto;
+    color: hsl(var(--foreground));
+    font-size: 0.72rem;
+}
+
+.episode-dock[data-player-state="closed"] .episode-dock__panel,
+.episode-dock[data-player-state="hidden"] .episode-dock__panel {
+  display: none;
+}
+
+.episode-dock[data-player-state="hidden"] .episode-dock__reopen {
+    display: flex;
+}
+
+.episode-dock[data-player-state="expanded"] .episode-dock__details {
+    display: block;
+}
+
+.theme-public:has([data-episode-dock][data-player-state="open"]) [data-public-content],
+.theme-public:has([data-episode-dock][data-player-state="expanded"]) [data-public-content] {
+  padding-bottom: 7rem;
+}
+
+.theme-public:has([data-episode-dock][data-player-state="expanded"]) [data-public-content] {
+    padding-bottom: 10rem;
+}
+
+@media (max-width: 640px) {
+    .episode-dock {
+      right: 0.5rem;
+      bottom: 0.5rem;
+      width: calc(100vw - 1rem);
+    }
+
+    .episode-dock__panel {
+      padding: 0.7rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .episode-dock__panel {
+      transition: none;
+    }
+}
+
+.episode-dock__slides {
+  display: none;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0.8rem;
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 0.8rem;
+}
+
+.episode-dock[data-player-state="expanded"] .episode-dock__slides {
+  display: block;
+}
+
+.episode-dock__slides [data-slideshow] {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.episode-dock__slides [data-slideshow-track] {
+  width: 100%;
+  min-width: 0;
+  margin-inline: 0;
+  padding-inline: 0;
+  overflow: hidden;
+}
+
+.episode-dock__slides [data-slide] {
+  display: none;
+  width: 100%;
+  min-width: 0;
+  height: min(52vh, 34rem);
+  min-height: 14rem;
+  margin: 0;
+  max-width: 100%;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.episode-dock__slides [data-slide][data-active] {
+  display: block;
+}
+
+.episode-dock__slides .slide-markdown {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.episode-dock__slides .slide-markdown img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  object-fit: contain;
+  object-position: center;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-contain {
+  object-fit: contain !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-cover {
+  object-fit: cover !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-fill {
+  object-fit: fill !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-none {
+  object-fit: none !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-scale-down {
+  object-fit: scale-down !important;
+}
+
+/* Expanded mode is a presentation surface, while compact mode stays small. */
+.episode-dock[data-player-state="expanded"] {
+  right: 1rem;
+  left: 1rem;
+  width: auto;
+  max-width: none;
+}
+
+.episode-dock[data-player-state="expanded"] .episode-dock__panel {
+  max-height: calc(100svh - 2rem);
+  overflow: auto;
+  padding: 1rem;
+}
+
+.episode-dock[data-player-state="expanded"] .episode-dock__slides {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.episode-dock[data-player-state="expanded"] .episode-dock__slides [data-slideshow-track] {
+  height: min(58svh, 42rem);
+  max-height: none;
+  overflow: hidden;
+}
+
+.episode-dock[data-player-state="expanded"] .episode-dock__slides [data-slide] {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  overflow: hidden;
+  padding: clamp(1rem, 3vw, 3rem);
+}
+
+.episode-dock__slides .slide-markdown {
+  width: 100%;
+  max-width: 68rem;
+  max-height: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.episode-dock__slides .slide-markdown img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin-inline: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-contain {
+  object-fit: contain !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-cover {
+  object-fit: cover !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-fill {
+  object-fit: fill !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-none {
+  width: auto;
+  height: auto;
+  object-fit: none !important;
+}
+
+.episode-dock__slides .slide-markdown img.slide-fit-scale-down {
+  object-fit: scale-down !important;
+}
+
+/* Presentation slides never become a second scroll surface. Text and media
+   are clipped to the fixed canvas; authors can choose a smaller image fit in
+   the slide markdown when the source artwork needs more breathing room. */
+.episode-dock__slides .slide-markdown > :first-child:last-child {
+  max-height: 100%;
+}
+
 /* Active nav link — left tick marker (minimal, no filled pill) */
 .public-nav-link[data-active] {
   color: hsl(var(--foreground));
