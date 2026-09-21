@@ -2,6 +2,7 @@
 import "./audio-metadata";
 import { initBlockSorter } from "./blocks";
 import { initEpisodePlayers, destroyActivePlayer } from "./episode-player";
+import { initEpisodeSlideshows } from "./episode-slides";
 import { initMarkdownEditors } from "./markdown-editor";
 import { toastManager } from "./toast";
 import { updateActiveNavLinks, initPublicNavScroll } from "./nav";
@@ -143,6 +144,7 @@ swup.hooks.on("content:replace", (visit) => {
   }
   if (document.querySelector("[data-public-content]")) {
     initEpisodePlayers();
+    initEpisodeSlideshows();
     initPublicNavScroll();
   }
 });
@@ -194,6 +196,7 @@ window.addEventListener("unhandledrejection", (event) => {
 updateActiveNavLinks(window.location.pathname);
 initBlockSorter();
 initEpisodePlayers();
+initEpisodeSlideshows();
 initPublicNavScroll();
 initMarkdownEditors();
 

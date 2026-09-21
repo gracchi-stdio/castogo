@@ -33,6 +33,7 @@ type Episode struct {
 	Explicit       bool          `json:"explicit"`
 	CoverImageURL  string        `json:"cover_image_url"`
 	AudioSourceURL string        `json:"audio_source_url"`
+	SlidesMD       string        `json:"slides_md"` // Slidev-style slide deck; "---" separates slides
 	EpisodeNumber  int           `json:"episode_number"`
 	LinkedPageID   *int64        `json:"linked_page_id"`
 	PublishAt      *time.Time    `json:"publish_at,omitempty"`
@@ -78,6 +79,7 @@ type UpdateEpisode struct {
 	Explicit       *bool          `json:"explicit,omitempty"`
 	CoverImageURL  *string        `json:"cover_image_url,omitempty"`
 	AudioSourceURL *string        `json:"audio_source_url,omitempty"`
+	SlidesMD       *string        `json:"slides_md,omitempty"`
 	AudioMetadata  *AudioMetadata `json:"audio_metadata,omitempty"`
 	PublishAt      *time.Time     `json:"publish_at,omitempty"`
 	ArchivedAt     *time.Time     `json:"archived_at,omitempty"`

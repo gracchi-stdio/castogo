@@ -1,0 +1,40 @@
+package blocks
+
+import (
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/audio"
+)
+
+// LinkedEpisodeSection renders the "listen" section for an episode linked to
+// the current page: title, description, the native audio player (chosen over
+// the WaveSurfer player because it re-mounts cleanly, no JS lifecycle), and
+// the audio-synced slide deck. Rendered after the page's blocks (page.templ).
+templ LinkedEpisodeSection(ep *domain.Episode) {
+	{{ audioID := fmt.Sprintf("listen-audio-%d", ep.ID) }}
+	<section class="py-16 border-t border-border">
+		<div class="mx-auto max-w-6xl px-6">
+			<div class="text-center mb-10 max-w-2xl mx-auto">
+				<p class="text-xs text-muted-foreground mb-2 font-mono uppercase tracking-wider">{ episodeLabel(ep.EpisodeNumber) }</p>
+				<h2 class="text-3xl font-bold text-foreground font-heading balance">{ ep.Title }</h2>
+				if ep.Description != "" {
+					<p class="mt-3 text-lg text-muted-foreground pretty">{ ep.Description }</p>
+				}
+			</div>
+			if ep.AudioSourceURL != "" {
+				<div class="max-w-2xl mx-auto mb-12">
+					@audio.Audio(audio.AudioArgs{Src: ep.AudioSourceURL, MimeType: ep.AudioMetadata.MimeType, ID: audioID, Class: "w-full"})
+				</div>
+			}
+			@SlideshowBlock(ep.SlidesMD, audioID)
+		</div>
+	</section>
+}
+
+func episodeLabel(n int) string {
+	if n > 0 {
+		return fmt.Sprintf("Listen · Episode %d", n)
+	}
+	return "Listen"
+}

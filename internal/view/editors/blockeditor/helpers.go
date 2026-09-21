@@ -8,6 +8,85 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 )
 
+// SignalsForBlock returns every signal the block's editor edits (fields and
+// items) as plain values, for SSE patch-signals. The same keys are seeded by
+// blockSignalAttrs in the pane HTML; pushing them explicitly too makes saving
+// independent of the browser re-applying data-signals attributes on morphed
+// content (Datastar's global store is what fetch actions serialize).
+func SignalsForBlock(block *domain.PageBlock) map[string]any {
+	content := parseBlockContent(block)
+	pfx := blockEditPrefix(block, "")
+
+	signals := map[string]any{
+		pfx + "editing":    false,
+		pfx + "block_type": block.BlockType,
+	}
+	set := func(name, key string) { signals[pfx+name] = strVal(content[key]) }
+
+	switch block.BlockType {
+	case "hero":
+		set("headline", "headline")
+		set("subheadline", "subheadline")
+		set("cta_text", "cta_text")
+		set("cta_url", "cta_url")
+		set("background_image", "background_image")
+		set("overlay_opacity", "overlay_opacity")
+	case "cta":
+		desc := content["description"]
+		if desc == nil {
+			desc = content["subheadline"]
+		}
+		signals[pfx+"description"] = strVal(desc)
+		set("headline", "headline")
+		set("button_text", "button_text")
+		set("button_url", "button_url")
+	case "features":
+		set("section_title", "section_title")
+		set("section_description", "section_description")
+		for i, item := range toItems(content["items"]) {
+			signals[fmt.Sprintf("%sitem_%d_icon", pfx, i)] = strVal(item["icon"])
+			signals[fmt.Sprintf("%sitem_%d_title", pfx, i)] = strVal(item["title"])
+			signals[fmt.Sprintf("%sitem_%d_description", pfx, i)] = strVal(item["description"])
+		}
+	case "episodes_showcase":
+		set("section_title", "section_title")
+		set("section_description", "section_description")
+		signals[pfx+"max_episodes"] = numVal(content["max_episodes"])
+		set("display_mode", "display_mode")
+	case "testimonials":
+		set("section_title", "section_title")
+		set("section_description", "section_description")
+		for i, item := range toItems(content["items"]) {
+			signals[fmt.Sprintf("%sitem_%d_quote", pfx, i)] = strVal(item["quote"])
+			signals[fmt.Sprintf("%sitem_%d_author", pfx, i)] = strVal(item["author"])
+			signals[fmt.Sprintf("%sitem_%d_role", pfx, i)] = strVal(item["role"])
+			signals[fmt.Sprintf("%sitem_%d_avatar_url", pfx, i)] = strVal(item["avatar_url"])
+		}
+	case "footer":
+		set("copyright", "copyright")
+		set("text", "text")
+		for i, link := range toItems(content["links"]) {
+			signals[fmt.Sprintf("%slink_%d_label", pfx, i)] = strVal(link["label"])
+			signals[fmt.Sprintf("%slink_%d_url", pfx, i)] = strVal(link["url"])
+		}
+		for i, link := range toItems(content["social_links"]) {
+			signals[fmt.Sprintf("%ssocial_%d_platform", pfx, i)] = strVal(link["platform"])
+			signals[fmt.Sprintf("%ssocial_%d_url", pfx, i)] = strVal(link["url"])
+		}
+	case "prose":
+		set("body", "body")
+	}
+
+	return signals
+}
+
+func numVal(v any) int {
+	if f, ok := v.(float64); ok {
+		return int(f)
+	}
+	return 0
+}
+
 // ItemsContainerID returns the DOM element ID for a block's items list.
 func ItemsContainerID(blockID int64, listType string) string {
 	switch listType {

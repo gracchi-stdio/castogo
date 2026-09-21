@@ -3,7 +3,6 @@ package blockEditor
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
@@ -11,6 +10,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	"github.com/gracchi-stdio/castogo/internal/view/components/imageupload"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/markdowntoolbar"
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
 	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
@@ -33,10 +33,14 @@ templ BlockEditor(pageID int64, blocks []*domain.PageBlock) {
 // BlockForm renders the editable fields for a single block, for the page-level
 // detail pane. It seeds the block's signals from stored content and renders the
 // type-specific fields — no card chrome or view/edit toggle (selection is handled
-// at the page level now). The page form supplies the Save action around it.
+// at the page level now). The Save action is passed in as children BY THE CALLER
+// and MUST stay inside this div: Datastar (v1 scoped signals) serializes an
+// action from the acting element's data-signals ancestry, so a button outside
+// this scope PATCHes with an empty body ("Invalid request" on the server).
 templ BlockForm(pageID int64, block *domain.PageBlock) {
 	<div { blockSignalAttrs(block)... } class="space-y-3">
 		@blockEditFields(pageID, block)
+		{ children... }
 	</div>
 }
 
@@ -249,7 +253,7 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 				@label.Label(label.LabelArgs{}) {
 					Content (Markdown)
 				}
-				@markdownToolbar(textareaID)
+				@markdowntoolbar.Toolbar(textareaID, "")
 				@textarea.Textarea(textarea.TextareaArgs{
 					Placeholder: "Write your content in markdown…",
 					Class:       "w-full min-h-48 font-mono",
@@ -259,39 +263,8 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 	}
 }
 
-// markdownToolbar renders the formatting toolbar above a bound markdown textarea.
-// The buttons carry no data-on:* (so Datastar ignores them); assets/js/markdown-
-// editor.ts attaches a delegated click listener to [data-md-toolbar] and acts on
-// each button's data-md-action, targeting the textarea named by data-md-target.
-templ markdownToolbar(target string) {
-	<div class="flex flex-wrap items-center gap-0.5 rounded-md border bg-background p-1" data-md-toolbar data-md-target={ target }>
-		@mdButton("bold", "Bold") { @icon.Lucide("bold", "size-4") }
-		@mdButton("italic", "Italic") { @icon.Lucide("italic", "size-4") }
-		@mdButton("code", "Inline code") { @icon.Lucide("code", "size-4") }
-		<span class="mx-1 h-5 w-px bg-border"></span>
-		@mdButton("h1", "Heading 1") { @icon.Lucide("heading-1", "size-4") }
-		@mdButton("h2", "Heading 2") { @icon.Lucide("heading-2", "size-4") }
-		<span class="mx-1 h-5 w-px bg-border"></span>
-		@mdButton("bullet-list", "Bulleted list") { @icon.Lucide("list", "size-4") }
-		@mdButton("numbered-list", "Numbered list") { @icon.Lucide("list-ordered", "size-4") }
-		@mdButton("quote", "Quote") { @icon.Lucide("quote", "size-4") }
-		<span class="mx-1 h-5 w-px bg-border"></span>
-		@mdButton("link", "Link") { @icon.Lucide("link", "size-4") }
-	</div>
-}
-
-templ mdButton(action string, title string) {
-	@button.Button(button.ButtonArgs{
-		Variant: "ghost",
-		Size:    "icon",
-		Attributes: map[string]any{
-			"data-md-action": action,
-			"title":          title,
-		},
-	}) {
-		{ children... }
-	}
-}
+// markdownToolbar moved to the shared component library
+// (components/markdowntoolbar) so the episode slides editor can use it too.
 
 templ featuresEditor(pageID int64, block *domain.PageBlock, pfx string) {
 	{{ content := parseBlockContent(block) }}
@@ -819,7 +792,8 @@ func blockSignalAttrs(block *domain.PageBlock) templ.Attributes {
 }
 
 // jsSignalVal converts a Go value to a JS signal string literal.
-// Strings are wrapped in single quotes with internal quotes escaped.
+// JSON-encodes so newlines and quotes survive as expression literals — a
+// single-quoted JS string cannot span lines, and markdown content often has them.
 // nil/empty returns "".
 func jsSignalVal(v any) string {
 	if v == nil {
@@ -829,8 +803,11 @@ func jsSignalVal(v any) string {
 	if !ok || s == "" {
 		return "''"
 	}
-	escaped := strings.NewReplacer("\\", "\\\\", "'", "\\'").Replace(s)
-	return fmt.Sprintf("'%s'", escaped)
+	b, err := json.Marshal(s)
+	if err != nil {
+		return "''"
+	}
+	return string(b)
 }
 
 // jsNumberSignalVal converts a Go value to a JS number signal.

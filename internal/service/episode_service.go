@@ -153,18 +153,22 @@ func (s *EpisodeService) GetDashboardStats(ctx context.Context) (*domain.Dashboa
 	}, nil
 }
 
-func (s *EpisodeService) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error) {
+func (s *EpisodeService) SearchPublishedWithPagePath(ctx context.Context, query string, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
 	if limit <= 0 {
 		limit = 20
 	}
-	eps, err := s.repo.SearchPublished(ctx, query, limit, offset)
+	ewps, err := s.repo.SearchPublishedWithPagePath(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.applyEpisodeNumbers(ctx, eps); err != nil {
+	ranks, err := s.episodeRanks(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return eps, nil
+	for _, ewp := range ewps {
+		ewp.EpisodeNumber = ranks[ewp.ID]
+	}
+	return ewps, nil
 }
 
 func (s *EpisodeService) LinkPage(ctx context.Context, episodeID, pageID int64) error {
@@ -177,4 +181,18 @@ func (s *EpisodeService) UnlinkPage(ctx context.Context, episodeID int64) error 
 
 func (s *EpisodeService) GetByLinkedPageID(ctx context.Context, pageID int64) (*domain.Episode, error) {
 	return s.repo.GetByLinkedPageID(ctx, pageID)
+}
+
+// ListPublishedByLinkedPageID returns the published episodes linked to a page
+// (the reverse of linked_page_id), with derived episode numbers applied — it
+// feeds the public page's "listen" section.
+func (s *EpisodeService) ListPublishedByLinkedPageID(ctx context.Context, pageID int64) ([]*domain.Episode, error) {
+	eps, err := s.repo.ListPublishedByLinkedPageID(ctx, pageID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.applyEpisodeNumbers(ctx, eps); err != nil {
+		return nil, err
+	}
+	return eps, nil
 }

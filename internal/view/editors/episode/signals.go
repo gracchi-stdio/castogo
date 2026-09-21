@@ -14,6 +14,9 @@ type Signals struct {
 	} `json:"explicit"`
 	PublishAt string `json:"publish_at"` // "2006-01-02" or ""
 
+	// Slide deck source (Slidev-style markdown). Saved with the main form.
+	SlidesMD string `json:"slides_md"`
+
 	// Page linkage — only the chosen existing-page id needs to round-trip; the
 	// linked/not-linked state itself is derived from the episode, so there is no
 	// separate "mode" signal to keep in sync across SSE patches.
@@ -55,6 +58,7 @@ func NewSignals(episode *domain.Episode) Signals {
 	if episode.PublishAt != nil {
 		s.PublishAt = episode.PublishAt.Format("2006-01-02")
 	}
+	s.SlidesMD = episode.SlidesMD
 	if episode.LinkedPageID != nil {
 		s.ExistingPageID = *episode.LinkedPageID
 	}

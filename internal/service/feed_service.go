@@ -28,7 +28,9 @@ func (s *FeedService) BuildFeed(ctx context.Context) (*domain.RSS, error) {
 		return nil, err
 	}
 
-	episodes, err := s.episodeRepo.ListPublished(ctx, 500, 0)
+	// WithPagePath (not ListPublished) so each item's <link> can point at the
+	// episode's real public page — there is no /episodes/{slug} route.
+	ewps, err := s.episodeRepo.ListPublishedWithPagePath(ctx, 500, 0)
 
 	if err != nil {
 		return nil, err
@@ -39,6 +41,10 @@ func (s *FeedService) BuildFeed(ctx context.Context) (*domain.RSS, error) {
 	ranks, err := episodeNumberRanks(ctx, s.episodeRepo)
 	if err != nil {
 		return nil, fmt.Errorf("compute episode numbers: %w", err)
+	}
+	episodes := make([]*domain.Episode, len(ewps))
+	for i, ewp := range ewps {
+		episodes[i] = ewp.Episode
 	}
 	applyEpisodeNumbers(episodes, ranks)
 
@@ -56,9 +62,9 @@ func (s *FeedService) BuildFeed(ctx context.Context) (*domain.RSS, error) {
 	}
 
 	// Build items from published episodes
-	items := make([]domain.Item, 0, len(episodes))
-	for _, ep := range episodes {
-		item := s.buildItem(ep, config)
+	items := make([]domain.Item, 0, len(ewps))
+	for _, ewp := range ewps {
+		item := s.buildItem(ewp, config)
 		items = append(items, item)
 	}
 
@@ -85,7 +91,7 @@ func (s *FeedService) BuildFeed(ctx context.Context) (*domain.RSS, error) {
 	return domain.NewRSSFeed(channel), nil
 }
 
-func (s *FeedService) buildItem(ep *domain.Episode, config *domain.PodcastConfig) domain.Item {
+func (s *FeedService) buildItem(ep *domain.EpisodeWithPagePath, config *domain.PodcastConfig) domain.Item {
 	// Determine the publish date: use PublishAt if set, otherwise CreatedAt
 	pubTime := ep.CreatedAt
 	if ep.PublishAt != nil {
@@ -117,9 +123,13 @@ func (s *FeedService) buildItem(ep *domain.Episode, config *domain.PodcastConfig
 		item.ITunesEpisode = &ep.EpisodeNumber
 	}
 
-	// Optional: episode page link
+	// Episode page link: the linked companion page when one exists (there is
+	// no /episodes/{slug} route), otherwise the site root.
 	if config.SiteURL != "" {
-		item.Link = config.SiteURL + "/episodes/" + ep.Slug
+		item.Link = config.SiteURL
+		if ep.PagePath != nil {
+			item.Link += *ep.PagePath
+		}
 	}
 
 	// Optional: per-episode cover image

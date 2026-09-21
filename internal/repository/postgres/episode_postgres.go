@@ -111,6 +111,7 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*do
 		Explicit:       ep.Explicit,
 		CoverImageUrl:  ep.CoverImageURL,
 		AudioSourceUrl: ep.AudioSourceURL,
+		SlidesMd:       ep.SlidesMD,
 		AudioMetadata:  audioMetadata,
 		PublishedAt:    publishedAt,
 		ArchivedAt:     archivedAt,
@@ -189,8 +190,8 @@ func (r *EpisodeRepo) ListForRanking(ctx context.Context) ([]*domain.Episode, er
 	return out, nil
 }
 
-func (r *EpisodeRepo) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error) {
-	results, err := r.q.SearchPublishedEpisodes(ctx, db.SearchPublishedEpisodesParams{
+func (r *EpisodeRepo) SearchPublishedWithPagePath(ctx context.Context, query string, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
+	results, err := r.q.SearchPublishedEpisodesWithPagePath(ctx, db.SearchPublishedEpisodesWithPagePathParams{
 		Search:     &query,
 		PageLimit:  int32(limit),
 		PageOffset: int32(offset),
@@ -198,11 +199,14 @@ func (r *EpisodeRepo) SearchPublished(ctx context.Context, query string, limit, 
 	if err != nil {
 		return nil, fmt.Errorf("search published episodes: %w", err)
 	}
-	episodes := make([]*domain.Episode, len(results))
-	for i, result := range results {
-		episodes[i] = toDomainEpisode(&result)
+	out := make([]*domain.EpisodeWithPagePath, len(results))
+	for i, row := range results {
+		out[i] = &domain.EpisodeWithPagePath{
+			Episode:  toDomainEpisode(&row.Episode),
+			PagePath: row.PagePath,
+		}
 	}
-	return episodes, nil
+	return out, nil
 }
 
 func (r *EpisodeRepo) UpdateLinkedPageID(ctx context.Context, episodeID int64, pageID *int64) error {
@@ -218,4 +222,19 @@ func (r *EpisodeRepo) GetByLinkedPageID(ctx context.Context, pageID int64) (*dom
 		return nil, fmt.Errorf("get episode by linked page ID: %w", err)
 	}
 	return toDomainEpisode(&result), nil
+}
+
+// ListPublishedByLinkedPageID returns the published episodes whose linked page
+// is this one — the reverse of the episode→page relation, feeding the public
+// page's "listen" section.
+func (r *EpisodeRepo) ListPublishedByLinkedPageID(ctx context.Context, pageID int64) ([]*domain.Episode, error) {
+	results, err := r.q.ListPublishedByLinkedPageID(ctx, &pageID)
+	if err != nil {
+		return nil, fmt.Errorf("list published episodes by linked page ID: %w", err)
+	}
+	out := make([]*domain.Episode, len(results))
+	for i, result := range results {
+		out[i] = toDomainEpisode(&result)
+	}
+	return out, nil
 }

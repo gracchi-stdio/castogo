@@ -36,6 +36,7 @@ func toDomainEpisode(e *db.Episode) *domain.Episode {
 		Explicit:       e.Explicit,
 		CoverImageURL:  stringValue(e.CoverImageUrl),
 		AudioSourceURL: stringValue(e.AudioSourceUrl),
+		SlidesMD:       e.SlidesMd,
 		AudioMetadata:  e.AudioMetadata,
 		LinkedPageID:   e.LinkedPageID,
 		CreatedAt:      e.CreatedAt.Time,

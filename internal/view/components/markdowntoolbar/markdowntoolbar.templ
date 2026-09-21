@@ -1,0 +1,49 @@
+package markdowntoolbar
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+)
+
+// Toolbar renders the formatting toolbar above a bound markdown textarea.
+// The buttons carry no data-on:* (so Datastar ignores them); assets/js/markdown-
+// editor.ts attaches a delegated click listener to [data-md-toolbar] and acts on
+// each button's data-md-action, targeting the textarea named by data-md-target.
+//
+// A non-empty UploadURL adds an image button and advertises the JSON upload
+// endpoint on data-md-upload — the editor script uploads the picked file there
+// and splices the returned CDN URL into the textarea as markdown image syntax.
+// Leave it empty where no upload endpoint applies (the editor script then omits
+// the button's behaviour).
+templ Toolbar(target string, uploadURL string) {
+	<div class="flex flex-wrap items-center gap-0.5 rounded-md border bg-background p-1" data-md-toolbar data-md-target={ target } data-md-upload={ uploadURL }>
+		@mdButton("bold", "Bold") { @icon.Lucide("bold", "size-4") }
+		@mdButton("italic", "Italic") { @icon.Lucide("italic", "size-4") }
+		@mdButton("code", "Inline code") { @icon.Lucide("code", "size-4") }
+		<span class="mx-1 h-5 w-px bg-border"></span>
+		@mdButton("h1", "Heading 1") { @icon.Lucide("heading-1", "size-4") }
+		@mdButton("h2", "Heading 2") { @icon.Lucide("heading-2", "size-4") }
+		<span class="mx-1 h-5 w-px bg-border"></span>
+		@mdButton("bullet-list", "Bulleted list") { @icon.Lucide("list", "size-4") }
+		@mdButton("numbered-list", "Numbered list") { @icon.Lucide("list-ordered", "size-4") }
+		@mdButton("quote", "Quote") { @icon.Lucide("quote", "size-4") }
+		<span class="mx-1 h-5 w-px bg-border"></span>
+		@mdButton("link", "Link") { @icon.Lucide("link", "size-4") }
+		if uploadURL != "" {
+			@mdButton("image", "Insert image (uploads and links the file)") { @icon.Lucide("image", "size-4") }
+		}
+		</div>
+	}
+
+templ mdButton(action string, title string) {
+	@button.Button(button.ButtonArgs{
+		Variant: "ghost",
+		Size:    "icon",
+		Attributes: map[string]any{
+			"data-md-action": action,
+			"title":          title,
+		},
+	}) {
+		{ children... }
+	}
+}

@@ -84,17 +84,23 @@ func (h *PublicHandler) homePage(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}
 
+	linkedEpisodes, err := h.episodesService.ListPublishedByLinkedPageID(c.Request().Context(), page.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching linked episodes")
+	}
+
 	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
 	}
 
 	data := &pageview.PageData{
-		Page:     pwb.Page,
-		Blocks:   toBlocks(pwb.Blocks),
-		Episodes: episodes,
-		Nav:      h.buildPublicNav(c),
-		Settings: *settings,
+		Page:          pwb.Page,
+		Blocks:        toBlocks(pwb.Blocks),
+		Episodes:      episodes,
+		LinkedEpisodes: linkedEpisodes,
+		Nav:           h.buildPublicNav(c),
+		Settings:      *settings,
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -125,17 +131,23 @@ func (h *PublicHandler) pageResolver(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}
 
+	linkedEpisodes, err := h.episodesService.ListPublishedByLinkedPageID(c.Request().Context(), page.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching linked episodes")
+	}
+
 	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
 	}
 
 	data := &pageview.PageData{
-		Page:     pwb.Page,
-		Blocks:   toBlocks(pwb.Blocks),
-		Episodes: episodes,
-		Nav:      h.buildPublicNav(c),
-		Settings: *settings,
+		Page:          pwb.Page,
+		Blocks:        toBlocks(pwb.Blocks),
+		Episodes:      episodes,
+		LinkedEpisodes: linkedEpisodes,
+		Nav:           h.buildPublicNav(c),
+		Settings:      *settings,
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -221,7 +233,7 @@ func (h *PublicHandler) searchPage(c *echo.Context) error {
 	}
 
 	var pages []*domain.Page
-	var episodes []*domain.Episode
+	var episodes []*domain.EpisodeWithPagePath
 
 	if query != "" {
 		if searchType == "all" || searchType == "pages" {
@@ -231,7 +243,7 @@ func (h *PublicHandler) searchPage(c *echo.Context) error {
 			}
 		}
 		if searchType == "all" || searchType == "episodes" {
-			results, err := h.episodesService.SearchPublished(c.Request().Context(), query, 20, 0)
+			results, err := h.episodesService.SearchPublishedWithPagePath(c.Request().Context(), query, 20, 0)
 			if err == nil {
 				episodes = results
 			}

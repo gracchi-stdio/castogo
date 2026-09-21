@@ -1,0 +1,127 @@
+package blocks
+
+import (
+	"html/template"
+	"strconv"
+	"strings"
+
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+)
+
+// slide is one parsed slide: an optional reveal time (seconds into the episode
+// audio) and pre-rendered markdown HTML.
+type slide struct {
+	timeSec *int
+	html    template.HTML
+}
+
+const timeDirective = "time:"
+
+// parseSlides splits Slidev-style markdown into slides. "---" lines delimit
+// the deck; directives ("time: 03:12") may either open a slide's content or —
+// Slidev frontmatter style — sit in their own "---"-bounded block, in which
+// case they attach to the slide that follows. Slides with no body are dropped.
+func parseSlides(src string) []slide {
+	var chunks [][]string
+	var cur []string
+	for _, line := range strings.Split(src, "\n") {
+		if strings.TrimSpace(line) == "---" {
+			chunks = append(chunks, cur)
+			cur = nil
+			continue
+		}
+		cur = append(cur, line)
+	}
+	chunks = append(chunks, cur)
+
+	var slides []slide
+	var carried []string // directives from a body-less chunk, for the next slide
+	for _, chunk := range chunks {
+		merged := make([]string, 0, len(carried)+len(chunk))
+		merged = append(merged, carried...)
+		merged = append(merged, chunk...)
+		carried = nil
+
+		s := buildSlide(merged)
+		if s.html == "" {
+			// Body-less chunk: carry its directives forward (frontmatter
+			// block) or drop it entirely (blank separator filler).
+			if s.timeSec != nil {
+				carried = []string{timeDirective + strconv.Itoa(*s.timeSec)}
+			}
+			continue
+		}
+		slides = append(slides, s)
+	}
+	return slides
+}
+
+// buildSlide peels leading directive lines (with blank lines between them) off
+// the chunk and renders the remainder as markdown.
+func buildSlide(lines []string) slide {
+	var s slide
+	i := 0
+	for ; i < len(lines); i++ {
+		t := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(t, timeDirective) {
+			if sec, ok := parseSlideTime(strings.TrimPrefix(t, timeDirective)); ok {
+				s.timeSec = &sec
+			}
+			continue
+		}
+		if t == "" {
+			continue
+		}
+		break // first content line ends the directive block
+	}
+	if body := strings.TrimSpace(strings.Join(lines[i:], "\n")); body != "" {
+		s.html = template.HTML(renderMarkdown(body))
+	}
+	return s
+}
+
+// parseSlideTime accepts right-aligned clock parts, leniently: "45" = 45s,
+// "03:12" = 192s, "1:02:03" = 3723s — and short forms like "0" or "00:1".
+func parseSlideTime(s string) (int, bool) {
+	parts := strings.Split(strings.TrimSpace(s), ":")
+	if len(parts) == 0 || len(parts) > 3 {
+		return 0, false
+	}
+	total := 0
+	for _, p := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil || n < 0 {
+			return 0, false
+		}
+		total = total*60 + n
+	}
+	return total, true
+}
+
+// SlideshowBlock renders an episode's slide deck presentation-style: one
+// slide visible at a time in a scroll-snapped track. When audioID names an
+// audio element on the page, assets/js/episode-slides.ts two-way-syncs it:
+// playback crossing a slide's time cue advances the deck, and navigating to a
+// slide (arrows, click, swipe) seeks playback to that slide's cue.
+templ SlideshowBlock(src string, audioID string) {
+	{{ slides := parseSlides(src) }}
+	if len(slides) > 0 {
+		<div class="relative max-w-3xl mx-auto" data-slideshow data-slideshow-audio={ audioID }>
+			<div data-slideshow-track class="flex overflow-x-auto snap-x snap-mandatory -mx-6 px-6">
+				for _, s := range slides {
+					{{ timeAttr := "" }}
+					{{ if s.timeSec != nil { timeAttr = strconv.Itoa(*s.timeSec) } }}
+					<figure data-slide data-slide-time={ timeAttr } class="snap-center shrink-0 w-full cursor-pointer border border-border bg-background p-6">
+						<div class="slide-markdown">@templ.Raw(s.html)</div>
+					</figure>
+				}
+			</div>
+			<button type="button" data-slideshow-prev class="slideshow-arrow slideshow-arrow-prev" aria-label="Previous slide">
+				@icon.Lucide("chevron-left", "size-5")
+			</button>
+			<button type="button" data-slideshow-next class="slideshow-arrow slideshow-arrow-next" aria-label="Next slide">
+				@icon.Lucide("chevron-right", "size-5")
+			</button>
+		</div>
+	}
+}

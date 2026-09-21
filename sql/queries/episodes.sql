@@ -99,6 +99,7 @@ SET title = COALESCE(sqlc.narg('title'), title),
   explicit = COALESCE(sqlc.narg('explicit'), explicit),
   cover_image_url = COALESCE(sqlc.narg('cover_image_url'), cover_image_url),
   audio_source_url = COALESCE(sqlc.narg('audio_source_url'), audio_source_url),
+  slides_md = COALESCE(sqlc.narg('slides_md'), slides_md),
   audio_metadata = COALESCE(sqlc.narg('audio_metadata'), audio_metadata),
   published_at = sqlc.narg('published_at'),
   archived_at = sqlc.narg('archived_at'),
@@ -114,6 +115,16 @@ WHERE id = $1;
 SELECT *
 FROM episodes
 WHERE linked_page_id = $1;
+-- name: ListPublishedByLinkedPageID :many
+-- Reverse direction of the episode→page link: the published episodes whose
+-- companion page is this one. Feeds the public page's "listen" section.
+SELECT *
+FROM episodes
+WHERE linked_page_id = $1
+  AND published_at IS NOT NULL
+  AND published_at <= NOW()
+  AND archived_at IS NULL
+ORDER BY published_at DESC;
 -- name: DeleteEpisode :exec
 DELETE FROM episodes
 WHERE id = $1;
@@ -126,15 +137,20 @@ WHERE published_at IS NOT NULL
   AND archived_at IS NULL
 ORDER BY published_at ASC,
   id ASC;
--- name: SearchPublishedEpisodes :many
-SELECT *
-FROM episodes
-WHERE published_at IS NOT NULL
-  AND published_at <= NOW()
-  AND archived_at IS NULL
+-- name: SearchPublishedEpisodesWithPagePath :many
+-- Like SearchPublishedEpisodes, but joins in the linked page's path so results
+-- can link somewhere that actually exists (there is no /episodes/{slug} route).
+SELECT sqlc.embed(e),
+  p.path AS page_path
+FROM episodes e
+  LEFT JOIN pages p ON p.id = e.linked_page_id
+    AND p.is_published = true
+WHERE e.published_at IS NOT NULL
+  AND e.published_at <= NOW()
+  AND e.archived_at IS NULL
   AND (
-    title ILIKE '%' || @search || '%'
-    OR description ILIKE '%' || @search || '%'
+    e.title ILIKE '%' || @search || '%'
+    OR e.description ILIKE '%' || @search || '%'
   )
-ORDER BY published_at DESC
+ORDER BY e.published_at DESC
 LIMIT @page_limit OFFSET @page_offset;

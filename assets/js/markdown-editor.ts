@@ -1,17 +1,19 @@
 // Markdown formatting toolbar over a bound textarea.
 //
 // Renders nothing in the DOM — the toolbar markup (buttons + icons) lives in the
-// Templ `markdownToolbar` snippet so it stays inside the shared component library.
-// This module only wires behaviour: each toolbar button carries a `data-md-action`,
-// and the toolbar container carries `data-md-target` (the textarea's id). Clicking a
+// shared Templ component `markdowntoolbar.Toolbar`. This module only wires
+// behaviour: each toolbar button carries a `data-md-action`, and the toolbar
+// container carries `data-md-target` (the textarea's id). Clicking a
 // button wraps or prefixes the textarea's current selection with markdown, then
 // dispatches a synthetic `input` event so Datastar's `data-bind` picks up the
 // programmatic change — it only syncs the signal on real input events, so without
-// this the save would silently lose the edit.
+// this the save would silently lose the edit. The optional `image` action uploads
+// through the URL in the toolbar's `data-md-upload` attribute and inserts the
+// returned CDN URL as image syntax.
 
 const MOUNTED = "data-md-mounted";
 
-type Action = (ta: HTMLTextAreaElement) => void;
+type Action = (ta: HTMLTextAreaElement, bar: HTMLElement) => void;
 
 /** Wrap the selection (or drop markers at the cursor) with before/after. */
 function wrap(ta: HTMLTextAreaElement, before: string, after: string): void {
@@ -62,6 +64,41 @@ function link(ta: HTMLTextAreaElement): void {
   sync(ta);
 }
 
+/**
+ * Upload an image and insert markdown image syntax at the cursor. The upload
+ * endpoint comes from the toolbar's data-md-upload attribute and responds with
+ * JSON {url} (not a Datastar SSE patch) — this module needs the URL in JS to
+ * splice into the textarea. Any selection becomes the alt text.
+ */
+async function insertImage(ta: HTMLTextAreaElement, bar: HTMLElement): Promise<void> {
+  const uploadURL = bar.getAttribute("data-md-upload");
+  if (!uploadURL) return;
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/jpeg,image/png,image/webp";
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const body = new FormData();
+    body.append("image_file", file);
+    try {
+      const res = await fetch(uploadURL, { method: "POST", body });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        window.pushToast({ message: data.error ?? "Image upload failed", variant: "error" });
+        return;
+      }
+      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      const alt = (sel || file.name.replace(/\.[^.]+$/, "")).replace(/[\[\]()]/g, "");
+      wrap(ta, `![${alt}](`, `${data.url})`);
+    } catch {
+      window.pushToast({ message: "Image upload failed", variant: "error" });
+    }
+  };
+  input.click();
+}
+
 const ACTIONS: Record<string, Action> = {
   bold: (ta) => wrap(ta, "**", "**"),
   italic: (ta) => wrap(ta, "*", "*"),
@@ -72,6 +109,7 @@ const ACTIONS: Record<string, Action> = {
   "bullet-list": (ta) => prefixLines(ta, "- "),
   "numbered-list": (ta) => prefixLines(ta, "1. "),
   link,
+  image: insertImage,
 };
 
 /** Push the textarea's value into its bound Datastar signal. */
@@ -95,7 +133,7 @@ export function initMarkdownEditors(root: ParentNode = document): void {
       if (!action || !targetId) return;
       const ta = document.getElementById(targetId) as HTMLTextAreaElement | null;
       if (!ta) return;
-      ACTIONS[action]?.(ta);
+      ACTIONS[action]?.(ta, bar);
     });
   }
 }

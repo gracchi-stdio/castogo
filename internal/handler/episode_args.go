@@ -10,6 +10,7 @@ type episodeUpdateInput struct {
 		Checked bool `json:"checked"`
 	} `json:"explicit"`
 	PublishAt string `json:"publish_at"` // "2006-01-02" or ""
+	SlidesMD  string `json:"slides_md"`  // whole slide deck; "" clears it
 }
 
 // episodeLinkPageInput carries the chosen existing-page id when the user links

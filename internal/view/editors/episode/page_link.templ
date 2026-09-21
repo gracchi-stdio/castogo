@@ -53,6 +53,15 @@ templ PageLinkContent(args Args) {
 		</div>
 		if args.LinkedPage != nil {
 			<div class="flex items-center justify-end gap-3">
+				<a
+					href={ args.LinkedPage.Path }
+					target="_blank"
+					rel="noopener"
+					class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+				>
+					@icon.Lucide("external-link", "size-3.5")
+					View page
+				</a>
 				<a href={ fmt.Sprintf("/admin/pages/%d/edit", args.LinkedPage.ID) } class="text-sm text-primary hover:underline">Edit page</a>
 				@button.Button(button.ButtonArgs{
 					Variant: "outline",

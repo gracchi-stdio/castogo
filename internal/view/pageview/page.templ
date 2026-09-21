@@ -15,8 +15,11 @@ type PageData struct {
 	Page     *domain.Page
 	Blocks   []domain.PageBlock
 	Episodes []*domain.EpisodeWithPagePath
-	Nav      *layout.PublicLayoutData
-	Settings domain.PodcastConfig
+	// Published episodes whose linked page is this one — each renders a
+	// "listen" section (player + synced slide deck) after the blocks.
+	LinkedEpisodes []*domain.Episode
+	Nav            *layout.PublicLayoutData
+	Settings       domain.PodcastConfig
 }
 
 templ PageView(data *PageData) {
@@ -58,6 +61,9 @@ templ PageView(data *PageData) {
 				{{ if err != nil { log.Printf("parse prose block: %v", err); continue } }}
 				@blocks.ProseBlock(content)
 			}
+		}
+		for _, ep := range data.LinkedEpisodes {
+			@blocks.LinkedEpisodeSection(ep)
 		}
 	}
 }

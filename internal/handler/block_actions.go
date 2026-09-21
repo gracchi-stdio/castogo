@@ -98,6 +98,11 @@ func (h *AdminHandler) blockCreateAction(c *echo.Context) error {
 
 	out := sse(c)
 	out.MarshalAndPatchSignals(map[string]any{"active_block": saved.ID})
+	// Push the block's signals into the store alongside the pane HTML — see
+	// SignalsForBlock: saving serializes Datastar's global store, which is
+	// populated here rather than relying on the browser re-applying the
+	// pane's data-signals attributes after the morph.
+	out.MarshalAndPatchSignals(blockEditor.SignalsForBlock(saved))
 	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
 	out.PatchElements(formHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
 	out.ExecuteScript("window.bustBlocksCache()")
@@ -196,6 +201,10 @@ func (h *AdminHandler) blockSelect(c *echo.Context) error {
 
 	out := sse(c)
 	out.MarshalAndPatchSignals(map[string]any{"active_block": blockID})
+	// Push the block's signals into the store with the pane HTML — saving
+	// serializes the global store, so this is what makes the Save button's
+	// PATCH carry the block's fields (see SignalsForBlock).
+	out.MarshalAndPatchSignals(blockEditor.SignalsForBlock(block))
 	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
 	out.PatchElements(formHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
 	return nil
@@ -212,10 +221,14 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid block ID")
 	}
 
-	out := sse(c)
+	var raw map[string]any
+	if err := readSignals(c, &raw); err != nil {
+		return toast(c, "Invalid request", "error")
+	}
 
 	// Load current blocks first — block type comes from the database (source of truth)
 	pageWithBlocks, err := h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	out := sse(c)
 	if err != nil {
 		out.ExecuteScript(toastScript("Failed to load page", "error"))
 		return nil
@@ -230,12 +243,6 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 	}
 	if currentBlock == nil {
 		out.ExecuteScript(toastScript("Block not found", "error"))
-		return nil
-	}
-
-	var raw map[string]any
-	if err := readSignals(c, &raw); err != nil {
-		out.ExecuteScript(toastScript("Invalid request", "error"))
 		return nil
 	}
 
@@ -394,29 +401,10 @@ func (h *AdminHandler) blockUploadImage(c *echo.Context) error {
 		return nil
 	}
 
-	file, header, err := c.Request().FormFile("image_file")
+	url, err := h.uploadImageFile(c, "block_img")
 	if err != nil {
 		out := sse(c)
-		out.ExecuteScript(toastScript("Please select a file to upload", "error"))
-		return nil
-	}
-	defer file.Close()
-
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Invalid file type. Please upload a JPG, PNG, or WebP image.", "error"))
-		return nil
-	}
-
-	b := make([]byte, 4)
-	_, _ = rand.Read(b)
-	filename := fmt.Sprintf("%s/block_img_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), b, ext)
-
-	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
-	if err != nil {
-		out := sse(c)
-		out.ExecuteScript(toastScript("Failed to upload image. Please try again.", "error"))
+		out.ExecuteScript(toastScript(err.Error(), "error"))
 		return nil
 	}
 
@@ -424,6 +412,34 @@ func (h *AdminHandler) blockUploadImage(c *echo.Context) error {
 		signalName: url,
 	})
 	return nil
+}
+
+// uploadImageFile validates the multipart "image_file" field and stores it
+// under <appname>/<keyPrefix>_<rand hex><ext>, returning the CDN URL. Shared by
+// the SSE-patching block image endpoint and the JSON slide-image endpoint.
+func (h *AdminHandler) uploadImageFile(c *echo.Context, keyPrefix string) (string, error) {
+	file, header, err := c.Request().FormFile("image_file")
+	if err != nil {
+		return "", errors.New("Please select a file to upload")
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".webp":
+	default:
+		return "", errors.New("Invalid file type. Please upload a JPG, PNG, or WebP image.")
+	}
+
+	b := make([]byte, 4)
+	_, _ = rand.Read(b)
+	filename := fmt.Sprintf("%s/%s_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), keyPrefix, b, ext)
+
+	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
+	if err != nil {
+		return "", errors.New("Failed to upload image. Please try again.")
+	}
+	return url, nil
 }
 
 func (h *AdminHandler) blockAddItemAction(c *echo.Context) error {

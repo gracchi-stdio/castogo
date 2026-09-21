@@ -134,6 +134,24 @@ func isAllowedAudioExt(ext string) bool {
 	return false
 }
 
+// episodeUploadImage handles POST /admin/episodes/upload-image — the slide
+// markdown editor's image button. Unlike blockUploadImage (which patches a
+// Datastar signal over SSE), this returns JSON, because the caller is plain
+// TypeScript (markdown-editor.ts) that needs the URL back to splice
+// "![alt](url)" into the textarea.
+func (h *AdminHandler) episodeUploadImage(c *echo.Context) error {
+	if err := c.Request().ParseMultipartForm(10 << 20); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Failed to parse form data"})
+	}
+
+	url, err := h.uploadImageFile(c, "slide_img")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"url": url})
+}
+
 // episodeUpdateAction handles POST /admin/episodes/:id — metadata only.
 // Publish date, episode audio, and page linkage each have dedicated endpoints.
 func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
@@ -154,6 +172,7 @@ func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
 	slugVal := raw.Slug
 	description := raw.Description
 	explicit := raw.Explicit.Checked
+	slidesMD := raw.SlidesMD
 
 	update := &domain.UpdateEpisode{
 		ID:          id,
@@ -161,6 +180,9 @@ func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
 		Slug:        &slugVal,
 		Description: &description,
 		Explicit:    &explicit,
+		// Always set: an emptied textarea means "clear the deck", and the form
+		// always submits the full signal group.
+		SlidesMD: &slidesMD,
 	}
 	if raw.PublishAt != "" {
 		t, err := time.Parse("2006-01-02", raw.PublishAt)

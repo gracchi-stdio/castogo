@@ -114,8 +114,10 @@ templ blockSummaryCard(pageID int64, block *domain.PageBlock, index int, isActiv
 }
 
 // blockDetailForm — the selected block's editor: type label + field form (delegated to
-// blockeditor) + Save. Save POSTs the block's signals to the per-block PATCH endpoint
-// and stays in place. Rendered into #block-form-pane by the select/add handlers.
+// blockeditor) + Save. Save PATCHes the block's signals to the per-block endpoint and
+// stays in place. The Save button is passed as BlockForm's children so it lives INSIDE
+// the block's data-signals scope (see BlockForm comment). Rendered into
+// #block-form-pane by the select/add handlers.
 templ blockDetailForm(pageID int64, block *domain.PageBlock) {
 	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
 		@card.CardHeader(card.CardHeaderArgs{}) {
@@ -124,19 +126,20 @@ templ blockDetailForm(pageID int64, block *domain.PageBlock) {
 			}
 		}
 		@card.CardContent(card.CardContentArgs{}) {
-			@blockEditor.BlockForm(pageID, block)
-			<div class="mt-5 flex justify-end gap-2 border-t pt-4">
-				@button.Button(button.ButtonArgs{
-					Variant: "default",
-					Size:    "sm",
-					Type:    "button",
-					Attributes: map[string]any{
-						"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d/blocks/%d')", pageID, block.ID),
-					},
-				}) {
-					Save Changes
-				}
-			</div>
+			@blockEditor.BlockForm(pageID, block) {
+				<div class="mt-5 flex justify-end gap-2 border-t pt-4">
+					@button.Button(button.ButtonArgs{
+						Variant: "default",
+						Size:    "sm",
+						Type:    "button",
+						Attributes: map[string]any{
+							"data-on:click": fmt.Sprintf("@patch('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+						},
+					}) {
+						Save Changes
+					}
+				</div>
+			}
 		}
 	}
 }

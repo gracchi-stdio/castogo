@@ -22,10 +22,11 @@ type EpisodeRepository interface {
 	Update(ctx context.Context, ep *domain.UpdateEpisode) (*domain.Episode, error)
 	UpdateLinkedPageID(ctx context.Context, episodeID int64, pageID *int64) error
 	GetByLinkedPageID(ctx context.Context, pageID int64) (*domain.Episode, error)
+	ListPublishedByLinkedPageID(ctx context.Context, pageID int64) ([]*domain.Episode, error)
 	Delete(ctx context.Context, id int64) error
 	CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error)
 	ListPublishedWithPagePath(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error)
 	ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error)
 	ListForRanking(ctx context.Context) ([]*domain.Episode, error)
-	SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Episode, error)
+	SearchPublishedWithPagePath(ctx context.Context, query string, limit, offset int) ([]*domain.EpisodeWithPagePath, error)
 }

@@ -12,7 +12,7 @@ type SearchPageData struct {
 	Query    string
 	Type     string
 	Pages    []*domain.Page
-	Episodes []*domain.Episode
+	Episodes []*domain.EpisodeWithPagePath
 	Nav      *layout.PublicLayoutData
 }
 
@@ -110,14 +110,27 @@ templ searchPageResult(page *domain.Page) {
 	</a>
 }
 
-templ searchEpisodeResult(ep *domain.Episode) {
-	<a href={ templ.SafeURL("/episodes/" + ep.Slug) } data-public-nav-link class="block border-b border-border/40 py-4 group">
-		<div class="flex items-center gap-3">
-			<span class="font-mono text-xs uppercase tracking-widest text-muted-foreground">EP { fmt.Sprintf("%d", ep.EpisodeNumber) }</span>
+// searchEpisodeResult links to the episode's companion page when one exists —
+// there is no /episodes/{slug} route, so an unlinked episode renders as plain
+// text rather than a dead link.
+templ searchEpisodeResult(ep *domain.EpisodeWithPagePath) {
+	if ep.PagePath != nil {
+		<a href={ templ.SafeURL(*ep.PagePath) } data-public-nav-link class="block border-b border-border/40 py-4 group">
+			@searchEpisodeResultInner(ep)
+		</a>
+	} else {
+		<div class="border-b border-border/40 py-4">
+			@searchEpisodeResultInner(ep)
 		</div>
-		<h3 class="text-foreground group-hover:text-primary transition-colors">{ ep.Title }</h3>
-		if ep.Description != "" {
-			<p class="mt-1 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
-		}
-	</a>
+	}
+}
+
+templ searchEpisodeResultInner(ep *domain.EpisodeWithPagePath) {
+	<div class="flex items-center gap-3">
+		<span class="font-mono text-xs uppercase tracking-widest text-muted-foreground">EP { fmt.Sprintf("%d", ep.EpisodeNumber) }</span>
+	</div>
+	<h3 class="text-foreground group-hover:text-primary transition-colors">{ ep.Title }</h3>
+	if ep.Description != "" {
+		<p class="mt-1 text-sm text-muted-foreground line-clamp-2">{ ep.Description }</p>
+	}
 }

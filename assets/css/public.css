@@ -178,3 +178,76 @@
 .public-skip-link:focus {
   top: 0.5rem;
 }
+
+/* Episode slideshow (pageview/blocks/slideshow.templ + episode-slides.ts).
+   Presentation-style: one slide per view; the track is swiped/arrowed and
+   scroll bars stay hidden — position is conveyed by the active border. */
+[data-slideshow-track] {
+  scrollbar-width: none;
+}
+[data-slideshow-track]::-webkit-scrollbar {
+  display: none;
+}
+[data-slide] {
+  transition: border-color 200ms ease;
+}
+[data-slide][data-active] {
+  border-color: hsl(var(--primary));
+}
+/* Markdown elements rendered inside a slide (goldmark output). */
+.slide-markdown :where(h1, h2, h3, h4) {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+.slide-markdown :where(h2) {
+  font-size: 1.25rem;
+}
+.slide-markdown :where(h3, h4) {
+  font-size: 1.05rem;
+}
+.slide-markdown :where(p, ul, ol, blockquote) {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.slide-markdown :where(ul, ol) {
+  padding-left: 1.25rem;
+  list-style: revert;
+}
+.slide-markdown :where(a) {
+  text-decoration: underline;
+}
+.slide-markdown :where(img) {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  max-height: 22rem;
+  height: auto;
+  object-fit: contain;
+}
+.slideshow-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  z-index: 5;
+}
+.slideshow-arrow:hover {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+.slideshow-arrow-prev {
+  left: -0.5rem;
+}
+.slideshow-arrow-next {
+  right: -0.5rem;
+}
