@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,6 +24,12 @@ func main() {
 	cmd := &cli.Command{
 		Name:  "castogo-cli",
 		Usage: "CLI utilities for Castogo",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "database-url",
+				Usage: "Database URL for this invocation — overrides DATABASE_URL (env/.env). Used to target another environment, e.g. production from a dev machine.",
+			},
+		},
 		Commands: []*cli.Command{
 			{
 				Name:  "version",
@@ -41,13 +49,34 @@ func main() {
 						Required: true,
 					},
 					&cli.StringFlag{
-						Name:     "password",
-						Usage:    "Password for registration",
-						Required: true,
+						Name:  "password",
+						Usage: "Password for registration (mutually exclusive with --generate)",
+					},
+					&cli.BoolFlag{
+						Name:  "generate",
+						Usage: "Generate a strong random password and print it once",
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					db, err := connectDB(ctx)
+					email := cmd.String("email")
+					password := cmd.String("password")
+
+					generated := false
+					switch {
+					case cmd.Bool("generate") && password != "":
+						return fmt.Errorf("--generate and --password are mutually exclusive")
+					case cmd.Bool("generate"):
+						var err error
+						password, err = generatePassword(20)
+						if err != nil {
+							return fmt.Errorf("generate password: %w", err)
+						}
+						generated = true
+					case password == "":
+						return fmt.Errorf("provide either --password or --generate")
+					}
+
+					db, err := connectDB(ctx, cmd)
 					if err != nil {
 						return err
 					}
@@ -56,14 +85,15 @@ func main() {
 					userRepo := postgres.NewUserRepo(db)
 					authService := service.NewAuthService(userRepo)
 
-					email := cmd.String("email")
-					password := cmd.String("password")
-
 					user, err := authService.Register(ctx, email, password)
 					if err != nil {
 						return fmt.Errorf("failed to create user: %w", err)
 					}
 					log.Printf("user %s successfully created", user.Email)
+					if generated {
+						fmt.Printf("Generated password for %s: %s\n", user.Email, password)
+						fmt.Println("Save it now — it is not stored in plain text anywhere.")
+					}
 					return nil
 				},
 			},
@@ -86,7 +116,7 @@ func main() {
 						return fmt.Errorf("refusing to reset without --yes")
 					}
 
-					db, err := connectDB(ctx)
+					db, err := connectDB(ctx, cmd)
 					if err != nil {
 						return err
 					}
@@ -131,7 +161,7 @@ func main() {
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					db, err := connectDB(ctx)
+					db, err := connectDB(ctx, cmd)
 					if err != nil {
 						return err
 					}
@@ -211,7 +241,7 @@ func main() {
 						return fmt.Errorf("refusing to adopt without --yes")
 					}
 
-					db, err := connectDB(ctx)
+					db, err := connectDB(ctx, cmd)
 					if err != nil {
 						return err
 					}
@@ -263,9 +293,30 @@ func main() {
 	}
 }
 
-func connectDB(ctx context.Context) (*pgxpool.Pool, error) {
+// generatePassword returns a cryptographically random password drawn from an
+// unambiguous charset (no 0/O/1/l/I) so it is safe to transcribe by hand.
+func generatePassword(n int) (string, error) {
+	const charset = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#_-+"
+	buf := make([]byte, n)
+	for i := range buf {
+		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		buf[i] = charset[idx.Int64()]
+	}
+	return string(buf), nil
+}
+
+func connectDB(ctx context.Context, cmd *cli.Command) (*pgxpool.Pool, error) {
 	if err := config.LoadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	// An explicit --database-url wins over the env var: targeting another
+	// environment is a per-invocation choice, not app configuration.
+	if url := cmd.Root().String("database-url"); url != "" {
+		config.Cfg.DatabaseURL = url
 	}
 
 	db, err := postgres.NewPool(ctx, config.Cfg.DatabaseURL)

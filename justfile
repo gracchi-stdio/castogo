@@ -54,6 +54,10 @@ frontend-build:
 build: generate frontend-build
 	go build -o bin/castogo ./cmd/server
 
+# Build the castogo-cli utility binary to bin/ (gitignored)
+build-cli:
+	go build -o bin/castogo-cli ./cmd/cli
+
 # Run the built binary
 [windows]
 run: build
@@ -84,6 +88,17 @@ migrate-status:
 # seeded by docker-entrypoint-initdb.d or databases migrated by hand (psql)
 migrate-adopt:
 	go run ./cmd/cli migrate-adopt --dir sql/migrations --yes
+
+# Run any castogo-cli command against the local dev database (from .env).
+# e.g.  just cli migrate-status   |   just cli register --email me@x.io --generate
+cli *args:
+	go run ./cmd/cli {{args}}
+
+# Run any castogo-cli command against the remote/production database.
+# Set REMOTE_DATABASE_URL (e.g. the Aiven service URI) in .env — never commit it.
+# e.g.  just cli-prod register --email me@x.io --generate
+cli-prod *args:
+	go run ./cmd/cli --database-url "{{env_var("REMOTE_DATABASE_URL")}}" {{args}}
 
 # Docker
 docker-up:
