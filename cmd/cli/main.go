@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
@@ -136,6 +137,12 @@ func main() {
 					}
 					defer db.Close()
 
+					release, err := acquireMigrationsLock(ctx, db, 30*time.Second)
+					if err != nil {
+						return err
+					}
+					defer release()
+
 					if err := ensureSchemaMigrations(ctx, db); err != nil {
 						return fmt.Errorf("ensure schema_migrations: %w", err)
 					}
@@ -185,6 +192,69 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:  "migrate-adopt",
+				Usage: "Record migration files as applied WITHOUT running them (for databases whose schema was created another way, e.g. docker-entrypoint-initdb.d or manual psql)",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "dir",
+						Usage: "Migrations directory",
+						Value: filepath.Join("sql", "migrations"),
+					},
+					&cli.BoolFlag{
+						Name:  "yes",
+						Usage: "Confirm adopt (skipped migrations are never applied later)",
+					},
+				},
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					if !cmd.Bool("yes") {
+						return fmt.Errorf("refusing to adopt without --yes")
+					}
+
+					db, err := connectDB(ctx)
+					if err != nil {
+						return err
+					}
+					defer db.Close()
+
+					release, err := acquireMigrationsLock(ctx, db, 30*time.Second)
+					if err != nil {
+						return err
+					}
+					defer release()
+
+					if err := ensureSchemaMigrations(ctx, db); err != nil {
+						return fmt.Errorf("ensure schema_migrations: %w", err)
+					}
+
+					files, err := listMigrationFiles(cmd.String("dir"))
+					if err != nil {
+						return err
+					}
+
+					applied, err := loadAppliedMigrations(ctx, db)
+					if err != nil {
+						return err
+					}
+
+					adopted := 0
+					for _, file := range files {
+						if _, ok := applied[file]; ok {
+							continue
+						}
+						if _, err := db.Exec(ctx, "INSERT INTO schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", file); err != nil {
+							return fmt.Errorf("adopt migration %s: %w", file, err)
+						}
+						log.Printf("Adopted %s", file)
+						adopted++
+					}
+
+					if adopted == 0 {
+						log.Println("Nothing to adopt — all migration files already recorded")
+					}
+					return nil
+				},
+			},
 		},
 	}
 
@@ -209,6 +279,55 @@ func connectDB(ctx context.Context) (*pgxpool.Pool, error) {
 
 	log.Println("Database connection successful")
 	return db, nil
+}
+
+// migrationsLockKey identifies castogo's migration advisory lock. Advisory
+// locks live in the server's global lock space shared by every connection,
+// so a fixed arbitrary constant means every migrator (deploy boot, manual CLI
+// run) contends on the same key.
+const migrationsLockKey = 0x63617374 // "cast" in hex — arbitrary but stable
+
+// acquireMigrationsLock takes a session-level advisory lock on a dedicated
+// pooled connection so that two concurrent migrators serialize instead of
+// racing on schema_migrations (e.g. a redeploy boot-migrating while someone
+// runs the CLI by hand against the same database). It polls pg_try_advisory_
+// lock until acquired or timeout elapses. The returned release function must
+// be called when the migration work is done.
+func acquireMigrationsLock(ctx context.Context, db *pgxpool.Pool, timeout time.Duration) (func(), error) {
+	conn, err := db.Acquire(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("acquire connection: %w", err)
+	}
+
+	deadline := time.Now().Add(timeout)
+	for {
+		var locked bool
+		if err := conn.QueryRow(ctx, "SELECT pg_try_advisory_lock($1)", migrationsLockKey).Scan(&locked); err != nil {
+			conn.Release()
+			return nil, fmt.Errorf("try advisory lock: %w", err)
+		}
+		if locked {
+			break
+		}
+		if time.Now().After(deadline) {
+			conn.Release()
+			return nil, fmt.Errorf("another migration is in progress (lock busy for %s) — retry after it finishes", timeout)
+		}
+		select {
+		case <-ctx.Done():
+			conn.Release()
+			return nil, ctx.Err()
+		case <-time.After(500 * time.Millisecond):
+		}
+	}
+
+	release := func() {
+		// Advisory locks are session-scoped: unlock on the same connection
+		// before returning it to the pool.
+		_, _ = conn.Exec(context.Background(), "SELECT pg_advisory_unlock($1)", migrationsLockKey)
+		conn.Release()
+	}
+	return release, nil
 }
 
 func ensureSchemaMigrations(ctx context.Context, db *pgxpool.Pool) error {

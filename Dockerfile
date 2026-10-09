@@ -34,6 +34,7 @@ COPY --from=builder /castogo /app/castogo
 COPY --from=builder /castogo-cli /app/castogo-cli
 COPY --from=builder /app/public /app/public
 COPY --from=builder /app/sql/migrations /app/sql/migrations
+COPY --chmod=755 scripts/entrypoint.sh /app/entrypoint.sh
 
 EXPOSE 8080
 STOPSIGNAL SIGTERM
@@ -41,4 +42,5 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 CMD wget 
 
 USER castogo
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["/app/castogo"]

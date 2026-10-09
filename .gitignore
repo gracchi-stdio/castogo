@@ -27,7 +27,7 @@ pgdata/
 tmp/
 
 # build artifacts
-scripts/
+# scripts/
 
 node_modules/
 dist/
