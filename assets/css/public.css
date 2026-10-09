@@ -113,13 +113,6 @@
 }
 
 /* ─── Docked page player ─────────────────────────────────────── */
-html:has(.theme-public),
-html:has(.theme-public) body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
 /* The shared audio component adds w-full; page audio is visually hidden and
    must stay 1px wide so its absolute positioning cannot create overflow. */
 .theme-public [data-page-audio] {
@@ -127,12 +120,17 @@ html:has(.theme-public) body {
   height: 1px !important;
 }
 
+/* Contain horizontal overflow (waveform / hidden audio positioning) without
+   creating scroll containers: `clip` leaves overflow-y visible, so wheel and
+   middle-click autoscroll keep hit-testing the document viewport. (`hidden`
+   here turned body and main into non-scrollable scroll containers, which
+   broke scrolling over public page content.) */
 .theme-public,
 .theme-public body,
 .theme-public [data-public-content] {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .episode-dock {

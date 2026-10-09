@@ -27,18 +27,25 @@ export function updateActiveNavLinks(pathname: string): void {
 
 // Brutalist nav scroll collapse — toggles data-scrolled on the public nav
 // when the user scrolls past 80px.
+// The nav lives outside the Swup swap container, so it persists across SPA
+// navigations — keep a single listener (re-init replaces, not accumulates)
+// and re-sync its state once on init so a previously-collapsed nav doesn't
+// stay collapsed after Swup scrolls back to the top.
+let navScrollHandler: (() => void) | null = null;
+
 export function initPublicNavScroll(): void {
   const nav = document.querySelector(".public-nav");
   if (!nav) return;
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (window.scrollY > 80) {
-        nav.setAttribute("data-scrolled", "");
-      } else {
-        nav.removeAttribute("data-scrolled");
-      }
-    },
-    { passive: true },
-  );
+  if (navScrollHandler) {
+    window.removeEventListener("scroll", navScrollHandler);
+  }
+  navScrollHandler = () => {
+    if (window.scrollY > 80) {
+      nav.setAttribute("data-scrolled", "");
+    } else {
+      nav.removeAttribute("data-scrolled");
+    }
+  };
+  window.addEventListener("scroll", navScrollHandler, { passive: true });
+  navScrollHandler();
 }

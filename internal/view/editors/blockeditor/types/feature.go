@@ -4,8 +4,8 @@ import blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/block
 
 func init() {
 	blockEditor.Register(&blockEditor.BlockType{
-		Name:  "feature",
-		Label: "Feature",
+		Name:  "features",
+		Label: "Features",
 		Fields: []blockEditor.Field{
 			{Name: "title", Label: "Title", Kind: blockEditor.FieldTextInput},
 			{Name: "description", Label: "Description", Kind: blockEditor.FieldTextArea},

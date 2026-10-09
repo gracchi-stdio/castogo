@@ -11,6 +11,14 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 	if content == nil {
 		return
 	}
+	{{
+		// MaxEpisodes caps the showcase; 0 means "no cap" (show everything
+		// the page loader passed in).
+		shown := episodes
+		if content.MaxEpisodes > 0 && len(shown) > content.MaxEpisodes {
+			shown = shown[:content.MaxEpisodes]
+		}
+	}}
 	<section id="episodes" class="py-20" aria-labelledby="episodes-heading">
 		<div class="mx-auto max-w-6xl px-6">
 			<div class="text-center mb-12">
@@ -21,16 +29,16 @@ templ EpisodesShowcaseBlock(content *domain.EpisodesShowcaseContent, episodes []
 					<p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto pretty">{ content.SectionDescription }</p>
 				}
 			</div>
-			if len(episodes) > 0 {
+			if len(shown) > 0 {
 				if content.DisplayMode == "list" {
 					<div class="max-w-4xl mx-auto">
-						for _, ep := range episodes {
+						for _, ep := range shown {
 							@episodeListItem(ep)
 						}
 					</div>
 				} else {
 					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-						for _, ep := range episodes {
+						for _, ep := range shown {
 							@episodeCard(ep)
 						}
 					</div>

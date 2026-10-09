@@ -6,6 +6,8 @@ type ImageUploadArgs struct {
 	SignalName string // Datastar signal for the image URL (e.g. "block_42_background_image")
 	UploadURL  string // SSE POST endpoint (e.g. "/admin/pages/blocks/upload-image")
 	FormID     string // Parent form element ID for multipart submission
+	UploadingSignal string // Optional Datastar boolean signal set while uploading
+	StatusSignal    string // Optional Datastar status signal shown during upload
 	Accept     string // File types (default "image/jpeg,image/png,image/webp")
 	Label      string // Label text (e.g. "Background Image")
 	PreviewW   string // Preview width class (default "w-48")

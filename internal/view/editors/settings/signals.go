@@ -26,6 +26,7 @@ type Signals struct {
 	AuthorEmailError   string `json:"author_email_error"`
 	OwnerEmailError    string `json:"owner_email_error"`
 	CoverImageURLError string `json:"cover_image_url_error"`
+	CategoryError      string `json:"category_error"`
 	SubcategoryError   string `json:"subcategory_error"`
 
 	// cover upload sub-action state — separate from $fetching (which tracks the main save)

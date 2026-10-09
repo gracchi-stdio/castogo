@@ -12,6 +12,15 @@ templ ImageUpload(args ImageUploadArgs) {
 			accept = "image/jpeg,image/png,image/webp"
 		}
 	}}
+	{{
+		uploadExpression := "@post('" + args.UploadURL + "', {contentType: 'form', form: '#" + args.FormID + "'})"
+		if args.UploadingSignal != "" {
+			uploadExpression = "$" + args.UploadingSignal + " = true; " + uploadExpression
+			if args.StatusSignal != "" {
+				uploadExpression = "$" + args.StatusSignal + " = 'Uploading image...'; " + uploadExpression
+			}
+		}
+	}}
 	{{ bindAttrs := templ.Attributes{"data-bind:" + args.SignalName: ""} }}
 	<div class={ args.Class } { args.Attributes... }>
 		@label.Label(label.LabelArgs{For: args.ID}) {
@@ -57,7 +66,7 @@ templ ImageUpload(args ImageUploadArgs) {
 			if args.FormID != "" {
 				form={ args.FormID }
 			}
-			data-on:change={ "@post('" + args.UploadURL + "', {contentType: 'form', form: '#" + args.FormID + "'})" }
+			data-on:change={ uploadExpression }
 		/>
 		<input
 			type="hidden"

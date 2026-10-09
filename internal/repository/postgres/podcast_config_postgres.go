@@ -5,6 +5,7 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/db"
 	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -21,6 +22,9 @@ func NewPodcastConfigRepository(pool *pgxpool.Pool) *PodcastConfigRepository {
 func (r *PodcastConfigRepository) Get(ctx context.Context) (*domain.PodcastConfig, error) {
 	res, err := r.q.GetPodcastConfig(ctx)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, domain.ErrNotFound
+		}
 		return nil, err
 	}
 	return toDomainPodcastConfig(&res), nil

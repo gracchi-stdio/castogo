@@ -1,6 +1,9 @@
 package domain
 
-import "sort"
+import (
+	"slices"
+	"sort"
+)
 
 // iTunes categories mapped to their subcategories.
 // Categories with no subcategories have an empty slice (e.g. True Crime).
@@ -60,6 +63,12 @@ func HasSubcategories(category string) bool {
 	return len(ITunesCategories[category]) > 0
 }
 
+// CategoryExists reports whether the category is a known iTunes category.
+func CategoryExists(category string) bool {
+	_, ok := ITunesCategories[category]
+	return ok
+}
+
 // IsValidCategory reports whether the category exists and the subcategory is
 // valid for that category.
 func IsValidCategory(category, subcategory string) bool {
@@ -70,10 +79,5 @@ func IsValidCategory(category, subcategory string) bool {
 	if subcategory == "" {
 		return len(subcategories) == 0
 	}
-	for _, candidate := range subcategories {
-		if candidate == subcategory {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(subcategories, subcategory)
 }

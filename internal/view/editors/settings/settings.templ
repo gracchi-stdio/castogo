@@ -6,6 +6,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/imageupload"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
 	"github.com/gracchi-stdio/castogo/internal/view/components/loading"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
@@ -31,17 +32,46 @@ templ Form(args Args) {
 			Signal: "cover_uploading",
 			Status: "cover_status",
 		})
+		@card.Card(card.CardArgs{Class: "mb-6 max-w-3xl border-border/70 shadow-sm"}) {
+			@card.CardHeader(card.CardHeaderArgs{}) {
+				@card.CardTitle(card.CardTitleArgs{}) { Cover image }
+				@card.CardDescription(card.CardDescriptionArgs{}) { Upload a square JPG, PNG, or WebP image for your podcast artwork. }
+			}
+			@card.CardContent(card.CardContentArgs{}) {
+				@form.Form(form.FormArgs{
+					ID:         "settings-cover-form",
+					Attributes: map[string]any{"enctype": "multipart/form-data"},
+				}) {
+					@imageupload.ImageUpload(imageupload.ImageUploadArgs{
+						SignalName: "cover_image_url",
+						UploadURL:  "/admin/settings/upload-cover",
+						FormID:     "settings-cover-form",
+						UploadingSignal: "cover_uploading",
+						StatusSignal:    "cover_status",
+						Label:      "Cover Image",
+						ID:         "cover_image",
+						Hint:       "Recommended: 3000x3000px, JPG or PNG",
+						PreviewW:   "w-48",
+						PreviewH:   "h-48",
+					})
+					<input type="hidden" name="id" value={ configID }/>
+				}
+			}
+		}
 		@form.Form(form.FormArgs{
 			ID:          "settings-form",
 			Action:      "/admin/settings",
 			ContentType: "json",
 		}) {
-			@card.Card(card.CardArgs{}) {
+			@card.Card(card.CardArgs{Class: "max-w-5xl border-border/70 shadow-sm"}) {
 				@card.CardContent(card.CardContentArgs{}) {
-					<div class="space-y-6">
+					<div class="space-y-8">
 						<!-- Podcast Info -->
 						<div>
-							<h3 class="text-lg font-medium mb-4">Podcast Info</h3>
+							<div class="mb-4 border-b pb-3">
+								<h3 class="text-base font-semibold tracking-tight">Podcast identity</h3>
+								<p class="mt-1 text-sm text-muted-foreground">The public details listeners see in your podcast directory and feed.</p>
+							</div>
 							<div class="space-y-4">
 								@formfield.FormField(formfield.FormFieldArgs{
 									Name:        "title",
@@ -56,7 +86,8 @@ templ Form(args Args) {
 										Placeholder: "My Awesome Podcast",
 										Class:       "w-full",
 										Attributes: map[string]any{
-											"data-on:input":          "$title = el.value; $title_error = ''",
+											"data-bind":              "title",
+											"data-on:input":          "$title_error = ''",
 											"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
 										},
 									})
@@ -76,59 +107,6 @@ templ Form(args Args) {
 										},
 									})
 								}
-								<!-- Cover Image Upload (custom UX — not a FormField) -->
-								<div class="space-y-2">
-									<span class="text-sm font-medium leading-none">Cover Image</span>
-									@input.Input(input.InputArgs{
-										Type:        "hidden",
-										ID:          "cover_image_url",
-										Name:        "cover_image_url",
-										Placeholder: "https://cdn.example.com/cover.jpg",
-										Class:       "w-full",
-										Attributes: map[string]any{
-											"data-bind:cover_image_url": "",
-										},
-									})
-									<p
-										class="text-destructive text-sm"
-										data-show="$cover_image_url_error != ''"
-										data-text="$cover_image_url_error"
-									></p>
-									<!-- No image: dashed upload area -->
-									<div
-										data-show="$cover_image_url === ''"
-										class="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
-										data-on:click="document.getElementById('cover_image').click()"
-									>
-										<div class="text-muted-foreground">
-											<p class="font-medium">Click to upload cover image</p>
-											<p class="text-sm mt-1">Recommended: 3000x3000px, JPG or PNG</p>
-										</div>
-									</div>
-									<!-- Has image: preview + change button -->
-									<div data-show="$cover_image_url !== ''" class="space-y-3">
-										<button
-											type="button"
-											class="text-sm text-muted-foreground hover:text-foreground transition-colors"
-											data-on:click="document.getElementById('cover_image').click()"
-										>
-											<img
-												data-attr:src="$cover_image_url"
-												alt="Cover image preview"
-												class="w-48 h-48 object-cover rounded-lg border"
-											/>
-										</button>
-									</div>
-									<!-- Hidden file input (shared by both states) -->
-									<input
-										type="file"
-										id="cover_image"
-										name="cover_image"
-										accept="image/jpeg,image/png,image/webp"
-										class="hidden"
-										data-on:change="$cover_status = 'Uploading cover image...'; $cover_uploading = true; @post('/admin/settings/upload-cover', {contentType: 'form', form: '#settings-form'})"
-									/>
-								</div>
 								@formfield.FormField(formfield.FormFieldArgs{
 									Name:        "site_url",
 									Label:       "Site URL",
@@ -141,8 +119,8 @@ templ Form(args Args) {
 										Placeholder: "https://example.com",
 										Class:       "w-full",
 										Attributes: map[string]any{
-											"data-on:input":          "$site_url = el.value; $site_url_error = ''",
-											"data-bind:site_url":     "",
+											"data-bind":              "site_url",
+											"data-on:input":          "$site_url_error = ''",
 											"data-attr:aria-invalid": "$site_url_error != '' ? 'true' : ''",
 										},
 									})
@@ -159,7 +137,7 @@ templ Form(args Args) {
 											Placeholder: "en",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-bind:language": "",
+												"data-bind": "language",
 											},
 										})
 									}
@@ -174,7 +152,7 @@ templ Form(args Args) {
 											Placeholder: "2026 My Podcast",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-bind:copyright": "",
+												"data-bind": "copyright",
 											},
 										})
 									}
@@ -183,7 +161,10 @@ templ Form(args Args) {
 						</div>
 						<!-- Author & Owner -->
 						<div>
-							<h3 class="text-lg font-medium mb-4">Author & Owner</h3>
+							<div class="mb-4 border-b pb-3">
+								<h3 class="text-base font-semibold tracking-tight">People</h3>
+								<p class="mt-1 text-sm text-muted-foreground">Set the contact details attached to your podcast.</p>
+							</div>
 							<div class="space-y-4">
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									@formfield.FormField(formfield.FormFieldArgs{
@@ -197,7 +178,7 @@ templ Form(args Args) {
 											Placeholder: "John Doe",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-bind:author_name": "",
+												"data-bind": "author_name",
 											},
 										})
 									}
@@ -213,8 +194,8 @@ templ Form(args Args) {
 											Placeholder: "john@example.com",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-on:input":          "$author_email = el.value; $author_email_error = ''",
-												"data-bind:author_email": "",
+												"data-bind":              "author_email",
+												"data-on:input":          "$author_email_error = ''",
 												"data-attr:aria-invalid": "$author_email_error != '' ? 'true' : ''",
 											},
 										})
@@ -232,7 +213,7 @@ templ Form(args Args) {
 											Placeholder: "John Doe",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-bind:owner_name": "",
+												"data-bind": "owner_name",
 											},
 										})
 									}
@@ -248,8 +229,8 @@ templ Form(args Args) {
 											Placeholder: "john@example.com",
 											Class:       "w-full",
 											Attributes: map[string]any{
-												"data-on:input":          "$owner_email = el.value; $owner_email_error = ''",
-												"data-bind:owner_email":  "",
+												"data-bind":              "owner_email",
+												"data-on:input":          "$owner_email_error = ''",
 												"data-attr:aria-invalid": "$owner_email_error != '' ? 'true' : ''",
 											},
 										})
@@ -259,12 +240,16 @@ templ Form(args Args) {
 						</div>
 						<!-- Category -->
 						<div>
-							<h3 class="text-lg font-medium mb-4">Category</h3>
+							<div class="mb-4 border-b pb-3">
+								<h3 class="text-base font-semibold tracking-tight">Categories</h3>
+								<p class="mt-1 text-sm text-muted-foreground">Choose the primary directory category and an optional subcategory.</p>
+							</div>
 							<div class="space-y-4">
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									@formfield.FormField(formfield.FormFieldArgs{
-										Name:  "category",
-										Label: "Category",
+										Name:        "category",
+										Label:       "Category",
+										ErrorSignal: "category_error",
 									}) {
 										@selectcomponent.Select(selectcomponent.SelectArgs{
 											ID:           "category_select",
@@ -274,7 +259,7 @@ templ Form(args Args) {
 											Options:      categoryOpts,
 											ContentClass: "max-h-32",
 											Value:        signals.Category,
-											OnChange:     "$category = $category_select.value; @get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))",
+											OnChange:     "$category = $category_select.value; $category_error = ''; @get('/admin/settings/subcategories?category=' + encodeURIComponent($category_select.value))",
 										})
 									}
 									<!-- Subcategory (SSE-swapped wrapper) -->
@@ -294,10 +279,6 @@ templ Form(args Args) {
 					</div>
 				}
 			}
-			<!-- id rides in the signals for the JSON main save, but the cover-upload
-			     endpoint posts this form as multipart (named fields, not signals),
-			     so this hidden input is what carries the id there. -->
-			<input type="hidden" name="id" value={ configID }/>
 		}
 	</div>
 }
