@@ -120,6 +120,13 @@ html:has(.theme-public) body {
   overflow-x: hidden;
 }
 
+/* The shared audio component adds w-full; page audio is visually hidden and
+   must stay 1px wide so its absolute positioning cannot create overflow. */
+.theme-public [data-page-audio] {
+  width: 1px !important;
+  height: 1px !important;
+}
+
 .theme-public,
 .theme-public body,
 .theme-public [data-public-content] {

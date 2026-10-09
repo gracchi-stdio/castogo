@@ -1,0 +1,11 @@
+.git
+.github
+.env
+node_modules
+bin
+tmp
+public/assets
+public/.vite
+internal/db
+internal/view/**/*_templ.go
+pgdata

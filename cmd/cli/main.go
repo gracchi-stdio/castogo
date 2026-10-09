@@ -12,6 +12,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/service"
+	"github.com/gracchi-stdio/castogo/internal/version"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v3"
 )
@@ -21,6 +22,14 @@ func main() {
 		Name:  "castogo-cli",
 		Usage: "CLI utilities for Castogo",
 		Commands: []*cli.Command{
+			{
+				Name:  "version",
+				Usage: "Print the Castogo build version",
+				Action: func(context.Context, *cli.Command) error {
+					fmt.Println(version.String())
+					return nil
+				},
+			},
 			{
 				Name:  "register",
 				Usage: "Register a new user",

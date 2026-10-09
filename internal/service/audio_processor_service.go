@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -28,6 +30,8 @@ func DefaultProcessingOptions() ProcessingOptions {
 
 type ProcessingResult struct {
 	OutputPath string
+	Extension  string
+	MimeType   string
 	Duration   float64
 	FileSize   int64
 	Bitrate    int
@@ -41,8 +45,40 @@ type AudioProcessor interface {
 
 type FFmpegProcessor struct{}
 
+type PassthroughProcessor struct{}
+
 func NewFFmpegProcessor() *FFmpegProcessor {
 	return &FFmpegProcessor{}
+}
+
+func NewPassthroughProcessor() *PassthroughProcessor {
+	return &PassthroughProcessor{}
+}
+
+func (p *PassthroughProcessor) Process(ctx context.Context, inputPath string, _ ProcessingOptions) (*ProcessingResult, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	info, err := os.Stat(inputPath)
+	if err != nil {
+		return nil, fmt.Errorf("stat input audio: %w", err)
+	}
+
+	extension := strings.ToLower(filepath.Ext(inputPath))
+	mimeType := mime.TypeByExtension(extension)
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	return &ProcessingResult{
+		OutputPath: inputPath,
+		Extension:  extension,
+		MimeType:   mimeType,
+		FileSize:   info.Size(),
+	}, nil
 }
 
 func (p *FFmpegProcessor) Process(ctx context.Context, inputPath string, opts ProcessingOptions) (*ProcessingResult, error) {
@@ -71,6 +107,10 @@ func (p *FFmpegProcessor) Process(ctx context.Context, inputPath string, opts Pr
 	result, err := parseFFmpegStats(output)
 	if err == nil {
 		result.OutputPath = outputPath
+		result.Extension = ".mp3"
+		result.MimeType = "audio/mpeg"
+		result.SampleRate = opts.TargetSample
+		result.Channels = 2
 	}
 
 	// get file size regardless of stats parsing

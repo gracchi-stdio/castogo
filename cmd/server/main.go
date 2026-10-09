@@ -19,6 +19,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/session"
+	"github.com/gracchi-stdio/castogo/internal/version"
 	"github.com/gracchi-stdio/castogo/internal/view/notfoundview"
 
 	_ "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor/types" // initialize block types
@@ -81,7 +82,10 @@ func main() {
 	authService := service.NewAuthService(userRepo)
 	storageService := service.NewBunnyStorageService(config.Cfg.BunnyStorageEndpoint, config.Cfg.BunnyStoragePassword)
 	episodeService := service.NewEpisodeService(episodeRepo)
-	audioProcessor := service.NewFFmpegProcessor()
+	var audioProcessor service.AudioProcessor = service.NewFFmpegProcessor()
+	if !config.Cfg.AudioProcessingEnabled {
+		audioProcessor = service.NewPassthroughProcessor()
+	}
 	settingsService := service.NewSettingsService(podcastRepo)
 	feedService := service.NewFeedService(podcastRepo, episodeRepo)
 	pageService := service.NewPageService(pageRepo, episodeRepo)
@@ -101,11 +105,31 @@ func main() {
 	adminGroup := e.Group("/admin", handler.AuthMiddleware(userRepo))
 	adminHandler.RegisterRoutes(adminGroup)
 
-	e.GET("/healthcheck", func(c *echo.Context) error {
+	readyHandler := func(c *echo.Context) error {
 		if err := db.Ping(c.Request().Context()); err != nil {
-			return c.JSON(503, map[string]string{"status": "unhealthy", "error": err.Error()})
+			return c.JSON(http.StatusServiceUnavailable, map[string]string{
+				"status":  "unready",
+				"version": version.Version,
+				"error":   err.Error(),
+			})
 		}
-		return c.JSON(200, map[string]string{"db": "ok"})
+		return c.JSON(http.StatusOK, map[string]string{
+			"status":  "ready",
+			"db":      "ok",
+			"version": version.Version,
+		})
+	}
+	e.GET("/healthcheck", readyHandler)
+	e.GET("/readyz", readyHandler)
+	e.GET("/healthz", func(c *echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok", "version": version.Version})
+	})
+	e.GET("/version", func(c *echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{
+			"version":    version.Version,
+			"commit":     version.Commit,
+			"build_time": version.BuildTime,
+		})
 	})
 
 	// DefaultHTTPErrorHandler is a factory in v5 (no longer a method on *Echo);

@@ -102,28 +102,32 @@ func (h *AdminHandler) processAndUploadAudio(ctx context.Context, file io.Reader
 	}
 	defer processedFile.Close()
 
-	cdnURL, err := h.storageService.UploadFile(ctx, processedFile, episodeAudioFilename(slug))
+	fileExtension := processResult.Extension
+	if fileExtension == "" {
+		fileExtension = ext
+	}
+	cdnURL, err := h.storageService.UploadFile(ctx, processedFile, episodeAudioFilename(slug, fileExtension))
 	if err != nil {
 		return "", domain.AudioMetadata{}, err
 	}
 
 	meta := domain.AudioMetadata{
 		Duration:     int(processResult.Duration),
-		SampleRate:   service.DefaultProcessingOptions().TargetSample,
-		ChannelCount: 2,
+		SampleRate:   processResult.SampleRate,
+		ChannelCount: processResult.Channels,
 		BitRate:      processResult.Bitrate,
 		FileSize:     processResult.FileSize,
-		Format:       "mp3",
-		MimeType:     "audio/mpeg",
+		Format:       strings.TrimPrefix(fileExtension, "."),
+		MimeType:     processResult.MimeType,
 	}
 	return cdnURL, meta, nil
 }
 
 // episodeAudioFilename builds a unique CDN path: episodes/<slug>-<8hex>.mp3.
-func episodeAudioFilename(slug string) string {
+func episodeAudioFilename(slug, ext string) string {
 	b := make([]byte, 4)
 	_, _ = rand.Read(b)
-	return fmt.Sprintf("episodes/%s-%x.mp3", slug, b)
+	return fmt.Sprintf("episodes/%s-%x%s", slug, b, ext)
 }
 
 func isAllowedAudioExt(ext string) bool {

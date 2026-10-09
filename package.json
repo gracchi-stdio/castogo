@@ -25,7 +25,6 @@
     "lightningcss": "^1.33.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "prettier-plugin-templ": "^0.2.2",
     "vite": "^6.4.3"
   }
 }

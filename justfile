@@ -89,6 +89,12 @@ migrate file="":
 docker-up:
 	docker compose up -d --build
 
+docker-migrate:
+	docker compose run --rm app /app/castogo-cli migrate --dir /app/sql/migrations
+
+docker-build version="dev" commit="local" build_time="local":
+	docker build --build-arg VERSION={{version}} --build-arg COMMIT={{commit}} --build-arg BUILD_TIME={{build_time}} -t castogo:{{version}} .
+
 podman-db-up:
 	podman compose up -d db
 
