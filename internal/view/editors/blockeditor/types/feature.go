@@ -7,8 +7,8 @@ func init() {
 		Name:  "features",
 		Label: "Features",
 		Fields: []blockEditor.Field{
-			{Name: "title", Label: "Title", Kind: blockEditor.FieldTextInput},
-			{Name: "description", Label: "Description", Kind: blockEditor.FieldTextArea},
+			{Name: "section_title", Label: "Section Title", Kind: blockEditor.FieldTextInput},
+			{Name: "section_description", Label: "Section Description", Kind: blockEditor.FieldTextArea},
 		},
 		Items: []blockEditor.ItemList{{
 			Signal: "items",

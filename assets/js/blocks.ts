@@ -12,12 +12,16 @@ export function initBlockSorter(): void {
   if (!list) return;
 
   sortableInstance = Sortable.create(list, {
-    animation: 150,
+    animation: 120,
+    delay: 0,
     handle: "[data-block-handle]",
-    forceFallback: true,
-    fallbackClass: "sortable-fallback",
+    dragoverBubble: true,
     ghostClass: "sortable-ghost",
     chosenClass: "sortable-chosen",
+    dragClass: "sortable-drag",
+    forceFallback: false,
+    scroll: true,
+    scrollSensitivity: 14,
     onStart: () => {
       document.body.classList.add("is-dragging");
     },

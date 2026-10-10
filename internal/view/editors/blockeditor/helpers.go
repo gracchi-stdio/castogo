@@ -41,8 +41,16 @@ func SignalsForBlock(block *domain.PageBlock) map[string]any {
 		set("button_text", "button_text")
 		set("button_url", "button_url")
 	case "features":
-		set("section_title", "section_title")
-		set("section_description", "section_description")
+		if title := content["section_title"]; title != nil {
+			signals[pfx+"section_title"] = strVal(title)
+		} else {
+			signals[pfx+"section_title"] = strVal(content["title"])
+		}
+		if description := content["section_description"]; description != nil {
+			signals[pfx+"section_description"] = strVal(description)
+		} else {
+			signals[pfx+"section_description"] = strVal(content["description"])
+		}
 		for i, item := range toItems(content["items"]) {
 			signals[fmt.Sprintf("%sitem_%d_icon", pfx, i)] = strVal(item["icon"])
 			signals[fmt.Sprintf("%sitem_%d_title", pfx, i)] = strVal(item["title"])

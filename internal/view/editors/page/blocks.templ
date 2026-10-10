@@ -74,29 +74,29 @@ templ BlockListItems(pageID int64, blocks []*domain.PageBlock, activeID int64) {
 templ blockSummaryCard(pageID int64, block *domain.PageBlock, index int, isActive bool) {
 	<div
 		data-block-id={ fmt.Sprintf("%d", block.ID) }
-		class={ fmt.Sprintf("flex items-center gap-1 rounded-lg border bg-card text-card-foreground px-1.5 py-1.5%s", activeBorderClass(isActive)) }
+		class={ fmt.Sprintf("group flex items-center gap-1.5 rounded-xl border border-border/80 bg-card/80 px-1.5 py-1.5 text-card-foreground shadow-sm transition-all duration-200 ease-out hover:border-border hover:bg-accent/5%s", activeBorderClass(isActive)) }
 	>
 		@button.Button(button.ButtonArgs{
 			Variant: "ghost",
 			Size:    "icon",
 			Type:    "button",
-			Class:   "cursor-grab active:cursor-grabbing shrink-0",
+			Class:   "shrink-0 rounded-md bg-background/80 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
 			Attributes: map[string]any{
 				"data-block-handle": "",
 				"aria-label":        "Drag to reorder",
 			},
 		}) {
-			@icon.Lucide("grip-vertical", "size-4 text-muted-foreground")
+			@icon.Lucide("grip-vertical", "size-4")
 		}
 		@button.Button(button.ButtonArgs{
 			Variant: "ghost",
 			Type:    "button",
-			Class:   "flex h-auto flex-1 items-center gap-2 min-w-0 justify-start px-2 py-1 font-normal",
+			Class:   "flex h-auto flex-1 items-center gap-2 min-w-0 justify-start px-2 py-1.5 font-normal",
 			Attributes: map[string]any{
 				"data-on:click": fmt.Sprintf("@get('/admin/pages/%d/blocks/%d/select')", pageID, block.ID),
 			},
 		}) {
-			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium text-muted-foreground">
+			<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
 				{ fmt.Sprintf("%d", index+1) }
 			</span>
 			<span class="min-w-0">
@@ -108,13 +108,13 @@ templ blockSummaryCard(pageID int64, block *domain.PageBlock, index int, isActiv
 			Variant: "ghost",
 			Size:    "icon",
 			Type:    "button",
-			Class:   "shrink-0",
+			Class:   "shrink-0 rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
 			Attributes: map[string]any{
 				"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d')", pageID, block.ID),
 				"aria-label":    "Delete block",
 			},
 		}) {
-			@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+			@icon.Lucide("trash-2", "size-4")
 		}
 	</div>
 }
@@ -200,7 +200,7 @@ templ blocksFormEmpty() {
 
 func activeBorderClass(active bool) string {
 	if active {
-		return " border-primary ring-1 ring-primary"
+		return " border-primary/70 bg-primary/5 shadow-sm ring-2 ring-primary/15"
 	}
 	return ""
 }

@@ -1,6 +1,7 @@
 package blockEditor
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/label"
 	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
 	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/yuin/goldmark"
 )
 
 templ BlockEditor(pageID int64, blocks []*domain.PageBlock) {
@@ -125,74 +127,87 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 	{{ pfx := blockEditPrefix(block, "") }}
 	switch block.BlockType {
 		case "hero":
-			<div class="space-y-3">
-				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) {
-						Headline
-					}
-					@input.Input(input.InputArgs{
-						Type: "text", Placeholder: "Enter headline…",
-						Class: "w-full", Attributes: bindAttr(pfx, "headline"),
-					})
-				</div>
-				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) {
-						Subheadline
-					}
-					@input.Input(input.InputArgs{
-						Type: "text", Placeholder: "Enter subheadline…",
-						Class: "w-full", Attributes: bindAttr(pfx, "subheadline"),
-					})
-				</div>
-				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) {
-						CTA Text
-					}
-					@input.Input(input.InputArgs{
-						Type: "text", Placeholder: "e.g. Listen Now",
-						Class: "w-full", Attributes: bindAttr(pfx, "cta_text"),
-					})
-				</div>
-				<div class="space-y-1.5">
-					@label.Label(label.LabelArgs{}) {
-						CTA URL
-					}
-					@input.Input(input.InputArgs{
-						Type: "text", Placeholder: "/episodes",
-						Class: "w-full", Attributes: bindAttr(pfx, "cta_url"),
-					})
-				</div>
-				@form.Form(form.FormArgs{
-					ID:    fmt.Sprintf("block-form-%d", block.ID),
-					Class: "space-y-2",
-					Attributes: map[string]any{
-						"enctype": "multipart/form-data",
-					},
-				}) {
-					@imageupload.ImageUpload(imageupload.ImageUploadArgs{
-						SignalName: pfx + "background_image",
-						UploadURL:  "/admin/pages/blocks/upload-image",
-						FormID:     fmt.Sprintf("block-form-%d", block.ID),
-						Label:      "Background Image",
-						ID:         fmt.Sprintf("bg-image-%d", block.ID),
-						Hint:       "Recommended: 1920x1080px, JPG or PNG",
-					})
-				}
-				<div class="space-y-1.5">
-					{{
-						overlayAttrs := bindAttr(pfx, "overlay_opacity")
-						overlayAttrs["min"] = "0"
-						overlayAttrs["max"] = "0.9"
-						overlayAttrs["step"] = "0.05"
-						overlayAttrs["inputmode"] = "decimal"
-					}}
-					@label.Label(label.LabelArgs{}) {
-						Overlay Opacity (0-0.9)
-					}
-					@input.Input(input.InputArgs{
-						Type: "number", Placeholder: "0.5",
-						Class: "w-full", Attributes: overlayAttrs,
-					})
+			<div class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4">
+				<div class="space-y-4">
+					<div class="space-y-3 rounded-lg border border-dashed border-border/80 bg-background/70 p-3">
+						@form.Form(form.FormArgs{
+							ID:    fmt.Sprintf("block-form-%d", block.ID),
+							Class: "space-y-3",
+							Attributes: map[string]any{
+								"enctype": "multipart/form-data",
+							},
+						}) {
+							@imageupload.ImageUpload(imageupload.ImageUploadArgs{
+								SignalName:      pfx + "background_image",
+								UploadURL:       "/admin/pages/blocks/upload-image",
+								FormID:          fmt.Sprintf("block-form-%d", block.ID),
+								Label:           "Background Image",
+								ID:              fmt.Sprintf("bg-image-%d", block.ID),
+								Hint:            "Recommended: 1920x1080px, JPG or PNG",
+								PreviewW:        "w-28",
+								PreviewH:        "h-20",
+								Horizontal:      true,
+								Clearable:       true,
+								UploadingSignal: "",
+								StatusSignal:    "",
+							})
+						}
+					</div>
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							Headline
+						}
+						@input.Input(input.InputArgs{
+							Type: "text", Placeholder: "Enter headline…",
+							Class: "w-full", Required: true, Attributes: bindAttr(pfx, "headline"),
+						})
+					</div>
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							Subheadline
+						}
+						@input.Input(input.InputArgs{
+							Type: "text", Placeholder: "Enter subheadline…",
+							Class: "w-full", Attributes: bindAttr(pfx, "subheadline"),
+						})
+					</div>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1.5">
+							@label.Label(label.LabelArgs{}) {
+								CTA Text
+							}
+							@input.Input(input.InputArgs{
+								Type: "text", Placeholder: "e.g. Listen Now",
+								Class: "w-full", Attributes: bindAttr(pfx, "cta_text"),
+							})
+						</div>
+						<div class="space-y-1.5">
+							@label.Label(label.LabelArgs{}) {
+								CTA URL
+							}
+							@input.Input(input.InputArgs{
+								Type: "text", Placeholder: "/episodes",
+								Class: "w-full", Attributes: bindAttr(pfx, "cta_url"),
+							})
+						</div>
+					</div>
+					<div class="space-y-1.5 pt-1">
+						{{
+							overlayAttrs := bindAttr(pfx, "overlay_opacity")
+							overlayAttrs["min"] = "0"
+							overlayAttrs["max"] = "0.9"
+							overlayAttrs["step"] = "0.05"
+							overlayAttrs["inputmode"] = "decimal"
+						}}
+						@label.Label(label.LabelArgs{}) {
+							Overlay Opacity
+						}
+						@input.Input(input.InputArgs{
+							Type: "number", Placeholder: "0.5",
+							Class: "w-full", Attributes: overlayAttrs,
+						})
+						<p class="text-xs text-muted-foreground">Set the dark overlay strength from 0 to 0.9.</p>
+					</div>
 				</div>
 			</div>
 		case "cta":
@@ -203,7 +218,7 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 					}
 					@input.Input(input.InputArgs{
 						Type: "text", Placeholder: "Enter headline…",
-						Class: "w-full", Attributes: bindAttr(pfx, "headline"),
+						Class: "w-full", Required: true, Attributes: bindAttr(pfx, "headline"),
 					})
 				</div>
 				<div class="space-y-1.5">
@@ -249,22 +264,61 @@ templ blockEditFields(pageID int64, block *domain.PageBlock) {
 				taAttrs := bindAttr(pfx, "body")
 				taAttrs["id"] = textareaID
 			}}
-			<div class="space-y-1.5">
-				@label.Label(label.LabelArgs{}) {
-					Content (Markdown)
-				}
-				@markdowntoolbar.Toolbar(textareaID, "")
-				@textarea.Textarea(textarea.TextareaArgs{
-					Placeholder: "Write your content in markdown…",
-					Class:       "w-full min-h-48 font-mono",
-					Attributes:  taAttrs,
-				})
+			<div class="space-y-3" data-signals:prose_mode="'edit'">
+				<div class="flex items-center justify-between gap-3">
+					<span class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Rich Text</span>
+					<div class="inline-flex rounded-lg border border-border/70 bg-muted/40 p-0.5" role="tablist" aria-label="Rich text view">
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost", Size: "sm", Type: "button",
+							Class: "h-8 gap-1.5 px-2.5 text-xs data-[active=true]:bg-background data-[active=true]:shadow-sm",
+							Attributes: map[string]any{
+								"data-on:click": "$prose_mode = 'edit'",
+								"data-attr-data-active": "$prose_mode === 'edit'",
+								"data-attr-aria-selected": "$prose_mode === 'edit'",
+								"role": "tab",
+							},
+						}) {
+							@icon.Lucide("pencil", "size-3.5")
+							Edit
+						}
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost", Size: "sm", Type: "button",
+							Class: "h-8 gap-1.5 px-2.5 text-xs data-[active=true]:bg-background data-[active=true]:shadow-sm",
+							Attributes: map[string]any{
+								"data-on:click": "$prose_mode = 'preview'",
+								"data-attr-data-active": "$prose_mode === 'preview'",
+								"data-attr-aria-selected": "$prose_mode === 'preview'",
+								"role": "tab",
+							},
+						}) {
+							@icon.Lucide("eye", "size-3.5")
+							Preview
+						}
+					</div>
+				</div>
+				<div data-show="$prose_mode === 'edit'" class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Content (Markdown)
+					}
+					@markdowntoolbar.Toolbar(textareaID, "")
+					@textarea.Textarea(textarea.TextareaArgs{
+						Placeholder: "Write your content in markdown…",
+						Class:       "w-full min-h-48 font-mono", Required: true,
+						Attributes:  taAttrs,
+					})
+				</div>
+				<div data-show="$prose_mode === 'preview'" class="min-h-48 rounded-xl border border-border/70 bg-background/60 p-4">
+					<div class="prose prose-public max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1">
+						if prosePreviewHTML(block) != "" {
+							@templ.Raw(prosePreviewHTML(block))
+						} else {
+							<p class="text-sm text-muted-foreground">Preview will appear here as you write content.</p>
+						}
+					</div>
+				</div>
 			</div>
+		}
 	}
-}
-
-// markdownToolbar moved to the shared component library
-// (components/markdowntoolbar) so the episode slides editor can use it too.
 
 templ featuresEditor(pageID int64, block *domain.PageBlock, pfx string) {
 	{{ content := parseBlockContent(block) }}
@@ -276,7 +330,7 @@ templ featuresEditor(pageID int64, block *domain.PageBlock, pfx string) {
 			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "Enter section title…",
-				Class: "w-full", Attributes: bindAttr(pfx, "section_title"),
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "section_title"),
 			})
 		</div>
 		<div class="space-y-1.5">
@@ -332,7 +386,7 @@ templ featureItemEditor(pageID int64, blockID int64, pfx string, index int, item
 		})
 		@input.Input(input.InputArgs{
 			Type: "text", Placeholder: "Feature title",
-			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_title", index)),
+			Class: "w-full", Required: true, Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_title", index)),
 		})
 		@input.Input(input.InputArgs{
 			Type: "text", Placeholder: "Feature description",
@@ -349,7 +403,7 @@ templ episodesShowcaseEditor(block *domain.PageBlock, pfx string) {
 			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "Enter section title…",
-				Class: "w-full", Attributes: bindAttr(pfx, "section_title"),
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "section_title"),
 			})
 		</div>
 		<div class="space-y-1.5">
@@ -399,7 +453,7 @@ templ testimonialsEditor(pageID int64, block *domain.PageBlock, pfx string) {
 			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "Enter section title…",
-				Class: "w-full", Attributes: bindAttr(pfx, "section_title"),
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "section_title"),
 			})
 		</div>
 		<div class="space-y-1.5">
@@ -451,12 +505,12 @@ templ testimonialItemEditor(pageID int64, blockID int64, pfx string, index int, 
 		</div>
 		@textarea.Textarea(textarea.TextareaArgs{
 			Placeholder: "Quote…",
-			Class:       "w-full",
+			Class:       "w-full", Required: true,
 			Attributes:  bindAttr(pfx, fmt.Sprintf("item_%d_quote", index)),
 		})
 		@input.Input(input.InputArgs{
 			Type: "text", Placeholder: "Author name",
-			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_author", index)),
+			Class: "w-full", Required: true, Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_author", index)),
 		})
 		@input.Input(input.InputArgs{
 			Type: "text", Placeholder: "Author role (e.g. Listener)",
@@ -480,7 +534,7 @@ templ footerEditor(pageID int64, block *domain.PageBlock, pfx string) {
 			}
 			@input.Input(input.InputArgs{
 				Type: "text", Placeholder: "© 2026 My Podcast",
-				Class: "w-full", Attributes: bindAttr(pfx, "copyright"),
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "copyright"),
 			})
 		</div>
 		<div class="space-y-2">
@@ -811,6 +865,19 @@ func jsSignalVal(v any) string {
 }
 
 // jsNumberSignalVal converts a Go value to a JS number signal.
+func prosePreviewHTML(block *domain.PageBlock) string {
+	content := parseBlockContent(block)
+	body, _ := content["body"].(string)
+	if body == "" {
+		return ""
+	}
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(body), &buf); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
 func jsNumberSignalVal(v any) string {
 	if v == nil {
 		return "0"

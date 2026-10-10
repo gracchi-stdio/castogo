@@ -45,6 +45,12 @@ func Register(t *BlockType) {
 }
 
 func Lookup(name string) *BlockType {
+	if name == "" {
+		if t, ok := registry["hero"]; ok {
+			return t
+		}
+		return nil
+	}
 	return registry[name]
 }
 

@@ -69,6 +69,12 @@ func (h *AdminHandler) blockCreateAction(c *echo.Context) error {
 	}
 
 	blockType, _ := raw["new_block_type"].(string)
+	if blockType == "" {
+		blockType = "hero"
+	}
+	if blockEditor.Lookup(blockType) == nil {
+		blockType = "hero"
+	}
 
 	block := &domain.PageBlock{
 		PageID:    pageID,
@@ -263,6 +269,10 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 
 	// Build content map based on the block type from the database
 	content := buildBlockContent(blockID, currentBlock.BlockType, raw)
+	if err := validateBlockContent(currentBlock.BlockType, content); err != nil {
+		out.ExecuteScript(toastScript(err.Error(), "error"))
+		return nil
+	}
 	contentJSON, err := json.Marshal(content)
 	if err != nil {
 		out.ExecuteScript(toastScript("Failed to encode block content", "error"))
@@ -275,8 +285,86 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 		return nil
 	}
 
+	pageWithBlocks, err = h.pageService.GetPageWithBlocks(c.Request().Context(), pageID)
+	if err != nil {
+		out.ExecuteScript(toastScript("Block saved, but the list could not be refreshed", "error"))
+		return nil
+	}
+	listHTML, err := pageform.RenderBlockListFragment(pageID, pageWithBlocks.Blocks, blockID)
+	if err != nil {
+		out.ExecuteScript(toastScript("Block saved, but the list could not be refreshed", "error"))
+		return nil
+	}
+	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
+
 	// Stay in edit mode so the user can keep iterating. Toast confirms the save.
 	out.ExecuteScript(toastScript("Block saved", "success"))
+	return nil
+}
+
+func validateBlockContent(blockType string, content map[string]any) error {
+	requireString := func(field, label string) error {
+		value, _ := content[field].(string)
+		if strings.TrimSpace(value) == "" {
+			return fmt.Errorf("%s is required", label)
+		}
+		return nil
+	}
+
+	switch blockType {
+	case "hero":
+		return requireString("headline", "Headline")
+	case "cta":
+		return requireString("headline", "Headline")
+	case "features":
+		if err := requireString("section_title", "Section title"); err != nil {
+			return err
+		}
+	case "episodes_showcase":
+		return requireString("section_title", "Section title")
+	case "testimonials":
+		if err := requireString("section_title", "Section title"); err != nil {
+			return err
+		}
+	case "footer":
+		return requireString("copyright", "Copyright")
+	case "prose":
+		return requireString("body", "Content")
+	}
+
+	if blockType == "features" {
+		for index, item := range toSlice(content["items"]) {
+			itemMap, ok := item.(map[string]any)
+			if !ok {
+				return fmt.Errorf("Feature %d is invalid", index+1)
+			}
+			if err := requireStringFromMap(itemMap, "title", fmt.Sprintf("Feature %d title", index+1)); err != nil {
+				return err
+			}
+		}
+	}
+	if blockType == "testimonials" {
+		for index, item := range toSlice(content["items"]) {
+			itemMap, ok := item.(map[string]any)
+			if !ok {
+				return fmt.Errorf("Testimonial %d is invalid", index+1)
+			}
+			if err := requireStringFromMap(itemMap, "quote", fmt.Sprintf("Testimonial %d quote", index+1)); err != nil {
+				return err
+			}
+			if err := requireStringFromMap(itemMap, "author", fmt.Sprintf("Testimonial %d author", index+1)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func requireStringFromMap(values map[string]any, field, label string) error {
+	value, _ := values[field].(string)
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("%s is required", label)
+	}
 	return nil
 }
 
