@@ -31,7 +31,7 @@ templ EditBlocks(shared *domain.AdminSharedData, args Args) {
 }
 
 templ blocksShell(pageID int64, blocks []*domain.PageBlock) {
-	<div data-signals:active_block="0" class="grid gap-4 md:grid-cols-[300px_1fr]">
+	<div data-signals:active_block="0" class="grid w-full max-w-6xl gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
 		@blocksListPane(pageID, blocks)
 		<div id="block-form-pane" class="min-w-0">
 			@blocksFormEmpty()
@@ -40,12 +40,18 @@ templ blocksShell(pageID int64, blocks []*domain.PageBlock) {
 }
 
 templ blocksListPane(pageID int64, blocks []*domain.PageBlock) {
-	<div class="space-y-3">
-		@addBlockControls(pageID)
-		<div id="block-list" class="space-y-2">
-			@BlockListItems(pageID, blocks, 0)
-		</div>
-	</div>
+	@card.Card(card.CardArgs{Class: "h-fit w-full border-border/70 shadow-sm"}) {
+		@card.CardHeader(card.CardHeaderArgs{}) {
+			@card.CardTitle(card.CardTitleArgs{}) { Blocks }
+			@card.CardDescription(card.CardDescriptionArgs{}) { Build this page from ordered content sections. }
+		}
+		@card.CardContent(card.CardContentArgs{Class: "space-y-4"}) {
+			@addBlockControls(pageID)
+			<div id="block-list" class="space-y-2">
+				@BlockListItems(pageID, blocks, 0)
+			</div>
+		}
+	}
 }
 
 // BlockListItems renders the cards (or the empty state) inside #block-list. Exported
@@ -119,7 +125,7 @@ templ blockSummaryCard(pageID int64, block *domain.PageBlock, index int, isActiv
 // the block's data-signals scope (see BlockForm comment). Rendered into
 // #block-form-pane by the select/add handlers.
 templ blockDetailForm(pageID int64, block *domain.PageBlock) {
-	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
+	@card.Card(card.CardArgs{Class: "w-full max-w-4xl border-border/70 shadow-sm"}) {
 		@card.CardHeader(card.CardHeaderArgs{}) {
 			@card.CardTitle(card.CardTitleArgs{}) {
 				{ blockEditor.TypeLabel(block.BlockType) } | { fmt.Sprintf("Block #%d", block.ID) }
@@ -184,7 +190,7 @@ templ blocksListEmpty() {
 }
 
 templ blocksFormEmpty() {
-	<div class="flex h-full min-h-64 flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center w-full max-w-md">
+	<div class="flex min-h-[28rem] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-card/40 px-6 py-16 text-center">
 		@icon.Lucide("mouse-pointer-click", "size-8 text-muted-foreground/30")
 		<p class="text-sm text-muted-foreground">Select a block to edit its content.</p>
 	</div>

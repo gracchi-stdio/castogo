@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
-	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/dialog"
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
@@ -16,12 +15,13 @@ import (
 // #episode-page-link-{id} is the SSE-patch target — link/unlink/create
 // endpoints re-render PageLinkContent and swap just that node.
 templ PageLinkCard(args Args) {
-	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-		@card.CardContent(card.CardContentArgs{}) {
-			<h3 class="text-sm font-medium mb-3">Companion Page</h3>
-			@PageLinkContent(args)
-		}
-	}
+	<div class="w-full">
+		<div class="mb-5">
+			<h2 class="text-base font-semibold tracking-tight">Companion page</h2>
+			<p class="mt-1 text-sm text-muted-foreground">Connect this episode to its public companion page.</p>
+		</div>
+		@PageLinkContent(args)
+	</div>
 }
 
 // PageLinkContent is the unified companion-page control. The page <select> is

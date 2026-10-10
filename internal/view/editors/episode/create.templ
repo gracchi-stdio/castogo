@@ -7,6 +7,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
 	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
@@ -26,7 +27,12 @@ templ Create(shared *domain.AdminSharedData) {
 		signals := CreateSignals{}
 		signalsJSON, _ := json.Marshal(signals)
 	}}
-	@layout.AdminLayout("New Episode", shared, createActions(), nil, nil) {
+	@layout.AdminLayout("New Episode", shared, createActions(), nil, formactions.FormActions(formactions.FormActionsArgs{
+		FormID:      "episode-create-form",
+		CancelLabel: "Cancel",
+		SubmitLabel: "Create Episode",
+		CancelHref:  "/admin/episodes",
+	})) {
 		<div data-signals={ string(signalsJSON) }>
 			@loading.LoadingOverlay(loading.LoadingOverlayArgs{
 				Signal: "uploading",
@@ -40,9 +46,21 @@ templ Create(shared *domain.AdminSharedData) {
 					"enctype": "multipart/form-data",
 				},
 			}) {
-				<div class="flex flex-wrap flex-col gap-6">
-					@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-						@card.CardContent(card.CardContentArgs{}) {
+				@card.Card(card.CardArgs{Class: "w-full max-w-5xl border-border/70 shadow-sm"}) {
+					<div class="grid md:grid-cols-[11rem_minmax(0,1fr)]">
+						<nav class="border-b p-4 md:border-b-0 md:border-r" aria-label="Episode sections">
+							<p class="mb-3 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Episode settings</p>
+							<div class="flex gap-1 overflow-x-auto md:flex-col">
+								<a href="#new-episode-details" class="rounded-md bg-muted px-3 py-2 text-sm font-medium">Details</a>
+								<a href="#new-episode-audio" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Audio</a>
+							</div>
+						</nav>
+						<div class="min-w-0 space-y-8 p-6">
+							<section id="new-episode-details" class="scroll-mt-20">
+								<div class="mb-5 border-b pb-3">
+									<h2 class="text-base font-semibold tracking-tight">Episode details</h2>
+									<p class="mt-1 text-sm text-muted-foreground">Add the public title and description for this episode.</p>
+								</div>
 							<div class="space-y-4">
 								@formfield.FormField(formfield.FormFieldArgs{
 									Name:        "title",
@@ -78,11 +96,12 @@ templ Create(shared *domain.AdminSharedData) {
 									})
 								}
 							</div>
-						}
-					}
-					@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-						@card.CardContent(card.CardContentArgs{}) {
-							<h3 class="text-sm font-medium mb-3">Audio File</h3>
+							</section>
+							<section id="new-episode-audio" class="scroll-mt-20 border-t pt-8">
+								<div class="mb-5">
+									<h2 class="text-base font-semibold tracking-tight">Audio file</h2>
+									<p class="mt-1 text-sm text-muted-foreground">Upload the source audio; metadata is extracted automatically.</p>
+								</div>
 							<div class="space-y-4">
 								@formfield.FormField(formfield.FormFieldArgs{
 									Name:        "audio_file",
@@ -136,20 +155,11 @@ templ Create(shared *domain.AdminSharedData) {
 										</div>
 									</div>
 								</div>
-								<div class="flex justify-end">
-									@button.Button(button.ButtonArgs{
-										Type: "button",
-										Attributes: map[string]any{
-											"data-on:click": "$uploading_status = 'Starting upload...'; $uploading = true; @post('/admin/episodes/create', {contentType: 'form', form: '#episode-create-form'})",
-										},
-									}) {
-										Create Episode
-									}
-								</div>
 							</div>
-						}
-					}
-				</div>
+							</section>
+						</div>
+					</div>
+				}
 			}
 		</div>
 	}

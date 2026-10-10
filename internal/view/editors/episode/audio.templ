@@ -6,7 +6,6 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/audio"
 	"github.com/gracchi-stdio/castogo/internal/view/components/button"
-	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
@@ -19,12 +18,13 @@ import (
 // target — episodeReplaceAudio re-renders AudioCardContent and swaps just that
 // node, mirroring the companion-page PageLinkCard / PageLinkContent split.
 templ AudioCard(episode *domain.Episode) {
-	@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-		@card.CardContent(card.CardContentArgs{}) {
-			<h3 class="text-sm font-medium mb-3">Audio File</h3>
-			@AudioCardContent(episode)
-		}
-	}
+	<div class="w-full">
+		<div class="mb-5">
+			<h2 class="text-base font-semibold tracking-tight">Audio file</h2>
+			<p class="mt-1 text-sm text-muted-foreground">Replace the source audio and rerun processing when needed.</p>
+		</div>
+		@AudioCardContent(episode)
+	</div>
 }
 
 // AudioCardContent is the patchable audio control. It shows the current audio

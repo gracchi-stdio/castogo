@@ -2,7 +2,6 @@ package episodeForm
 
 import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/markdowntoolbar"
 	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
 )
@@ -14,17 +13,18 @@ import (
 // splices the returned CDN URL in as image syntax).
 templ SlidesCard(episode *domain.Episode) {
 	{{ textareaID := "slides_md_input" }}
-	@card.Card(card.CardArgs{Class: "w-full"}) {
-		@card.CardContent(card.CardContentArgs{}) {
-			<h3 class="text-sm font-medium mb-1">Slides</h3>
-			<p class="text-sm text-muted-foreground mb-3">
+	<div class="w-full">
+		<div class="mb-5">
+			<h2 class="text-base font-semibold tracking-tight">Slides</h2>
+			<p class="mt-1 text-sm text-muted-foreground">
 				Image + text slides shown on this episode's linked page, synced to the audio.
 				Separate slides with a line containing <code class="font-mono">---</code>;
 				start a slide with <code class="font-mono">time: MM:SS</code> to reveal it
 				at that point in the episode. Saved with the form's Save Changes.
 			</p>
-			@markdowntoolbar.Toolbar(textareaID, "/admin/episodes/upload-image")
-			@textarea.Textarea(textarea.TextareaArgs{
+		</div>
+		@markdowntoolbar.Toolbar(textareaID, "/admin/episodes/upload-image")
+		@textarea.Textarea(textarea.TextareaArgs{
 				ID:          textareaID,
 				Name:        "slides_md",
 				Placeholder: "---\ntime: 00:00\n# Opening\n\n---\ntime: 03:12\n## The Garden of Earthly Delights\n![](https://cdn.example/garden.png)\nWe open with the triptych…",
@@ -32,7 +32,6 @@ templ SlidesCard(episode *domain.Episode) {
 				Attributes: map[string]any{
 					"data-bind:slides_md": "",
 				},
-			})
-		}
-	}
+		})
+	</div>
 }

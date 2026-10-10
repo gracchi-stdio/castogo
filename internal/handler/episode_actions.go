@@ -199,6 +199,7 @@ func (h *AdminHandler) episodeUpdateAction(c *echo.Context) error {
 	if _, err := h.episodeService.Update(c.Request().Context(), update); err != nil {
 		return toast(c, "Failed to update episode", "error")
 	}
+	bustCache(c, fmt.Sprintf("/admin/episodes/%d/edit", id))
 	return toast(c, "Episode saved successfully", "success")
 }
 

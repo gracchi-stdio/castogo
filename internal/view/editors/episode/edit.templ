@@ -25,32 +25,44 @@ templ Edit(shared *domain.AdminSharedData, args Args) {
 		signalsJSON, _ := json.Marshal(signals)
 		id := args.Episode.ID
 	}}
-	@layout.AdminLayout("Edit Episode", shared, editActions(), nil, nil) {
-		<div data-signals={ string(signalsJSON) } class="flex flex-wrap gap-6">
-			@card.Card(card.CardArgs{Class: "w-full max-w-md"}) {
-				@card.CardContent(card.CardContentArgs{}) {
+	@layout.AdminLayout("Edit Episode", shared, editActions(), nil, formactions.FormActions(formactions.FormActionsArgs{
+		FormID:      "episode-edit-form",
+		CancelLabel: "Back",
+		CancelHref:  "/admin/episodes",
+		SubmitLabel: "Save Changes",
+	})) {
+		<div data-signals={ string(signalsJSON) } class="w-full max-w-5xl">
+			@card.Card(card.CardArgs{Class: "w-full border-border/70 shadow-sm"}) {
+				<div class="grid md:grid-cols-[11rem_minmax(0,1fr)]">
+					<nav class="border-b p-4 md:sticky md:top-4 md:z-10 md:h-fit md:self-start md:border-b-0 md:border-r md:bg-card" aria-label="Episode sections">
+						<p class="mb-3 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Episode settings</p>
+						<div class="flex gap-1 overflow-x-auto md:flex-col">
+							<a href="#episode-details" class="rounded-md bg-muted px-3 py-2 text-sm font-medium">Details</a>
+							<a href="#episode-audio" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Audio</a>
+							<a href="#episode-companion" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Companion page</a>
+							<a href="#episode-slides" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Slides</a>
+						</div>
+					</nav>
+					<div class="min-w-0 space-y-8 p-6">
+						<section id="episode-details" class="scroll-mt-20">
+							<div class="mb-5 border-b pb-3">
+								<h2 class="text-base font-semibold tracking-tight">Episode details</h2>
+								<p class="mt-1 text-sm text-muted-foreground">Update the public information and publishing options for this episode.</p>
+							</div>
 					@form.Form(form.FormArgs{
 						ID:          "episode-edit-form",
 						Action:      fmt.Sprintf("/admin/episodes/%d", id),
 						ContentType: "json",
 					}) {
 						@episodeFields(signals)
-						<div class="flex justify-end gap-2">
-							@formactions.FormActions(formactions.FormActionsArgs{
-								FormID:      "episode-edit-form",
-								CancelLabel: "Back",
-								CancelHref:  "/admin/episodes",
-								SubmitLabel: "Save Changes",
-							})
-						</div>
 					}
-				}
+						</section>
+						<section id="episode-audio" class="scroll-mt-20 border-t pt-8">@AudioCard(args.Episode)</section>
+						<section id="episode-companion" class="scroll-mt-20 border-t pt-8">@PageLinkCard(args)</section>
+						<section id="episode-slides" class="scroll-mt-20 border-t pt-8">@SlidesCard(args.Episode)</section>
+					</div>
+				</div>
 			}
-			<div class="flex flex-col gap-6 w-full max-w-md">
-				@AudioCard(args.Episode)
-				@PageLinkCard(args)
-			</div>
-			@SlidesCard(args.Episode)
 		</div>
 	}
 }

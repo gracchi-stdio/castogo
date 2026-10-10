@@ -32,7 +32,7 @@ templ Form(args Args) {
 			Signal: "cover_uploading",
 			Status: "cover_status",
 		})
-		@card.Card(card.CardArgs{Class: "mb-6 max-w-3xl border-border/70 shadow-sm"}) {
+		@card.Card(card.CardArgs{Class: "mb-6 max-w-5xl border-border/70 shadow-sm"}) {
 			@card.CardHeader(card.CardHeaderArgs{}) {
 				@card.CardTitle(card.CardTitleArgs{}) { Cover image }
 				@card.CardDescription(card.CardDescriptionArgs{}) { Upload a square JPG, PNG, or WebP image for your podcast artwork. }
@@ -53,6 +53,8 @@ templ Form(args Args) {
 						Hint:       "Recommended: 3000x3000px, JPG or PNG",
 						PreviewW:   "w-48",
 						PreviewH:   "h-48",
+						Horizontal: true,
+						Clearable:  true,
 					})
 					<input type="hidden" name="id" value={ configID }/>
 				}

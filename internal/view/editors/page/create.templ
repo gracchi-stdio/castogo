@@ -1,10 +1,16 @@
 package pageform
 
 import "github.com/gracchi-stdio/castogo/internal/domain"
+import "github.com/gracchi-stdio/castogo/internal/view/components/formactions"
 import "github.com/gracchi-stdio/castogo/internal/view/layout"
 
 templ Create(shared *domain.AdminSharedData, args Args) {
-	@layout.AdminLayout("Create Page", shared, nil, nil, nil) {
+	@layout.AdminLayout("Create Page", shared, nil, nil, formactions.FormActions(formactions.FormActionsArgs{
+		FormID:      "page-settings-form",
+		CancelLabel: "Cancel",
+		SubmitLabel: "Create Page",
+		CancelHref:  "/admin/pages",
+	})) {
 		@Settings(args)
 	}
 }

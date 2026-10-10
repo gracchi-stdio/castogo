@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
 	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
 	"github.com/gracchi-stdio/castogo/internal/view/components/form"
-	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
 
 	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
 	"github.com/gracchi-stdio/castogo/internal/view/components/input"
@@ -30,18 +30,22 @@ templ Settings(args Args) {
 			Action:      action,
 			ContentType: "json",
 		}) {
-			@pageSettingsFields(signals, args.ParentPages)
-			@linkedEpisodeFragment(args.LinkedEpisode)
+			@card.Card(card.CardArgs{Class: "max-w-5xl border-border/70 shadow-sm"}) {
+				@card.CardContent(card.CardContentArgs{}) {
+					<div class="space-y-8">
+						<div>
+							<div class="mb-4 border-b pb-3">
+								<h3 class="text-base font-semibold tracking-tight">Page details</h3>
+								<p class="mt-1 text-sm text-muted-foreground">Set the page title, URL, hierarchy, and visibility.</p>
+							</div>
+							@pageSettingsFields(signals, args.ParentPages)
+						</div>
+						@linkedEpisodeFragment(args.LinkedEpisode)
+					</div>
+				}
+			}
 		}
 	</div>
-	// <div class="sticky bottom-0 bg-background95 backdrop-blur border-t py-3 px-4 -mx-4 -mb-4">
-	// 	<div class="flex justify-end gap-2">
-	// 		@formactions.FormActions(formactions.FormActionsArgs{
-	// 			FormID: formID, 
-	// 			SubmitLabel: submitLabel, 
-	// 			CancelHref: "admin/pages"})
-	// 	</div>
-	// </div>
 }
 
 templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
@@ -110,13 +114,6 @@ templ pageSettingsFields(s Signals, parentPages []*domain.Page) {
 				Name:    "show_in_nav",
 				Checked: s.ShowInNav})
 			<span class="text-sm">Show in main navigation</span>
-		</div>
-		<div class="flex justify-end gap-2">
-			@formactions.FormActions(formactions.FormActionsArgs{
-				FormID:      "page-settings-form",
-				CancelLabel: "Back",
-				SubmitLabel: "Save Changes",
-				CancelHref:  "/admin/pages"})
 		</div>
 	</div>
 }
