@@ -9,6 +9,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/repository/libsql"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
+	"github.com/gracchi-stdio/castogo/internal/repository/sqlite"
 	"github.com/urfave/cli/v3"
 )
 
@@ -47,9 +48,16 @@ func connectDatabase(ctx context.Context, cmd *cli.Command) (database, error) {
 		if err != nil {
 			return nil, fmt.Errorf("connect libsql: %w", err)
 		}
-		return &libsqlDatabase{db: db}, nil
+		return &sqliteDatabase{db: db}, nil
+
+	case "file", "sqlite":
+		db, err := sqlite.NewDB(ctx, databaseURL)
+		if err != nil {
+			return nil, fmt.Errorf("connect sqlite: %w", err)
+		}
+		return &sqliteDatabase{db: db}, nil
 	default:
-		return nil, fmt.Errorf("unsupported database URL scheme %q - want postgres://.. or https://.. ", u.Scheme)
+		return nil, fmt.Errorf("unsupported database URL scheme %q - want postgres://, libsql:// or file:", u.Scheme)
 	}
 }
 

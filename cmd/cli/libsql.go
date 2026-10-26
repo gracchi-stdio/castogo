@@ -10,19 +10,22 @@ import (
 	"strings"
 )
 
-type libsqlDatabase struct {
+// sqliteDatabase is the dialect wrapper for every SQLite-flavored backend —
+// remote libSQL (Bunny, over libsql-client-go) and local files (modernc
+// driver). Both speak the same SQL dialect through database/sql.
+type sqliteDatabase struct {
 	db *sql.DB
 }
 
-func (d *libsqlDatabase) Ping(ctx context.Context) error { return d.db.PingContext(ctx) }
+func (d *sqliteDatabase) Ping(ctx context.Context) error { return d.db.PingContext(ctx) }
 
-func (d *libsqlDatabase) Close() error {
+func (d *sqliteDatabase) Close() error {
 	return d.db.Close()
 }
 
-func (d *libsqlDatabase) Migrations() migrationHandler { return &sqliteMigrations{db: d.db} }
+func (d *sqliteDatabase) Migrations() migrationHandler { return &sqliteMigrations{db: d.db} }
 
-func (d *libsqlDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations-sqlite") }
+func (d *sqliteDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations-sqlite") }
 
 // sqliteMigrations is the LibSQL/Bunny implementation of migrationHandler:
 // TEXT timestamps via datetime('now'), ? placeholders, database/sql calls,
