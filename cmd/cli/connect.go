@@ -16,6 +16,11 @@ type database interface {
 	Ping(ctx context.Context) error
 	Close() error
 	Migrations() migrationHandler
+	// MigrationsDir is the dialect's default migrations directory, used when
+	// the --dir flag is empty. The dialect owns this mapping (postgres →
+	// sql/migrations, libsql → sql/migrations-sqlite) so the commands never
+	// re-parse the URL scheme themselves.
+	MigrationsDir() string
 }
 
 func connectDatabase(ctx context.Context, cmd *cli.Command) (database, error) {

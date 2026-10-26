@@ -22,6 +22,8 @@ func (d *libsqlDatabase) Close() error {
 
 func (d *libsqlDatabase) Migrations() migrationHandler { return &sqliteMigrations{db: d.db} }
 
+func (d *libsqlDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations-sqlite") }
+
 // sqliteMigrations is the LibSQL/Bunny implementation of migrationHandler:
 // TEXT timestamps via datetime('now'), ? placeholders, database/sql calls,
 // DropAll via sqlite_master, Lock a no-op (writes serialize through the

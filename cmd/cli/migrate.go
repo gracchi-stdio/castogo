@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -24,8 +22,6 @@ type migrationHandler interface {
 	DropAll(ctx context.Context) error
 	Lock(ctx context.Context) (func(), error)
 }
-
-var errNotImplemented = errors.New("not implemented: dialect handler stub")
 
 // listMigrationFiles is dialect-neutral: it only reads the directory.
 func listMigrationFiles(dir string) ([]string, error) {
@@ -55,11 +51,8 @@ func migrateCommand() *cli.Command {
 		Usage: "Apply pending SQL migrations",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: "dir",
-				Usage: "Migrations directory",
-				// Step 2: default becomes empty and resolves by URL scheme —
-				// sql/migrations vs sql/migrations-sqlite
-				Value: filepath.Join("sql", "migrations"),
+				Name:  "dir",
+				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations, libsql → sql/migrations-sqlite)",
 			},
 			&cli.BoolFlag{
 				Name:  "dry-run",
@@ -86,6 +79,9 @@ func migrateCommand() *cli.Command {
 			}
 
 			dir := cmd.String("dir")
+			if dir == "" {
+				dir = db.MigrationsDir()
+			}
 			files, err := listMigrationFiles(dir)
 			if err != nil {
 				return err
@@ -139,8 +135,7 @@ func migrateResetCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "dir",
-				Usage: "Migrations directory",
-				Value: filepath.Join("sql", "migrations"),
+				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations, libsql → sql/migrations-sqlite)",
 			},
 			&cli.BoolFlag{
 				Name:  "yes",
@@ -169,6 +164,9 @@ func migrateResetCommand() *cli.Command {
 			}
 
 			dir := cmd.String("dir")
+			if dir == "" {
+				dir = db.MigrationsDir()
+			}
 			files, err := listMigrationFiles(dir)
 			if err != nil {
 				return err
@@ -193,11 +191,10 @@ func migrateAdoptCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "dir",
-				Usage: "Migrations directory",
-				Value: filepath.Join("sql", "migrations"),
+				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations, libsql → sql/migrations-sqlite)",
 			},
 			&cli.BoolFlag{
-				Name: "yes",
+				Name:  "yes",
 				Usage: "Confirm adopt (skipped migrations are never applied later)",
 			},
 		},
@@ -224,7 +221,11 @@ func migrateAdoptCommand() *cli.Command {
 				return fmt.Errorf("ensure schema_migrations: %w", err)
 			}
 
-			files, err := listMigrationFiles(cmd.String("dir"))
+			dir := cmd.String("dir")
+			if dir == "" {
+				dir = db.MigrationsDir()
+			}
+			files, err := listMigrationFiles(dir)
 			if err != nil {
 				return err
 			}

@@ -25,6 +25,8 @@ func (d *pgDatabase) Close() error {
 
 func (d *pgDatabase) Migrations() migrationHandler { return &pgMigrations{pool: d.pool} }
 
+func (d *pgDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations") }
+
 // pgMigrations is the PostgreSQL implementation of migrationHandler.
 type pgMigrations struct {
 	pool *pgxpool.Pool
