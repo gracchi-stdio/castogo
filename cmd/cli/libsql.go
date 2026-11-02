@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gracchi-stdio/castogo/internal/repository"
+	"github.com/gracchi-stdio/castogo/internal/repository/sqlite"
 )
 
 // sqliteDatabase is the dialect wrapper for every SQLite-flavored backend —
@@ -25,7 +28,11 @@ func (d *sqliteDatabase) Close() error {
 
 func (d *sqliteDatabase) Migrations() migrationHandler { return &sqliteMigrations{db: d.db} }
 
-func (d *sqliteDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations-sqlite") }
+func (d *sqliteDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations", "sqlite") }
+
+func (d *sqliteDatabase) UserRepo() repository.UserRepository {
+	return sqlite.NewUserRepo(d.db)
+}
 
 // sqliteMigrations is the LibSQL/Bunny implementation of migrationHandler:
 // TEXT timestamps via datetime('now'), ? placeholders, database/sql calls,
@@ -54,7 +61,7 @@ func (m *sqliteMigrations) Applied(ctx context.Context) (map[string]struct{}, er
 	if err != nil {
 		return nil, fmt.Errorf("query schema_migrations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	applied := make(map[string]struct{})
 	for rows.Next() {
@@ -116,12 +123,12 @@ func (m *sqliteMigrations) DropAll(ctx context.Context) error {
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
-			rows.Close()
+			_ = rows.Close()
 			return fmt.Errorf("scan table name: %w", err)
 		}
 		tables = append(tables, name)
 	}
-	rows.Close()
+	_ = rows.Close()
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("iterate tables: %w", err)
 	}

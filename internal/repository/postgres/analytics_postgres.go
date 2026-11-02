@@ -4,24 +4,24 @@ import (
 	"context"
 	"time"
 
-	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AnalyticsPostgres struct {
-	q *db.Queries
+	q *sqlcpg.Queries
 }
 
 func NewAnalyticsPostgres(pool *pgxpool.Pool) *AnalyticsPostgres {
 	return &AnalyticsPostgres{
-		q: db.New(pool),
+		q: sqlcpg.New(pool),
 	}
 }
 
 func (r *AnalyticsPostgres) InsertProcessedFile(ctx context.Context, filePath string, fileDate time.Time, entriesCount int) error {
-	_, err := r.q.InsertProcessedFile(ctx, db.InsertProcessedFileParams{
+	_, err := r.q.InsertProcessedFile(ctx, sqlcpg.InsertProcessedFileParams{
 		Filename:     filePath,
 		FileDate:     pgtype.Date{Time: fileDate, Valid: true},
 		EntriesCount: int32(entriesCount),
@@ -41,7 +41,7 @@ func (r *AnalyticsPostgres) IsFileProcessed(ctx context.Context, filePath string
 }
 
 func (r *AnalyticsPostgres) AccumulateBytes(ctx context.Context, hash string, episodeID int64, date time.Time, bytes int64) (int64, bool, error) {
-	acc, err := r.q.UpsertAccumulator(ctx, db.UpsertAccumulatorParams{
+	acc, err := r.q.UpsertAccumulator(ctx, sqlcpg.UpsertAccumulatorParams{
 		Hash:      hash,
 		EpisodeID: episodeID,
 		Date:      pgtype.Date{Time: date, Valid: true},
@@ -58,7 +58,7 @@ func (r *AnalyticsPostgres) MarkCounted(ctx context.Context, hash string) error 
 }
 
 func (r *AnalyticsPostgres) UpsertPodcastDaily(ctx context.Context, podcastID int64, date time.Time, bandwidth int64) error {
-	_, err := r.q.UpsertPodcastDaily(ctx, db.UpsertPodcastDailyParams{
+	_, err := r.q.UpsertPodcastDaily(ctx, sqlcpg.UpsertPodcastDailyParams{
 		PodcastID: podcastID,
 		Date:      pgtype.Date{Time: date, Valid: true},
 		Bandwidth: bandwidth,
@@ -67,7 +67,7 @@ func (r *AnalyticsPostgres) UpsertPodcastDaily(ctx context.Context, podcastID in
 }
 
 func (r *AnalyticsPostgres) UpsertByEpisode(ctx context.Context, podcastID, episodeID int64, date time.Time, age int) error {
-	_, err := r.q.UpsertPodcastByEpisode(ctx, db.UpsertPodcastByEpisodeParams{
+	_, err := r.q.UpsertPodcastByEpisode(ctx, sqlcpg.UpsertPodcastByEpisodeParams{
 		PodcastID: podcastID,
 		EpisodeID: episodeID,
 		Date:      pgtype.Date{Time: date, Valid: true},
@@ -77,7 +77,7 @@ func (r *AnalyticsPostgres) UpsertByEpisode(ctx context.Context, podcastID, epis
 }
 
 func (r *AnalyticsPostgres) UpsertByPlayer(ctx context.Context, podcastID int64, date time.Time, service, app, device, os string, isBot bool) error {
-	_, err := r.q.UpsertPodcastByPlayer(ctx, db.UpsertPodcastByPlayerParams{
+	_, err := r.q.UpsertPodcastByPlayer(ctx, sqlcpg.UpsertPodcastByPlayerParams{
 		PodcastID: podcastID,
 		Date:      pgtype.Date{Time: date, Valid: true},
 		Service:   service,
@@ -90,7 +90,7 @@ func (r *AnalyticsPostgres) UpsertByPlayer(ctx context.Context, podcastID int64,
 }
 
 func (r *AnalyticsPostgres) UpsertByHour(ctx context.Context, podcastID int64, date time.Time, hour int) error {
-	_, err := r.q.UpsertPodcastByHour(ctx, db.UpsertPodcastByHourParams{
+	_, err := r.q.UpsertPodcastByHour(ctx, sqlcpg.UpsertPodcastByHourParams{
 		PodcastID: podcastID,
 		Date:      pgtype.Date{Time: date, Valid: true},
 		Hour:      int32(hour),
@@ -99,7 +99,7 @@ func (r *AnalyticsPostgres) UpsertByHour(ctx context.Context, podcastID int64, d
 }
 
 func (r *AnalyticsPostgres) UpsertByCountry(ctx context.Context, podcastID int64, date time.Time, countryCode string) error {
-	_, err := r.q.UpsertPodcastByCountry(ctx, db.UpsertPodcastByCountryParams{
+	_, err := r.q.UpsertPodcastByCountry(ctx, sqlcpg.UpsertPodcastByCountryParams{
 		PodcastID:   podcastID,
 		Date:        pgtype.Date{Time: date, Valid: true},
 		CountryCode: countryCode,

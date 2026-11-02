@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/repository"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -12,17 +12,17 @@ import (
 )
 
 type EpisodeRepo struct {
-	q *db.Queries
+	q *sqlcpg.Queries
 }
 
 func NewEpisodeRepo(pool *pgxpool.Pool) *EpisodeRepo {
 	return &EpisodeRepo{
-		q: db.New(pool),
+		q: sqlcpg.New(pool),
 	}
 }
 
 func (r *EpisodeRepo) Create(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
-	params := db.CreateEpisodeParams{
+	params := sqlcpg.CreateEpisodeParams{
 		Title:          ep.Title,
 		Slug:           ep.Slug,
 		Description:    ep.Description,
@@ -62,7 +62,7 @@ func (r *EpisodeRepo) GetBySlug(ctx context.Context, slug string) (*domain.Episo
 }
 
 func (r *EpisodeRepo) List(ctx context.Context, filter repository.EpisodeFilter) ([]*domain.Episode, error) {
-	params := db.ListEpisodesParams{
+	params := sqlcpg.ListEpisodesParams{
 		Search:     filter.Search,
 		Status:     filter.Status,
 		PageOffset: int32(filter.Offset),
@@ -102,7 +102,7 @@ func (r *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*do
 		archivedAt = pgtype.Timestamptz{Time: *ep.ArchivedAt, Valid: true}
 	}
 
-	params := db.UpdateEpisodeParams{
+	params := sqlcpg.UpdateEpisodeParams{
 		ID:             ep.ID,
 		Title:          ep.Title,
 		Slug:           ep.Slug,
@@ -138,7 +138,7 @@ func (r *EpisodeRepo) CountByStatus(ctx context.Context, status domain.EpisodeSt
 }
 
 func (r *EpisodeRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Episode, error) {
-	params := db.ListPublishedEpisodesParams{
+	params := sqlcpg.ListPublishedEpisodesParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	}
@@ -155,7 +155,7 @@ func (r *EpisodeRepo) ListPublished(ctx context.Context, limit, offset int) ([]*
 }
 
 func (r *EpisodeRepo) ListPublishedWithPagePath(ctx context.Context, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
-	params := db.ListPublishedEpisodesWithPagePathParams{
+	params := sqlcpg.ListPublishedEpisodesWithPagePathParams{
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	}
@@ -191,7 +191,7 @@ func (r *EpisodeRepo) ListForRanking(ctx context.Context) ([]*domain.Episode, er
 }
 
 func (r *EpisodeRepo) SearchPublishedWithPagePath(ctx context.Context, query string, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {
-	results, err := r.q.SearchPublishedEpisodesWithPagePath(ctx, db.SearchPublishedEpisodesWithPagePathParams{
+	results, err := r.q.SearchPublishedEpisodesWithPagePath(ctx, sqlcpg.SearchPublishedEpisodesWithPagePathParams{
 		Search:     &query,
 		PageLimit:  int32(limit),
 		PageOffset: int32(offset),
@@ -210,7 +210,7 @@ func (r *EpisodeRepo) SearchPublishedWithPagePath(ctx context.Context, query str
 }
 
 func (r *EpisodeRepo) UpdateLinkedPageID(ctx context.Context, episodeID int64, pageID *int64) error {
-	return r.q.UpdateEpisodeLinkedPageID(ctx, db.UpdateEpisodeLinkedPageIDParams{
+	return r.q.UpdateEpisodeLinkedPageID(ctx, sqlcpg.UpdateEpisodeLinkedPageIDParams{
 		ID:           episodeID,
 		LinkedPageID: pageID,
 	})

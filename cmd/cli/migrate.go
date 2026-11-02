@@ -52,7 +52,7 @@ func migrateCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "dir",
-				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations, libsql → sql/migrations-sqlite)",
+				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations/postgres, sqlite → sql/migrations/sqlite)",
 			},
 			&cli.BoolFlag{
 				Name:  "dry-run",
@@ -135,7 +135,7 @@ func migrateResetCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "dir",
-				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations, libsql → sql/migrations-sqlite)",
+				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations/postgres, sqlite → sql/migrations/sqlite)",
 			},
 			&cli.BoolFlag{
 				Name:  "yes",
@@ -191,7 +191,7 @@ func migrateAdoptCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "dir",
-				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations, libsql → sql/migrations-sqlite)",
+				Usage: "Migrations directory (default: by URL scheme — postgres → sql/migrations/postgres, sqlite → sql/migrations/sqlite)",
 			},
 			&cli.BoolFlag{
 				Name:  "yes",

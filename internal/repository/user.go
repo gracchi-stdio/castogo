@@ -6,10 +6,9 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/domain"
 )
 
-//	Note: [16]byte for UUID — uuid.UUID is just a [16]byte
-//
-// type alias. Using the raw type avoids importing the uuid
-// package in the interface.
+// UserRepository is the storage contract for admin accounts. IDs are
+// [16]byte — uuid.UUID is just a [16]byte type alias, so using the raw
+// type avoids importing the uuid package in the interface.
 type UserRepository interface {
 	GetByID(ctx context.Context, id [16]byte) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)

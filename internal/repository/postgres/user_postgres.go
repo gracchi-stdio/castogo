@@ -3,24 +3,24 @@ package postgres
 import (
 	"context"
 
-	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepo struct {
-	q *db.Queries
+	q *sqlcpg.Queries
 }
 
 func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	return &UserRepo{
-		q: db.New(pool),
+		q: sqlcpg.New(pool),
 	}
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
-	params := db.CreateUserParams{
+	params := sqlcpg.CreateUserParams{
 		Email:        user.Email,
 		PasswordHash: user.PasswordHash,
 	}
@@ -53,7 +53,7 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*domain.User, 
 }
 
 func (r *UserRepo) Update(ctx context.Context, user *domain.User) (*domain.User, error) {
-	params := db.UpdateUserParams{
+	params := sqlcpg.UpdateUserParams{
 		ID:           uuidToPgtype(user.ID),
 		Email:        user.Email,
 		PasswordHash: user.PasswordHash,
@@ -71,7 +71,7 @@ func (r *UserRepo) Delete(ctx context.Context, id [16]byte) error {
 }
 
 // --- Type mapping helper ---
-func toDomainUser(u *db.User) *domain.User {
+func toDomainUser(u *sqlcpg.User) *domain.User {
 	return &domain.User{
 		ID:           pgtypeToUUID(u.ID),
 		Email:        u.Email,

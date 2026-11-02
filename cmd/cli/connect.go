@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/gracchi-stdio/castogo/internal/config"
-	"github.com/gracchi-stdio/castogo/internal/repository/libsql"
+	"github.com/gracchi-stdio/castogo/internal/repository"
 	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/repository/sqlite"
 	"github.com/urfave/cli/v3"
@@ -17,11 +17,8 @@ type database interface {
 	Ping(ctx context.Context) error
 	Close() error
 	Migrations() migrationHandler
-	// MigrationsDir is the dialect's default migrations directory, used when
-	// the --dir flag is empty. The dialect owns this mapping (postgres →
-	// sql/migrations, libsql → sql/migrations-sqlite) so the commands never
-	// re-parse the URL scheme themselves.
 	MigrationsDir() string
+	UserRepo() repository.UserRepository
 }
 
 func connectDatabase(ctx context.Context, cmd *cli.Command) (database, error) {
@@ -44,14 +41,14 @@ func connectDatabase(ctx context.Context, cmd *cli.Command) (database, error) {
 		return &pgDatabase{pool: pool}, nil
 
 	case "libsql", "http", "https":
-		db, err := libsql.NewDB(ctx, databaseURL)
+		db, err := sqlite.NewRemoteDB(ctx, databaseURL)
 		if err != nil {
 			return nil, fmt.Errorf("connect libsql: %w", err)
 		}
 		return &sqliteDatabase{db: db}, nil
 
 	case "file", "sqlite":
-		db, err := sqlite.NewDB(ctx, databaseURL)
+		db, err := sqlite.NewLocalDB(ctx, databaseURL)
 		if err != nil {
 			return nil, fmt.Errorf("connect sqlite: %w", err)
 		}

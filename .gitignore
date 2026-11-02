@@ -3,7 +3,8 @@ bin/
 *.exe
 
 # Generated code (regenerated via `just generate`)
-internal/db/
+internal/sqlcpg/
+internal/sqlcsqlite/
 
 # templ generated (regenerated via `just generate`)
 internal/view/**/*_templ.go
@@ -35,3 +36,8 @@ dist/
 # Vite production build output
 public/assets/
 public/.vite/
+
+# local build artifacts
+/server
+/cli
+/tmp_echo_repro

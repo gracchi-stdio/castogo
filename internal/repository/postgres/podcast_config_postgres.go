@@ -3,19 +3,19 @@ package postgres
 import (
 	"context"
 
-	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PodcastConfigRepository struct {
-	q *db.Queries
+	q *sqlcpg.Queries
 }
 
 func NewPodcastConfigRepository(pool *pgxpool.Pool) *PodcastConfigRepository {
 	return &PodcastConfigRepository{
-		q: db.New(pool),
+		q: sqlcpg.New(pool),
 	}
 }
 
@@ -31,7 +31,7 @@ func (r *PodcastConfigRepository) Get(ctx context.Context) (*domain.PodcastConfi
 }
 
 func (r *PodcastConfigRepository) Update(ctx context.Context, config *domain.UpdatePodcastConfig) (*domain.PodcastConfig, error) {
-	params := db.UpdatePodcastConfigParams{
+	params := sqlcpg.UpdatePodcastConfigParams{
 		ID:            config.ID,
 		Title:         config.Title,
 		Description:   config.Description,

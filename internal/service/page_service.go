@@ -40,7 +40,7 @@ type CreatePageInput struct {
 	Layout      string
 	ParentID    *int64
 	IsPublished *bool
-	ShowInNav   *bool
+	NavOrder    *int32
 	Metadata    domain.PageMetadata
 }
 
@@ -50,7 +50,7 @@ type UpdatePageInput struct {
 	Layout      *string
 	ParentID    **int64
 	IsPublished *bool
-	ShowInNav   *bool
+	NavOrder    *int32
 	Metadata    *domain.PageMetadata
 	SortOrder   *int
 }
@@ -102,7 +102,7 @@ func (s *PageService) CreatePage(ctx context.Context, input CreatePageInput) (*d
 		Slug:        input.Slug,
 		Layout:      input.Layout,
 		ParentID:    input.ParentID,
-		ShowInNav:   ptrOr(input.ShowInNav, false),
+		NavOrder:    input.NavOrder,
 		IsPublished: ptrOr(input.IsPublished, false),
 		Path:        path,
 		Metadata:    input.Metadata,
@@ -296,7 +296,7 @@ func applyUpdates(existing *domain.Page, input UpdatePageInput) *domain.Page {
 		Layout:      existing.Layout,
 		ParentID:    existing.ParentID,
 		IsPublished: existing.IsPublished,
-		ShowInNav:   existing.ShowInNav,
+		NavOrder:    existing.NavOrder,
 		Path:        existing.Path,
 		Metadata:    existing.Metadata,
 		SortOrder:   existing.SortOrder,
@@ -316,8 +316,8 @@ func applyUpdates(existing *domain.Page, input UpdatePageInput) *domain.Page {
 	if input.IsPublished != nil {
 		p.IsPublished = *input.IsPublished
 	}
-	if input.ShowInNav != nil {
-		p.ShowInNav = *input.ShowInNav
+	if input.NavOrder != nil {
+		p.NavOrder = input.NavOrder
 	}
 	if input.Metadata != nil {
 		p.Metadata = *input.Metadata

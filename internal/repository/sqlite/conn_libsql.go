@@ -1,5 +1,4 @@
-// Package libsql
-package libsql
+package sqlite
 
 import (
 	"context"
@@ -9,7 +8,9 @@ import (
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
-func NewDB(ctx context.Context, databaseURL string) (*sql.DB, error) {
+// NewRemoteDB opens a remote libSQL database over HTTP/WebSocket
+// (libsql-client-go) — Bunny managed DB and other sqld servers.
+func NewRemoteDB(ctx context.Context, databaseURL string) (*sql.DB, error) {
 	db, err := sql.Open("libsql", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("open libsql: %w", err)

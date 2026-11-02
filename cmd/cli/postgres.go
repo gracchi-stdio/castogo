@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gracchi-stdio/castogo/internal/repository"
+	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,7 +27,11 @@ func (d *pgDatabase) Close() error {
 
 func (d *pgDatabase) Migrations() migrationHandler { return &pgMigrations{pool: d.pool} }
 
-func (d *pgDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations") }
+func (d *pgDatabase) MigrationsDir() string { return filepath.Join("sql", "migrations", "postgres") }
+
+func (d *pgDatabase) UserRepo() repository.UserRepository {
+	return postgres.NewUserRepo(d.pool)
+}
 
 // pgMigrations is the PostgreSQL implementation of migrationHandler.
 type pgMigrations struct {

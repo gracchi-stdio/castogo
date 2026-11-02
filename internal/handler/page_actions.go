@@ -36,7 +36,13 @@ func (h *AdminHandler) pageUpdateAction(c *echo.Context) error {
 	slug := raw.Slug
 	layout := raw.Layout
 	isPublished := raw.IsPublished.Checked
-	showInNav := raw.ShowInNav.Checked
+
+	// Checkbox semantics until the nav editor gets a real position input:
+	// checked = nav_order 0 (ordered by the path tie-break), unchecked = hidden.
+	var navOrder *int32
+	if raw.ShowInNav.Checked {
+		navOrder = new(int32)
+	}
 
 	update := service.UpdatePageInput{
 		Title:       &title,
@@ -44,7 +50,7 @@ func (h *AdminHandler) pageUpdateAction(c *echo.Context) error {
 		Layout:      &layout,
 		ParentID:    &parentVal,
 		IsPublished: &isPublished,
-		ShowInNav:   &showInNav,
+		NavOrder:    navOrder,
 	}
 
 	// Settings only saves page metadata. Block content is saved per-block from the
@@ -77,13 +83,18 @@ func (h *AdminHandler) pageCreateAction(c *echo.Context) error {
 		parentID = &pid
 	}
 
+	var navOrder *int32
+	if raw.ShowInNav.Checked {
+		navOrder = new(int32)
+	}
+
 	input := service.CreatePageInput{
 		Title:       raw.Title,
 		Slug:        raw.Slug,
 		Layout:      raw.Layout,
 		ParentID:    parentID,
 		IsPublished: &raw.IsPublished.Checked,
-		ShowInNav:   &raw.ShowInNav.Checked,
+		NavOrder:    navOrder,
 	}
 
 	page, err := h.pageService.CreatePage(c.Request().Context(), input)

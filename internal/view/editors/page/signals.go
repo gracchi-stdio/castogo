@@ -21,7 +21,7 @@ func NewSignals(page *domain.Page) Signals {
 		Title:       page.Title,
 		Slug:        page.Slug,
 		IsPublished: page.IsPublished,
-		ShowInNav:   page.ShowInNav,
+		ShowInNav:   page.NavOrder != nil,
 	}
 	if page.ParentID != nil {
 		s.ParentID = *page.ParentID

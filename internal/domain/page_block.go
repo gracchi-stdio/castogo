@@ -18,7 +18,7 @@ type Page struct {
 	Layout      string       `json:"layout"`
 	Slug        string       `json:"slug"`
 	IsPublished bool         `json:"is_published"`
-	ShowInNav   bool         `json:"show_in_nav"`
+	NavOrder    *int32       `json:"nav_order"`
 	ParentID    *int64       `json:"parent_id"`
 	Path        string       `json:"path"`
 	Metadata    PageMetadata `json:"metadata"`

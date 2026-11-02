@@ -1,14 +1,14 @@
 package postgres
 
 import (
-	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 )
 
 // --- Helper functions for type mapping between db and domain models ---
 
 // --- Type mapping helper ---
-func toDomainPodcastConfig(c *db.PodcastConfig) *domain.PodcastConfig {
+func toDomainPodcastConfig(c *sqlcpg.PodcastConfig) *domain.PodcastConfig {
 	return &domain.PodcastConfig{
 		ID:            c.ID,
 		Title:         c.Title,
@@ -26,7 +26,7 @@ func toDomainPodcastConfig(c *db.PodcastConfig) *domain.PodcastConfig {
 	}
 }
 
-func toDomainEpisode(e *db.Episode) *domain.Episode {
+func toDomainEpisode(e *sqlcpg.Episode) *domain.Episode {
 	ep := &domain.Episode{
 		ID:             e.ID,
 		Title:          e.Title,

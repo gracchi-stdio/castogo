@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 
+	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/urfave/cli/v3"
 )
 
@@ -37,16 +39,24 @@ func registerCommand() *cli.Command {
 				}
 			}
 
-			// Step 4: db grows UserRepo() when the libsql repositories land,
-			// then register becomes dialect-blind like every other command:
-			//
-			//   db, err := connectDatabase(ctx, cmd)
-			//   authService := service.NewAuthService(db.UserRepo())
-			//   user, err := authService.Register(ctx, email, password)
-			_ = email
-			_ = password
-			_ = generated
-			return fmt.Errorf("register: arrives with the libsql user repository (step 4)")
+			db, err := connectDatabase(ctx, cmd)
+			if err != nil {
+				return nil
+			}
+
+			authService := service.NewAuthService(db.UserRepo())
+
+			user, err := authService.Register(ctx, email, password)
+			if err != nil {
+				return fmt.Errorf("register: %w", err)
+			}
+
+			log.Printf("user registered: %s", user.Email)
+			if generated {
+				log.Printf("generated password (shown once): %s", password)
+			}
+
+			return nil
 		},
 	}
 }

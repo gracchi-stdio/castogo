@@ -3,29 +3,29 @@ package postgres
 import (
 	"context"
 
-	"github.com/gracchi-stdio/castogo/internal/db"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PageRepo struct {
-	q *db.Queries
+	q *sqlcpg.Queries
 }
 
 func NewPageRepo(pool *pgxpool.Pool) *PageRepo {
 	return &PageRepo{
-		q: db.New(pool),
+		q: sqlcpg.New(pool),
 	}
 }
 
 func (r *PageRepo) Create(ctx context.Context, page *domain.Page) (*domain.Page, error) {
-	result, err := r.q.CreatePage(ctx, db.CreatePageParams{
+	result, err := r.q.CreatePage(ctx, sqlcpg.CreatePageParams{
 		Title:       page.Title,
 		Slug:        page.Slug,
 		Layout:      page.Layout,
 		ParentID:    page.ParentID,
 		IsPublished: page.IsPublished,
-		ShowInNav:   page.ShowInNav,
+		NavOrder:    page.NavOrder,
 		Metadata:    page.Metadata,
 		Path:        page.Path,
 		SortOrder:   int32(page.SortOrder),
@@ -61,7 +61,7 @@ func (r *PageRepo) GetBySlug(ctx context.Context, slug string) (*domain.Page, er
 }
 
 func (r *PageRepo) List(ctx context.Context) ([]*domain.Page, error) {
-	pages, err := r.q.ListPages(ctx, db.ListPagesParams{
+	pages, err := r.q.ListPages(ctx, sqlcpg.ListPagesParams{
 		Search:     "",
 		PageOffset: 0,
 		PageLimit:  100,
@@ -89,14 +89,14 @@ func (r *PageRepo) GetChildren(ctx context.Context, parentID int64) ([]*domain.P
 }
 
 func (r *PageRepo) Update(ctx context.Context, page *domain.Page) (*domain.Page, error) {
-	result, err := r.q.UpdatePage(ctx, db.UpdatePageParams{
+	result, err := r.q.UpdatePage(ctx, sqlcpg.UpdatePageParams{
 		ID:          page.ID,
 		Title:       &page.Title,
 		Slug:        &page.Slug,
 		Layout:      &page.Layout,
 		ParentID:    page.ParentID,
 		IsPublished: &page.IsPublished,
-		ShowInNav:   &page.ShowInNav,
+		NavOrder:    page.NavOrder,
 		Metadata:    page.Metadata,
 		Path:        &page.Path,
 		SortOrder:   ptrInt32(int32(page.SortOrder)),
@@ -112,7 +112,7 @@ func (r *PageRepo) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *PageRepo) UpdateDescendantPaths(ctx context.Context, oldPrefix, newPrefix string) error {
-	return r.q.UpdateDescendantPaths(ctx, db.UpdateDescendantPathsParams{
+	return r.q.UpdateDescendantPaths(ctx, sqlcpg.UpdateDescendantPathsParams{
 		OldPrefix: &oldPrefix,
 		NewPrefix: &newPrefix,
 	})
@@ -121,7 +121,7 @@ func (r *PageRepo) UpdateDescendantPaths(ctx context.Context, oldPrefix, newPref
 // Block methods
 
 func (r *PageRepo) CreateBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error) {
-	result, err := r.q.CreateBlock(ctx, db.CreateBlockParams{
+	result, err := r.q.CreateBlock(ctx, sqlcpg.CreateBlockParams{
 		Content:   block.Content,
 		SortOrder: int32(block.SortOrder),
 		BlockType: block.BlockType,
@@ -146,7 +146,7 @@ func (r *PageRepo) GetBlockByPageID(ctx context.Context, pageID int64) ([]*domai
 }
 
 func (r *PageRepo) UpdateBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error) {
-	result, err := r.q.UpdateBlock(ctx, db.UpdateBlockParams{
+	result, err := r.q.UpdateBlock(ctx, sqlcpg.UpdateBlockParams{
 		Content:   block.Content,
 		SortOrder: ptrInt32(int32(block.SortOrder)),
 		ID:        block.ID,
@@ -162,7 +162,7 @@ func (r *PageRepo) DeleteBlock(ctx context.Context, id int64) error {
 }
 
 func (r *PageRepo) UpdateBlockOrder(ctx context.Context, id int64, sortOrder int) error {
-	return r.q.UpdateBlockOrder(ctx, db.UpdateBlockOrderParams{
+	return r.q.UpdateBlockOrder(ctx, sqlcpg.UpdateBlockOrderParams{
 		ID:        id,
 		SortOrder: int32(sortOrder),
 	})
@@ -170,7 +170,7 @@ func (r *PageRepo) UpdateBlockOrder(ctx context.Context, id int64, sortOrder int
 
 // Converters
 
-func toDomainPage(p *db.Page) *domain.Page {
+func toDomainPage(p *sqlcpg.Page) *domain.Page {
 	return &domain.Page{
 		ID:          p.ID,
 		Title:       p.Title,
@@ -178,7 +178,7 @@ func toDomainPage(p *db.Page) *domain.Page {
 		Layout:      p.Layout,
 		ParentID:    p.ParentID,
 		IsPublished: p.IsPublished,
-		ShowInNav:   p.ShowInNav,
+		NavOrder:    p.NavOrder,
 		Metadata:    p.Metadata,
 		SortOrder:   int(p.SortOrder),
 		Path:        p.Path,
@@ -187,7 +187,7 @@ func toDomainPage(p *db.Page) *domain.Page {
 	}
 }
 
-func toDomainPageBlock(b *db.PageBlock) *domain.PageBlock {
+func toDomainPageBlock(b *sqlcpg.PageBlock) *domain.PageBlock {
 	return &domain.PageBlock{
 		ID:        b.ID,
 		PageID:    b.PageID,
@@ -216,7 +216,7 @@ func (r *PageRepo) GetTopLevelPublished(ctx context.Context) ([]*domain.Page, er
 }
 
 func (r *PageRepo) SearchPublished(ctx context.Context, query string, limit, offset int) ([]*domain.Page, error) {
-	pages, err := r.q.SearchPublishedPages(ctx, db.SearchPublishedPagesParams{
+	pages, err := r.q.SearchPublishedPages(ctx, sqlcpg.SearchPublishedPagesParams{
 		Search:     &query,
 		PageLimit:  int32(limit),
 		PageOffset: int32(offset),

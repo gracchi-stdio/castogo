@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "sql/queries"
-    schema: "sql/migrations"
+    queries: "sql/queries/postgres"
+    schema: "sql/migrations/postgres"
     gen:
       go:
-        package: "db"
-        out: "internal/db"
+        package: "sqlcpg"
+        out: "internal/sqlcpg"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_empty_slices: true
@@ -24,3 +24,18 @@ sql:
             go_type:
               import: "encoding/json"
               type: "RawMessage"
+
+  # SQLite/libSQL dialect (Bunny remote + local files). database/sql instead of
+  # pgx; JSON columns stay string — the repo wrappers unmarshal into domain
+  # types, same as they convert hex ids and TEXT timestamps.
+  - engine: "sqlite"
+    queries: "sql/queries/sqlite"
+    schema: "sql/migrations/sqlite"
+    gen:
+      go:
+        package: "sqlcsqlite"
+        out: "internal/sqlcsqlite"
+        sql_package: "database/sql"
+        emit_json_tags: true
+        emit_empty_slices: true
+        emit_pointers_for_null_types: true

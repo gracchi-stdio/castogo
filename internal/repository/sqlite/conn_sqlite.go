@@ -1,6 +1,7 @@
-// Package sqlite provides local-file SQLite connections (modernc.org/sqlite,
-// pure Go) for development and CLI testing. Remote libSQL (Bunny) goes through
-// the libsql package instead — same SQL dialect, different transport.
+// Package sqlite is the SQLite/libSQL dialect layer: the repositories (which
+// are transport-agnostic, running over database/sql) and the two connection
+// constructors — NewLocalDB (modernc driver, local files) and NewRemoteDB
+// (libsql-client-go, HTTP/WebSocket to sqld servers like Bunny).
 package sqlite
 
 import (
@@ -11,7 +12,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func NewDB(ctx context.Context, databaseURL string) (*sql.DB, error) {
+// NewLocalDB opens a local SQLite file (modernc.org/sqlite, pure Go) for
+// development and CLI testing.
+func NewLocalDB(ctx context.Context, databaseURL string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
