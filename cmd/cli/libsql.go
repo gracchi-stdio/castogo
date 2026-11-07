@@ -54,6 +54,10 @@ func (d *sqliteDatabase) PageRepo() repository.PageRepository {
 	return sqlite.NewPageRepo(d.db)
 }
 
+func (d *sqliteDatabase) AnalyticsRepo() repository.AnalyticsRepository {
+	return sqlite.NewAnalyticRepo(d.db)
+}
+
 func (m *sqliteMigrations) Lock(ctx context.Context) (func(), error) {
 	return func() {}, nil
 }

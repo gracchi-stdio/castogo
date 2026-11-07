@@ -170,7 +170,7 @@ func main() {
 		config.Cfg.BunnyPullZoneID,
 		httpClient, // use default HTTP client
 	)
-	analyticsRepo := postgres.NewAnalyticsPostgres(db)
+	analyticsRepo := postgres.NewAnalyticsRepo(db)
 	analyticsService := service.NewAnalyticsService(fetcher, analyticsRepo, episodeRepo)
 	worker := service.NewAnalyticsWorker(analyticsService, 5*time.Hour)
 

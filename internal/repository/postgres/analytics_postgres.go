@@ -14,7 +14,7 @@ type AnalyticsPostgres struct {
 	q *sqlcpg.Queries
 }
 
-func NewAnalyticsPostgres(pool *pgxpool.Pool) *AnalyticsPostgres {
+func NewAnalyticsRepo(pool *pgxpool.Pool) *AnalyticsPostgres {
 	return &AnalyticsPostgres{
 		q: sqlcpg.New(pool),
 	}

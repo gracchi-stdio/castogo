@@ -22,6 +22,7 @@ type database interface {
 	EpisodeRepo() repository.EpisodeRepository
 	PodcastConfigRepo() repository.PodcastConfigRepository
 	PageRepo() repository.PageRepository
+	AnalyticsRepo() repository.AnalyticsRepository
 }
 
 func connectDatabase(ctx context.Context, cmd *cli.Command) (database, error) {

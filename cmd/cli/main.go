@@ -36,6 +36,7 @@ func main() {
 			dbPingCommand(),
 			episodesListCommand(),
 			pagesListCommand(),
+			analyticsSmokeCommand(),
 		},
 	}
 

@@ -58,6 +58,10 @@ func (d *pgDatabase) PageRepo() repository.PageRepository {
 	return postgres.NewPageRepo(d.pool)
 }
 
+func (d *pgDatabase) AnalyticsRepo() repository.AnalyticsRepository {
+	return postgres.NewAnalyticsRepo(d.pool)
+}
+
 // Lock takes a session-level advisory lock on a dedicated pooled connection
 // so that two concurrent migrators serialize instead of racing on
 // schema_migrations (e.g. a redeploy boot-migrating while someone runs the

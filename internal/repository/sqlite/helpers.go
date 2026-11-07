@@ -9,6 +9,11 @@ import (
 // zone suffix. Timestamp comparisons in the queries are string comparisons, so
 // everything this package writes must use this exact format.
 const sqliteTimeLayout = "2006-01-02 15:04:05"
+const sqliteDateLayout = "2006-01-02"
+
+func dateToSQLite(t time.Time) string {
+	return t.UTC().Format(sqliteDateLayout)
+}
 
 // timeToSQLite formats for storage. A wrong format here (e.g. RFC3339) does
 // not error — it silently mis-sorts against datetime('now') in the queries.
