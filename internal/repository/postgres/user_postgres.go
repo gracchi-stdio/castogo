@@ -3,9 +3,8 @@ package postgres
 import (
 	"context"
 
-	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -31,11 +30,10 @@ func (r *UserRepo) Create(ctx context.Context, user *domain.User) (*domain.User,
 	}
 
 	return toDomainUser(&result), nil
-
 }
 
-func (r *UserRepo) GetByID(ctx context.Context, id [16]byte) (*domain.User, error) {
-	result, err := r.q.GetUserByID(ctx, uuidToPgtype(id))
+func (r *UserRepo) GetByID(ctx context.Context, id int64) (*domain.User, error) {
+	result, err := r.q.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +52,7 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*domain.User, 
 
 func (r *UserRepo) Update(ctx context.Context, user *domain.User) (*domain.User, error) {
 	params := sqlcpg.UpdateUserParams{
-		ID:           uuidToPgtype(user.ID),
+		ID:           user.ID,
 		Email:        user.Email,
 		PasswordHash: user.PasswordHash,
 	}
@@ -66,26 +64,17 @@ func (r *UserRepo) Update(ctx context.Context, user *domain.User) (*domain.User,
 	return toDomainUser(&result), nil
 }
 
-func (r *UserRepo) Delete(ctx context.Context, id [16]byte) error {
-	return r.q.DeleteUser(ctx, uuidToPgtype(id))
+func (r *UserRepo) Delete(ctx context.Context, id int64) error {
+	return r.q.DeleteUser(ctx, id)
 }
 
 // --- Type mapping helper ---
 func toDomainUser(u *sqlcpg.User) *domain.User {
 	return &domain.User{
-		ID:           pgtypeToUUID(u.ID),
+		ID:           u.ID,
 		Email:        u.Email,
 		PasswordHash: u.PasswordHash,
+		CreatedAt:    u.CreatedAt.Time,
+		UpdatedAt:    u.UpdatedAt.Time,
 	}
-}
-
-func uuidToPgtype(uuid [16]byte) pgtype.UUID {
-	return pgtype.UUID{
-		Bytes: uuid,
-		Valid: true,
-	}
-}
-
-func pgtypeToUUID(u pgtype.UUID) [16]byte {
-	return u.Bytes
 }

@@ -2,8 +2,8 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/gracchi-stdio/castogo/internal/repository"
 	"github.com/labstack/echo-contrib/v5/session"
 	"github.com/labstack/echo/v5"
@@ -23,7 +23,7 @@ func AuthMiddleware(userRepo repository.UserRepository) echo.MiddlewareFunc {
 				return redirectLogin(c)
 			}
 
-			id, err := uuid.Parse(idStr)
+			id, err := strconv.ParseInt(idStr, 10, 64)
 			if err != nil {
 				return redirectLogin(c)
 			}

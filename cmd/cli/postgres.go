@@ -14,9 +14,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// pgMigrations is the PostgreSQL implementation of migrationHandler.
+type pgMigrations struct {
+	pool *pgxpool.Pool
+}
+
 type pgDatabase struct {
 	pool *pgxpool.Pool
 }
+
+// migrationsLockKey identifies castogo's migration advisory lock. Advisory
+// locks live in the server's global lock space shared by every connection,
+// so a fixed arbitrary constant means every migrator (deploy boot, manual CLI
+// run) contends on the same key.
+const migrationsLockKey = 0x63617374 // "cast" in hex — arbitrary but stable
+
+const migrationsLockTimeout = 30 * time.Second
 
 func (d *pgDatabase) Ping(ctx context.Context) error { return d.pool.Ping(ctx) }
 
@@ -33,18 +46,9 @@ func (d *pgDatabase) UserRepo() repository.UserRepository {
 	return postgres.NewUserRepo(d.pool)
 }
 
-// pgMigrations is the PostgreSQL implementation of migrationHandler.
-type pgMigrations struct {
-	pool *pgxpool.Pool
+func (d *pgDatabase) EpisodeRepo() repository.EpisodeRepository {
+	return postgres.NewEpisodeRepo(d.pool)
 }
-
-// migrationsLockKey identifies castogo's migration advisory lock. Advisory
-// locks live in the server's global lock space shared by every connection,
-// so a fixed arbitrary constant means every migrator (deploy boot, manual CLI
-// run) contends on the same key.
-const migrationsLockKey = 0x63617374 // "cast" in hex — arbitrary but stable
-
-const migrationsLockTimeout = 30 * time.Second
 
 // Lock takes a session-level advisory lock on a dedicated pooled connection
 // so that two concurrent migrators serialize instead of racing on

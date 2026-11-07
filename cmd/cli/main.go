@@ -34,6 +34,7 @@ func main() {
 			migrateCommand(),
 			migrateAdoptCommand(),
 			dbPingCommand(),
+			episodesListCommand(),
 		},
 	}
 

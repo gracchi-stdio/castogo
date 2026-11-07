@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 // EpisodeStatus represents the derived state of an episode.
 // It is NOT stored in the database — it is computed from publish_at and archived_at.
@@ -21,6 +26,33 @@ type AudioMetadata struct {
 	FileSize     int64  `json:"file_size"`   // in bytes
 	Format       string `json:"format"`      // e.g., "mp3", "wav"
 	MimeType     string `json:"mimetype"`    // e.g., "audio/mpeg", "audio/wav"
+}
+
+// Scan implements sql.Scanner so sqlc overrides can map JSON columns to this
+// type on both engines: pgx hands the json bytes through its codec, sqlite
+// drivers hand a string (modernc) or []byte (libsql).
+func (m *AudioMetadata) Scan(src any) error {
+	switch v := src.(type) {
+	case nil:
+		*m = AudioMetadata{}
+		return nil
+	case string:
+		return json.Unmarshal([]byte(v), m)
+	case []byte:
+		return json.Unmarshal(v, m)
+	default:
+		return fmt.Errorf("audio_metadata: unsupported scan type %T", src)
+	}
+}
+
+// Value implements driver.Valuer. pgx writes the returned string verbatim for
+// json/jsonb; database/sql drivers store it as TEXT.
+func (m AudioMetadata) Value() (driver.Value, error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }
 
 type Episode struct {

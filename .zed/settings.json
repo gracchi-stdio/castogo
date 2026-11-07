@@ -1,0 +1,6 @@
+{
+  "theme": "One Dark",
+  "experimental.theme_overrides": {
+    "background_appearance": "blurred"
+  }
+}

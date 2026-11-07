@@ -106,3 +106,7 @@ WHERE is_published = true
   AND title ILIKE '%' || @search || '%'
 ORDER BY sort_order ASC
 LIMIT @page_limit OFFSET @page_offset;
+-- name: GetPublishedPageByPath :one
+SELECT *
+  FROM pages
+  WHERE is_published = true AND path = $1;

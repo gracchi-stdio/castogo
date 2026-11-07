@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
-	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
 	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/sqlcpg"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -49,6 +51,18 @@ func (r *PageRepo) GetByPath(ctx context.Context, path string) (*domain.Page, er
 	if err != nil {
 		return nil, err
 	}
+	return toDomainPage(&page), nil
+}
+
+func (r *PageRepo) GetPublishedByPath(ctx context.Context, path string) (*domain.Page, error) {
+	page, err := r.q.GetPublishedPageByPath(ctx, path)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, err
+	}
+
 	return toDomainPage(&page), nil
 }
 

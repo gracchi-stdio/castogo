@@ -41,7 +41,7 @@ func registerCommand() *cli.Command {
 
 			db, err := connectDatabase(ctx, cmd)
 			if err != nil {
-				return nil
+				return err
 			}
 
 			authService := service.NewAuthService(db.UserRepo())

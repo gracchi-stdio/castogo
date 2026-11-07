@@ -219,6 +219,19 @@ func (s *PageService) DeletePage(ctx context.Context, id int64) error {
 	return s.page.Delete(ctx, id)
 }
 
+func (s *PageService) GetWithBlocksByPath(ctx context.Context, path string) (*PageWithBlocks, error) {
+	page, err := s.page.GetPublishedByPath(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks, err := s.page.GetBlockByPageID(ctx, page.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &PageWithBlocks{Page: page, Blocks: blocks}, nil
+}
+
 func (s *PageService) GetPageWithBlocks(ctx context.Context, id int64) (*PageWithBlocks, error) {
 	page, err := s.page.GetByID(ctx, id)
 	if err != nil {

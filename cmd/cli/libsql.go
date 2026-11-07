@@ -20,6 +20,14 @@ type sqliteDatabase struct {
 	db *sql.DB
 }
 
+// sqliteMigrations is the LibSQL/Bunny implementation of migrationHandler:
+// TEXT timestamps via datetime('now'), ? placeholders, database/sql calls,
+// DropAll via sqlite_master, Lock a no-op (writes serialize through the
+// primary and schema_migrations's PK makes a double-apply fail safely).
+type sqliteMigrations struct {
+	db *sql.DB
+}
+
 func (d *sqliteDatabase) Ping(ctx context.Context) error { return d.db.PingContext(ctx) }
 
 func (d *sqliteDatabase) Close() error {
@@ -34,12 +42,8 @@ func (d *sqliteDatabase) UserRepo() repository.UserRepository {
 	return sqlite.NewUserRepo(d.db)
 }
 
-// sqliteMigrations is the LibSQL/Bunny implementation of migrationHandler:
-// TEXT timestamps via datetime('now'), ? placeholders, database/sql calls,
-// DropAll via sqlite_master, Lock a no-op (writes serialize through the
-// primary and schema_migrations's PK makes a double-apply fail safely).
-type sqliteMigrations struct {
-	db *sql.DB
+func (d *sqliteDatabase) EpisodeRepo() repository.EpisodeRepository {
+	return sqlite.NewEpisodeRepo(d.db)
 }
 
 func (m *sqliteMigrations) Lock(ctx context.Context) (func(), error) {

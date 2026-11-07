@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -64,76 +66,31 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 }
 
 func (h *PublicHandler) homePage(c *echo.Context) error {
-	// Homepage is the root page — the one with empty slug, whose path is "/"
-	page, err := h.pageService.GetPageByPath(c.Request().Context(), "/")
-	if err != nil {
-		return echo.ErrNotFound
-	}
-
-	if !page.IsPublished {
-		return echo.ErrNotFound
-	}
-
-	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), page.ID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching page content")
-	}
-
-	episodes, err := h.episodesService.ListPublishedWithPagePath(c.Request().Context(), 5, 0)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
-	}
-
-	linkedEpisodes, err := h.episodesService.ListPublishedByLinkedPageID(c.Request().Context(), page.ID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching linked episodes")
-	}
-
-	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
-	}
-
-	data := &pageview.PageData{
-		Page:          pwb.Page,
-		Blocks:        toBlocks(pwb.Blocks),
-		Episodes:      episodes,
-		LinkedEpisodes: linkedEpisodes,
-		Nav:           h.buildPublicNav(c),
-		Settings:      *settings,
-	}
-
-	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
+	return h.renderPublishedPage(c, "/", 5)
 }
 
 func (h *PublicHandler) pageResolver(c *echo.Context) error {
-	// Echo stores wildcard params as "*", not the named version. Wildcard
-	// values have no leading slash — add it back so the lookup matches the
-	// stored full-URL path.
 	path := "/" + strings.Trim(c.Param("*"), "/")
+	return h.renderPublishedPage(c, path, 20)
+}
 
-	page, err := h.pageService.GetPageByPath(c.Request().Context(), path)
+func (h *PublicHandler) renderPublishedPage(c *echo.Context, path string, latestLimit int) error {
+	pwd, err := h.pageService.GetWithBlocksByPath(c.Request().Context(), path)
 	if err != nil {
-		return echo.ErrNotFound
-	}
-
-	if !page.IsPublished {
-		return echo.ErrNotFound
-	}
-
-	pwb, err := h.pageService.GetPageWithBlocks(c.Request().Context(), page.ID)
-	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return echo.ErrNotFound
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching page content")
 	}
 
-	episodes, err := h.episodesService.ListPublishedWithPagePath(c.Request().Context(), 20, 0)
+	episodes, err := h.episodesService.ListPublishedWithPagePath(c.Request().Context(), latestLimit, 0)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching latest episodes")
 	}
 
-	linkedEpisodes, err := h.episodesService.ListPublishedByLinkedPageID(c.Request().Context(), page.ID)
+	linkedEpisodes, err := h.episodesService.ListPublishedByLinkedPageID(c.Request().Context(), pwd.Page.ID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching linked episodes")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
 	}
 
 	settings, err := h.settingsService.GetPodcastConfig(c.Request().Context())
@@ -142,12 +99,12 @@ func (h *PublicHandler) pageResolver(c *echo.Context) error {
 	}
 
 	data := &pageview.PageData{
-		Page:          pwb.Page,
-		Blocks:        toBlocks(pwb.Blocks),
-		Episodes:      episodes,
+		Page:           pwd.Page,
+		Blocks:         toBlocks(pwd.Blocks),
+		Episodes:       episodes,
 		LinkedEpisodes: linkedEpisodes,
-		Nav:           h.buildPublicNav(c),
-		Settings:      *settings,
+		Nav:            h.buildPublicNav(c),
+		Settings:       *settings,
 	}
 
 	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
@@ -177,7 +134,7 @@ func (h *PublicHandler) login(c *echo.Context) error {
 	}
 
 	sess, _ := session.Get("session", c)
-	sess.Values["user_id"] = user.ID.String()
+	sess.Values["user_id"] = strconv.FormatInt(user.ID, 10)
 
 	if err := sess.Save(c.Request(), c.Response()); err != nil {
 		log.Printf("session save error: %v", err)
@@ -257,7 +214,6 @@ func (h *PublicHandler) searchPage(c *echo.Context) error {
 		Episodes: episodes,
 		Nav:      h.buildPublicNav(c),
 	}
-
 	return echo.WrapHandler(templ.Handler(searchview.SearchPage(data)))(c)
 }
 

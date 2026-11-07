@@ -10,6 +10,7 @@ type PageRepository interface {
 	Create(ctx context.Context, page *domain.Page) (*domain.Page, error)
 	GetByID(ctx context.Context, id int64) (*domain.Page, error)
 	GetByPath(ctx context.Context, path string) (*domain.Page, error)
+	GetPublishedByPath(ctx context.Context, path string) (*domain.Page, error)
 	GetBySlug(ctx context.Context, slug string) (*domain.Page, error)
 	List(ctx context.Context) ([]*domain.Page, error)
 	GetChildren(ctx context.Context, parentID int64) ([]*domain.Page, error)
