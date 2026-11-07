@@ -50,6 +50,14 @@ func (d *pgDatabase) EpisodeRepo() repository.EpisodeRepository {
 	return postgres.NewEpisodeRepo(d.pool)
 }
 
+func (d *pgDatabase) PodcastConfigRepo() repository.PodcastConfigRepository {
+	return postgres.NewPodcastConfigRepository(d.pool)
+}
+
+func (d *pgDatabase) PageRepo() repository.PageRepository {
+	return postgres.NewPageRepo(d.pool)
+}
+
 // Lock takes a session-level advisory lock on a dedicated pooled connection
 // so that two concurrent migrators serialize instead of racing on
 // schema_migrations (e.g. a redeploy boot-migrating while someone runs the

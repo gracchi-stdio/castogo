@@ -1,0 +1,112 @@
+-- name: CreatePage :one
+INSERT INTO pages (
+    title,
+    slug,
+    parent_id,
+    layout,
+    is_published,
+    nav_order,
+    metadata,
+    path,
+    sort_order
+  )
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING *;
+-- name: GetPageByID :one
+SELECT *
+FROM pages
+WHERE id = ?;
+-- name: GetPageByPath :one
+SELECT *
+FROM pages
+WHERE path = ?;
+-- name: GetPageBySlug :one
+SELECT *
+FROM pages
+WHERE slug = ?;
+-- name: ListPages :many
+SELECT *
+FROM pages
+WHERE (
+    @search = ''
+    OR title LIKE '%' || @search || '%'
+  )
+ORDER BY path ASC
+LIMIT @page_limit OFFSET @page_offset;
+-- name: GetChildren :many
+SELECT *
+FROM pages
+WHERE parent_id = ?
+ORDER BY sort_order ASC;
+-- name: GetDescendants :many
+SELECT *
+FROM pages
+WHERE path LIKE sqlc.arg('prefix') || '/%'
+ORDER BY path ASC;
+-- name: UpdatePage :one
+UPDATE pages
+SET title = COALESCE(sqlc.narg('title'), title),
+  slug = COALESCE(sqlc.narg('slug'), slug),
+  layout = COALESCE(sqlc.narg('layout'), layout),
+  parent_id = COALESCE(sqlc.narg('parent_id'), parent_id),
+  is_published = COALESCE(sqlc.narg('is_published'), is_published),
+  nav_order = COALESCE(sqlc.narg('nav_order'), nav_order),
+  metadata = COALESCE(sqlc.narg('metadata'), metadata),
+  path = COALESCE(sqlc.narg('path'), path),
+  sort_order = COALESCE(sqlc.narg('sort_order'), sort_order),
+  updated_at = datetime('now')
+WHERE id = sqlc.arg('id')
+RETURNING *;
+-- name: DeletePage :exec
+DELETE FROM pages
+WHERE id = ?;
+-- name: UpdateDescendantPaths :exec
+UPDATE pages
+SET path = REPLACE(
+    path,
+    sqlc.arg('old_prefix') || '/',
+    sqlc.arg('new_prefix') || '/'
+  ),
+  updated_at = datetime('now')
+WHERE path LIKE sqlc.arg('old_prefix') || '/%';
+-- name: GetPageSiblings :many
+SELECT *
+FROM pages
+WHERE parent_id = ?
+  AND id != ?
+ORDER BY sort_order ASC;
+-- name: GetChildrenCount :one
+SELECT COUNT(*)
+FROM pages
+WHERE parent_id = ?;
+-- name: GetPagePathAndChildrenCountByID :one
+SELECT p.path,
+  (
+    SELECT COUNT(*)
+    FROM pages
+    WHERE parent_id = p.id
+  ) AS children_count
+FROM pages p
+WHERE p.id = ?;
+-- name: CountPageWithoutParent :one
+SELECT COUNT(*)
+FROM pages
+WHERE parent_id IS NULL;
+-- name: GetPublishedTopLevelPages :many
+SELECT *
+FROM pages
+WHERE parent_id IS NULL
+  AND is_published = true
+  AND nav_order IS NOT NULL
+ORDER BY sort_order ASC;
+-- name: SearchPublishedPages :many
+SELECT *
+FROM pages
+WHERE is_published = true
+  AND title LIKE '%' || @search || '%'
+ORDER BY sort_order ASC
+LIMIT @page_limit OFFSET @page_offset;
+-- name: GetPublishedPageByPath :one
+SELECT *
+  FROM pages
+  WHERE is_published = true AND path = ?;

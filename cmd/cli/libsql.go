@@ -46,6 +46,14 @@ func (d *sqliteDatabase) EpisodeRepo() repository.EpisodeRepository {
 	return sqlite.NewEpisodeRepo(d.db)
 }
 
+func (d *sqliteDatabase) PodcastConfigRepo() repository.PodcastConfigRepository {
+	return sqlite.NewPodcastConfigRepo(d.db)
+}
+
+func (d *sqliteDatabase) PageRepo() repository.PageRepository {
+	return sqlite.NewPageRepo(d.db)
+}
+
 func (m *sqliteMigrations) Lock(ctx context.Context) (func(), error) {
 	return func() {}, nil
 }

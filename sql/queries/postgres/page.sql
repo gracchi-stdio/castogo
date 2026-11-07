@@ -97,7 +97,7 @@ SELECT *
 FROM pages
 WHERE parent_id IS NULL
   AND is_published = true
-  AND show_in_nav = true
+  AND nav_order IS NOT NULL
 ORDER BY sort_order ASC;
 -- name: SearchPublishedPages :many
 SELECT *

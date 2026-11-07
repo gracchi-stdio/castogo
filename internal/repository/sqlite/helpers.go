@@ -67,3 +67,9 @@ func orZero[T any](p *T) T {
 	}
 	return *p
 }
+
+// toPtr boxes v. Go can't take the address of a conversion (&int64(x));
+// a generic can.
+func toPtr[T any](v T) *T {
+	return &v
+}

@@ -68,7 +68,7 @@ func episodesFromList(list []sqlcsqlite.Episode) ([]*domain.Episode, error) {
 
 // CountByStatus implements [repository.EpisodeRepository].
 func (e *EpisodeRepo) CountByStatus(ctx context.Context, status domain.EpisodeStatus) (int, error) {
-	result, err := e.q.CountEpisodesByStatus(ctx, status)
+	result, err := e.q.CountEpisodesByStatus(ctx, string(status))
 	if err != nil {
 		return 0, fmt.Errorf("count episodes by status: %w", err)
 	}
@@ -77,12 +77,11 @@ func (e *EpisodeRepo) CountByStatus(ctx context.Context, status domain.EpisodeSt
 
 // Create implements [repository.EpisodeRepository].
 func (e *EpisodeRepo) Create(ctx context.Context, ep *domain.Episode) (*domain.Episode, error) {
-	duration := int64(ep.Duration)
 	result, err := e.q.CreateEpisode(ctx, sqlcsqlite.CreateEpisodeParams{
 		Title:          &ep.Title,
 		Slug:           &ep.Slug,
 		Description:    &ep.Description,
-		Duration:       &duration,
+		Duration:       toPtr(int64(ep.Duration)),
 		Explicit:       &ep.Explicit,
 		CoverImageUrl:  &ep.CoverImageURL,
 		AudioSourceUrl: &ep.AudioSourceURL,
@@ -224,8 +223,7 @@ func (e *EpisodeRepo) SearchPublishedWithPagePath(ctx context.Context, query str
 func (e *EpisodeRepo) Update(ctx context.Context, ep *domain.UpdateEpisode) (*domain.Episode, error) {
 	var duration *int64
 	if ep.Duration != nil {
-		d := int64(*ep.Duration)
-		duration = &d
+		duration = toPtr(int64(*ep.Duration))
 	}
 
 	// nil → zero value, mirroring the postgres wrapper: the narg on an

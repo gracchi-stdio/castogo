@@ -20,6 +20,8 @@ type database interface {
 	MigrationsDir() string
 	UserRepo() repository.UserRepository
 	EpisodeRepo() repository.EpisodeRepository
+	PodcastConfigRepo() repository.PodcastConfigRepository
+	PageRepo() repository.PageRepository
 }
 
 func connectDatabase(ctx context.Context, cmd *cli.Command) (database, error) {
