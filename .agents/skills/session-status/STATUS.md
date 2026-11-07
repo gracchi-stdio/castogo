@@ -1,53 +1,50 @@
 # Castogo — session status
 
-Last compacted: 2026-11-07 (Step 0 finished; dead queries KEPT per user
-decision; only Bunny smoke + commit remain for Step 6)
+Last compacted: 2026-11-07 (step 7 local smoke GREEN; steps 6+7 down to
+Bunny run + commit)
 
 ## Landed decisions
 
 - **Dead page queries KEPT (user, 2026-11-07)** — GetDescendants,
   GetPageSiblings, GetChildrenCount, GetPagePathAndChildrenCountByID,
-  CountPageWithoutParent stay in BOTH corpora for future child-page
-  features. Do NOT re-delete in cleanups (overrides step-6 scoping finding).
-- sqlite JSON columns auto-shape via sqlc overrides + `domain.Scan`/`Value`
-  (`AudioMetadata`, `PageMetadata`; `page_blocks.content` → `json.RawMessage`).
-  - `Value()` returns string — pgx writes it verbatim for json/jsonb
-    (verified in pgtype/json.go); sqlite stores TEXT.
-  - nil `*T` param → SQL NULL on both stacks (pgx `isNilDriverValuer`,
-    database/sql `callValuerValue` guard).
-  - `go_type` override beats `sqlc.narg` → metadata narg is non-pointer;
-    Update nil = zero-value overwrite (mirrors pg wrapper, commented).
-- Wrapper conventions, `internal/repository/sqlite`:
-  - `helpers.go`: `sqliteTimeLayout`, `timeTo/FromSQLite` (strict),
-    `timePtrTo/FromSQLite`, `sqliteTime` (lenient — **updated_at only**),
-    `orZero`, `toPtr`.
-  - `xFromRow` + `xFromList` per repo; errors wrap `"verb object: %w"`.
-  - No-rows sentinel: `sql.ErrNoRows` → `domain.ErrNotFound`.
-- Nav semantics (022): `nav_order NULL` = hidden, else ascending display
-  order, **tie-break path ASC** — `GetPublishedTopLevelPages` sorts
-  `nav_order ASC, path ASC` in both corpora (was `sort_order`).
+  CountPageWithoutParent stay in BOTH corpora. Do NOT re-delete.
+- sqlite JSON columns auto-shape via sqlc overrides + `domain.Scan`/`Value`.
+- Wrapper conventions, `internal/repository/sqlite`: helpers (`sqliteTimeLayout`,
+  `timeTo/FromSQLite`, strict; `sqliteTime` lenient updated_at only;
+  `sqliteDateLayout`/`dateToSQLite` — DATE-as-TEXT "2006-01-02" UTC),
+  `xFromRow`/`xFromList`, errors wrap `"verb object: %w"`, no-rows →
+  `domain.ErrNotFound` EXCEPT predicates (`IsFileProcessed` → false,nil).
+- Nav semantics (022): nav_order NULL=hidden, ascending, tie-break path ASC.
+- Analytics upserts twin 1:1; sqlite ON CONFLICT/DO UPDATE/EXCLUDED/RETURNING
+  semantics == PG; verified empirically through modernc (upsert arithmetic
+  accumulates across repeated calls — repro'd while debugging).
+- pg analytics ctor renamed `NewAnalyticsPostgres` → `NewAnalyticsRepo`
+  (user, naming symmetry); server call site updated.
 
-## Repo state (uncommitted, step 6 work)
+## Repo state (uncommitted, steps 6+7 complete locally)
 
-- Corpora: `sql/queries/sqlite/{podcast_config,page,block}.sql` (A–C);
-  pg+sqlite nav fix applied. `just generate` clean; build + vet clean
-  (2026-11-07); restored queries present in both generated packages.
-- Wrappers: `config_sqlite.go`, `page_sqlite.go` (E–F). Wiring:
-  `cmd/cli/pages.go` (`pages-list`) registered (G).
-- Part H local smoke DONE (user): `pages-list file:/tmp/castogo-local.db`
-  → 1 page, hidden/published//sample.
-- sqlite migrations on Bunny: 001 applied (step 2); **002_users_id pending**
-  — DROP+recreate users, wipes any rows there.
+- Step 6: corpora+wrappers+wiring+pages-list local smoke DONE.
+- Step 7: analytics.sql corpus, analytics_sqlite.go wrapper, dateToSQLite,
+  CLI wiring both dialects, `analytics-smoke` cmd — ALL DONE.
+- Smoke verified (2026-11-07): all 9 interface methods + sqlite3/python
+  arithmetic check — `2|2048`, `251|1`, `1`, `1|3`, `1`, `1` ✓
+  (CLI command is `migrate`, NOT db-migrate).
+- Debug detour resolved: smoke's second UpsertPodcastDaily call had been
+  removed (looked like a dup) → (1,1024); restored, all green. No driver bug.
+- go.mod diagnostic: `github.com/google/uuid should be indirect` — run
+  `go mod tidy` before commit (leftover from step 4.5).
+- sqlite migrations on Bunny: 001 applied; 002_users_id pending (=users
+  table reset there).
 
 ## Anytype (Notebook space `sr7yvu`)
 
-- Step 6 doc: "🧩 Step 6 — PodcastConfig + Page (sqlite) + nav query fix +
-  Scan/Value" id `bafyreicxu…tpynq3u` — durable instructions. NOTE: its
-  "delete the 5 dead queries" instruction is superseded by the user
-  decision above; doc not yet annotated.
+- Step 7 doc: id `bafyreibfojv4z4dbgo3sz643fpc3f25jn6b2gxlzjbiejmn6ib3iwagti4`
+  — Part F corrected (migrate cmd name, bytes_seen column, python3 fallback).
+- Step 6 doc: completion note appended. Step 6 id `bafyreicxu…tpynq3u`.
 
 ## Next
 
-1. Bunny smoke (user runs, URL has authToken): `migrate` (applies 002 —
-   users reset) then `pages-list --database-url libsql://…`
-2. Step 6 SP tick (`wrtDCFL9bmkWfzQ28Kcpx`) + commit tree
+1. Bunny run (steps 6+7): `migrate` (applies 002 — users reset) →
+   `pages-list` → `analytics-smoke` against libsql:// URL
+2. `go mod tidy` + commit tree (steps 6+7, maybe one commit or split 6/7)
+3. SP ticks (step 6 `wrtDCFL9bmkWfzQ28Kcpx`, step 7 `os5YvLT2Q01q-R0VXC2M6`)
