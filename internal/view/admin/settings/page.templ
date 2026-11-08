@@ -1,0 +1,16 @@
+package settings
+
+import (
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+templ SettingsPage(data *layout.AdminSharedData, config *domain.PodcastConfig) {
+	@layout.AdminLayout("Settings", data, nil, nil, formactions.FormActions(formactions.FormActionsArgs{
+		FormID:      "settings-form",
+		SubmitLabel: "Save Settings",
+	})) {
+		@Form(Args{Config: config})
+	}
+}

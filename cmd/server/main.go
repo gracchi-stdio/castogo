@@ -18,9 +18,9 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/handler"
 	"github.com/gracchi-stdio/castogo/internal/service"
 	"github.com/gracchi-stdio/castogo/internal/version"
-	"github.com/gracchi-stdio/castogo/internal/view/notfoundview"
+	"github.com/gracchi-stdio/castogo/internal/view/public/notfound"
 
-	_ "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor/types" // initialize block types
+	_ "github.com/gracchi-stdio/castogo/internal/view/admin/blockeditor/types" // initialize block types
 )
 
 func main() {
@@ -140,7 +140,7 @@ func main() {
 			if resp, _ := echo.UnwrapResponse(c.Response()); resp != nil {
 				resp.Status = http.StatusNotFound
 			}
-			echo.WrapHandler(templ.Handler(notfoundview.NotFoundView()))(c)
+			echo.WrapHandler(templ.Handler(notfound.NotFoundView()))(c)
 			return
 		}
 		// fall through to Echo's default error handler

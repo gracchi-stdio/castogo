@@ -1,0 +1,154 @@
+package episode
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/card"
+	"github.com/gracchi-stdio/castogo/internal/view/components/checkbox"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formactions"
+	"github.com/gracchi-stdio/castogo/internal/view/components/formfield"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
+)
+
+// Edit renders the episode edit page: a metadata form (JSON/signals mode,
+// mirroring the page Settings form) plus a companion-page card.
+templ Edit(shared *layout.AdminSharedData, args Args) {
+	{{
+		signals := NewSignals(args.Episode)
+		signalsJSON, _ := json.Marshal(signals)
+		id := args.Episode.ID
+	}}
+	@layout.AdminLayout("Edit Episode", shared, editActions(), nil, formactions.FormActions(formactions.FormActionsArgs{
+		FormID:      "episode-edit-form",
+		CancelLabel: "Back",
+		CancelHref:  "/admin/episodes",
+		SubmitLabel: "Save Changes",
+	})) {
+		<div data-signals={ string(signalsJSON) } class="w-full max-w-5xl">
+			@card.Card(card.CardArgs{Class: "w-full border-border/70 shadow-sm"}) {
+				<div class="grid md:grid-cols-[11rem_minmax(0,1fr)]">
+					<nav class="border-b p-4 md:sticky md:top-4 md:z-10 md:h-fit md:self-start md:border-b-0 md:border-r md:bg-card" aria-label="Episode sections">
+						<p class="mb-3 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Episode settings</p>
+						<div class="flex gap-1 overflow-x-auto md:flex-col">
+							<a href="#episode-details" class="rounded-md bg-muted px-3 py-2 text-sm font-medium">Details</a>
+							<a href="#episode-audio" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Audio</a>
+							<a href="#episode-companion" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Companion page</a>
+							<a href="#episode-slides" class="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Slides</a>
+						</div>
+					</nav>
+					<div class="min-w-0 space-y-8 p-6">
+						<section id="episode-details" class="scroll-mt-20">
+							<div class="mb-5 border-b pb-3">
+								<h2 class="text-base font-semibold tracking-tight">Episode details</h2>
+								<p class="mt-1 text-sm text-muted-foreground">Update the public information and publishing options for this episode.</p>
+							</div>
+					@form.Form(form.FormArgs{
+						ID:          "episode-edit-form",
+						Action:      fmt.Sprintf("/admin/episodes/%d", id),
+						ContentType: "json",
+					}) {
+						@episodeFields(signals)
+					}
+						</section>
+						<section id="episode-audio" class="scroll-mt-20 border-t pt-8">@AudioCard(args.Episode)</section>
+						<section id="episode-companion" class="scroll-mt-20 border-t pt-8">@PageLinkCard(args)</section>
+						<section id="episode-slides" class="scroll-mt-20 border-t pt-8">@SlidesCard(args.Episode)</section>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ episodeFields(s Signals) {
+	<div class="space-y-6">
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "title",
+			Label:       "Title",
+			Required:    true,
+			ErrorSignal: "title_error"}) {
+			@input.Input(input.InputArgs{
+				Type:        "text",
+				ID:          "title",
+				Name:        "title",
+				Placeholder: "My Awesome Episode",
+				Class:       "w-full",
+				Attributes: map[string]any{
+					"data-bind":              "title",
+					"data-on:input":          "$title_error = ''",
+					"data-attr:aria-invalid": "$title_error != '' ? 'true' : ''",
+				}})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "slug",
+			Label:       "Slug",
+			ErrorSignal: "slug_error",
+			Description: "Used in the URL"}) {
+			@input.Input(input.InputArgs{
+				Type:  "text",
+				ID:    "slug",
+				Name:  "slug",
+				Class: "w-full",
+				Attributes: map[string]any{
+					"data-bind":              "slug",
+					"data-on:input":          "$slug_error = ''",
+					"data-attr:aria-invalid": "$slug_error != '' ? 'true' : ''",
+					"data-on:blur":           "$slug = $slug.trim()",
+				},
+			})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:  "description",
+			Label: "Description"}) {
+			@textarea.Textarea(textarea.TextareaArgs{
+				ID:          "description",
+				Name:        "description",
+				Placeholder: "What's this episode about?",
+				Class:       "w-full",
+				Rows:        4,
+				Attributes: map[string]any{
+					"data-bind:description": "",
+				},
+			})
+		}
+		@formfield.FormField(formfield.FormFieldArgs{
+			Name:        "publish_at",
+			Label:       "Publish Date",
+			Description: "Sets the episode order; leave empty to keep as a draft"}) {
+			@input.Input(input.InputArgs{
+				Type:  "date",
+				ID:    "publish_at",
+				Name:  "publish_at",
+				Class: "w-full",
+				Attributes: map[string]any{
+					"data-bind": "publish_at",
+				},
+			})
+		}
+		<div class="flex items-center gap-3">
+			@checkbox.Checkbox(checkbox.CheckboxArgs{
+				ID:      "explicit",
+				Name:    "explicit",
+				Checked: s.Explicit.Checked})
+			<span class="text-sm">Explicit</span>
+		</div>
+	</div>
+}
+
+templ editActions() {
+	<a href="/admin/episodes">
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+		}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Episodes
+		}
+	</a>
+}

@@ -124,33 +124,25 @@ func (s *EpisodeService) ListPublishedWithPagePath(ctx context.Context, limit, o
 	return ewps, nil
 }
 
-func (s *EpisodeService) GetDashboardStats(ctx context.Context) (*domain.DashboardStats, error) {
-	published, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusPublished)
-	if err != nil {
-		return nil, fmt.Errorf("count published: %w", err)
+// CountEpisodesByStatus returns the episode count for every status, keyed by status.
+// Handles assemble view models from it; the service stays UI-blind.
+func (s *EpisodeService) CountEpisodesByStatus(ctx context.Context) (map[domain.EpisodeStatus]int, error) {
+	statuses := []domain.EpisodeStatus{
+		domain.EpisodeStatusPublished,
+		domain.EpisodeStatusDraft,
+		domain.EpisodeStatusScheduled,
+		domain.EpisodeStatusArchived,
 	}
 
-	drafts, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusDraft)
-	if err != nil {
-		return nil, fmt.Errorf("count drafts: %w", err)
+	counts := make(map[domain.EpisodeStatus]int, len(statuses))
+	for _, status := range statuses {
+		n, err := s.repo.CountByStatus(ctx, status)
+		if err != nil {
+			return nil, fmt.Errorf("count %s episodes: %w", status, err)
+		}
+		counts[status] = n
 	}
-
-	scheduled, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusScheduled)
-	if err != nil {
-		return nil, fmt.Errorf("count scheduled: %w", err)
-	}
-
-	archived, err := s.repo.CountByStatus(ctx, domain.EpisodeStatusArchived)
-	if err != nil {
-		return nil, fmt.Errorf("count archived: %w", err)
-	}
-
-	return &domain.DashboardStats{
-		Total:     published + drafts + scheduled + archived,
-		Published: published,
-		Drafts:    drafts,
-		Scheduled: scheduled,
-	}, nil
+	return counts, nil
 }
 
 func (s *EpisodeService) SearchPublishedWithPagePath(ctx context.Context, query string, limit, offset int) ([]*domain.EpisodeWithPagePath, error) {

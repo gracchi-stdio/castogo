@@ -13,7 +13,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	"github.com/gracchi-stdio/castogo/internal/view/settingview"
+	"github.com/gracchi-stdio/castogo/internal/view/admin/settings"
 	"github.com/labstack/echo/v5"
 )
 
@@ -23,7 +23,7 @@ func (h *AdminHandler) settingsPage(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load settings")
 	}
 	// cfg is nil on first run (no config row yet) — the template handles nil.
-	return echo.WrapHandler(templ.Handler(settingview.SettingsPage(getSharedData(c), cfg)))(c)
+	return echo.WrapHandler(templ.Handler(settings.SettingsPage(getSharedData(c), cfg)))(c)
 }
 
 func (h *AdminHandler) settingsSave(c *echo.Context) error {

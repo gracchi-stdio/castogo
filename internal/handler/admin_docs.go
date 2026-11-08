@@ -6,7 +6,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/docs"
-	"github.com/gracchi-stdio/castogo/internal/view/docsview"
+	admindocs "github.com/gracchi-stdio/castogo/internal/view/admin/docs"
 	"github.com/labstack/echo/v5"
 )
 
@@ -65,14 +65,14 @@ func (h *AdminHandler) renderDocs(c *echo.Context, section docs.Section, slug st
 		title = current.Title
 	}
 
-	args := docsview.DocsPageArgs{
+	args := admindocs.DocsPageArgs{
 		Section:      section,
 		SectionLabel: sectionLabel(section),
 		Items:        items,
 		Current:      current,
 	}
 
-	return echo.WrapHandler(templ.Handler(docsview.DocsPage(getSharedData(c), title, args)))(c)
+	return echo.WrapHandler(templ.Handler(admindocs.DocsPage(getSharedData(c), title, args)))(c)
 }
 
 func sectionLabel(s docs.Section) string {

@@ -17,7 +17,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	episodeForm "github.com/gracchi-stdio/castogo/internal/view/editors/episode"
+	episodeview "github.com/gracchi-stdio/castogo/internal/view/admin/episode"
 	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -261,7 +261,7 @@ func (h *AdminHandler) episodeReplaceAudio(c *echo.Context) error {
 
 	// Re-render the card so the "current audio" section reflects the new
 	// server-derived metadata + filename, then clear upload/preview state.
-	sse(c).PatchElementTempl(episodeForm.AudioCardContent(updated),
+	sse(c).PatchElementTempl(episodeview.AudioCardContent(updated),
 		datastar.WithSelectorID(fmt.Sprintf("episode-audio-%d", id)),
 		datastar.WithModeOuter())
 	patchSignals(c, map[string]string{
@@ -323,7 +323,7 @@ func (h *AdminHandler) episodeUpdatePublishAt(c *echo.Context) error {
 		return toast(c, "Failed to update publish date", "error")
 	}
 
-	sse(c).PatchElementTempl(episodeForm.EpisodeRow(updated),
+	sse(c).PatchElementTempl(episodeview.EpisodeRow(updated),
 		datastar.WithSelectorID(fmt.Sprintf("episode-row-%d", id)),
 		datastar.WithModeOuter())
 	return nil
@@ -430,7 +430,7 @@ func (h *AdminHandler) patchPageLink(c *echo.Context, id int64) error {
 		return toast(c, "Failed to refresh", "error")
 	}
 
-	args := episodeForm.Args{Episode: episode, Pages: pages}
+	args := episodeview.Args{Episode: episode, Pages: pages}
 	if episode.LinkedPageID != nil {
 		for _, p := range pages {
 			if p.ID == *episode.LinkedPageID {
@@ -440,13 +440,13 @@ func (h *AdminHandler) patchPageLink(c *echo.Context, id int64) error {
 		}
 	}
 
-	sse(c).PatchElementTempl(episodeForm.PageLinkContent(args),
+	sse(c).PatchElementTempl(episodeview.PageLinkContent(args),
 		datastar.WithSelectorID(fmt.Sprintf("episode-page-link-%d", id)),
 		datastar.WithModeOuter())
 	// The re-render's data-signals only declares initial state, so the select's
 	// internal value/label would otherwise stay stale — push them explicitly.
 	if args.LinkedPage != nil {
-		label := episodeForm.PageLabel(args.LinkedPage)
+		label := episodeview.PageLabel(args.LinkedPage)
 		sse(c).PatchSignals([]byte(fmt.Sprintf(`{"page_select":{"value":%q,"label":%q}}`,
 			strconv.FormatInt(args.LinkedPage.ID, 10), label)))
 	} else {

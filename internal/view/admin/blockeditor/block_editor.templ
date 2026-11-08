@@ -1,0 +1,898 @@
+package blockeditor
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+
+	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/components/button"
+	"github.com/gracchi-stdio/castogo/internal/view/components/form"
+	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
+	"github.com/gracchi-stdio/castogo/internal/view/components/imageupload"
+	"github.com/gracchi-stdio/castogo/internal/view/components/input"
+	"github.com/gracchi-stdio/castogo/internal/view/components/markdowntoolbar"
+	"github.com/gracchi-stdio/castogo/internal/view/components/label"
+	selectcomponent "github.com/gracchi-stdio/castogo/internal/view/components/select"
+	"github.com/gracchi-stdio/castogo/internal/view/components/textarea"
+	"github.com/yuin/goldmark"
+)
+
+templ BlockEditor(pageID int64, blocks []*domain.PageBlock) {
+	<div class="space-y-4">
+		<div class="flex items-center justify-between">
+			<h3 class="text-lg font-medium">Blocks</h3>
+			@addBlockControls(pageID)
+		</div>
+		if len(blocks) > 0 {
+			@blockList(pageID, blocks)
+		} else {
+			@blockListEmpty()
+		}
+	</div>
+}
+
+// BlockForm renders the editable fields for a single block, for the page-level
+// detail pane. It seeds the block's signals from stored content and renders the
+// type-specific fields — no card chrome or view/edit toggle (selection is handled
+// at the page level now). The Save action is passed in as children BY THE CALLER
+// and MUST stay inside this div: Datastar (v1 scoped signals) serializes an
+// action from the acting element's data-signals ancestry, so a button outside
+// this scope PATCHes with an empty body ("Invalid request" on the server).
+templ BlockForm(pageID int64, block *domain.PageBlock) {
+	<div { blockSignalAttrs(block)... } class="space-y-3">
+		@blockEditFields(pageID, block)
+		{ children... }
+	</div>
+}
+
+templ blockList(pageID int64, blocks []*domain.PageBlock) {
+	<div id="block-list" class="space-y-2">
+		for i, block := range blocks {
+			@blockCard(pageID, block, i)
+		}
+	</div>
+}
+
+templ blockCard(pageID int64, block *domain.PageBlock, index int) {
+	<div data-block-id={ fmt.Sprintf("%d", block.ID) } class="rounded-lg border bg-card text-card-foreground shadow-sm group px-4">
+		<div data-slot="card-content" class="">
+			<div
+				{ blockSignalAttrs(block)... }
+			>
+				<!-- View mode -->
+				<div data-show={ fmt.Sprintf("!$%s", blockEditPrefix(block, "editing")) } class="flex items-center justify-between py-3">
+					<div class="flex items-center gap-3">
+						<span class="flex items-center justify-center w-7 h-7 rounded-md bg-muted text-xs font-medium text-muted-foreground">
+							{ fmt.Sprintf("%d", index+1) }
+						</span>
+						<div>
+							<p class="font-medium text-sm">{ blockTypeLabel(block.BlockType) }</p>
+							<p class="text-xs text-muted-foreground" data-text={ blockSummarySignal(block) }></p>
+						</div>
+					</div>
+					<div class="flex items-center gap-2">
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost",
+							Size:    "sm",
+							Type:    "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("$%s = true", blockEditPrefix(block, "editing")),
+							},
+						}) {
+							@icon.Lucide("pencil", "size-4 mr-1")
+							Edit
+						}
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost",
+							Size:    "icon",
+							Type:    "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d')", pageID, block.ID),
+							},
+						}) {
+							@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+						}
+					</div>
+				</div>
+				<!-- Edit mode -->
+				<div data-show={ fmt.Sprintf("$%s", blockEditPrefix(block, "editing")) } class="px-4 py-3 space-y-3">
+					<div class="flex items-center justify-between">
+						<span class="font-medium text-sm">{ blockTypeLabel(block.BlockType) }</span>
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost",
+							Size:    "icon",
+							Type:    "button",
+							Attributes: map[string]any{
+								"data-on:click": fmt.Sprintf("$%s = false", blockEditPrefix(block, "editing")),
+							},
+						}) {
+							@icon.Lucide("x", "size-4")
+						}
+					</div>
+					@blockEditFields(pageID, block)
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+func bindAttr(pfx, field string) templ.Attributes {
+	return templ.Attributes{
+		"data-bind:" + pfx + field: "",
+	}
+}
+
+templ blockEditFields(pageID int64, block *domain.PageBlock) {
+	{{ pfx := blockEditPrefix(block, "") }}
+	switch block.BlockType {
+		case "hero":
+			<div class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4">
+				<div class="space-y-4">
+					<div class="space-y-3 rounded-lg border border-dashed border-border/80 bg-background/70 p-3">
+						@form.Form(form.FormArgs{
+							ID:    fmt.Sprintf("block-form-%d", block.ID),
+							Class: "space-y-3",
+							Attributes: map[string]any{
+								"enctype": "multipart/form-data",
+							},
+						}) {
+							@imageupload.ImageUpload(imageupload.ImageUploadArgs{
+								SignalName:      pfx + "background_image",
+								UploadURL:       "/admin/pages/blocks/upload-image",
+								FormID:          fmt.Sprintf("block-form-%d", block.ID),
+								Label:           "Background Image",
+								ID:              fmt.Sprintf("bg-image-%d", block.ID),
+								Hint:            "Recommended: 1920x1080px, JPG or PNG",
+								PreviewW:        "w-28",
+								PreviewH:        "h-20",
+								Horizontal:      true,
+								Clearable:       true,
+								UploadingSignal: "",
+								StatusSignal:    "",
+							})
+						}
+					</div>
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							Headline
+						}
+						@input.Input(input.InputArgs{
+							Type: "text", Placeholder: "Enter headline…",
+							Class: "w-full", Required: true, Attributes: bindAttr(pfx, "headline"),
+						})
+					</div>
+					<div class="space-y-1.5">
+						@label.Label(label.LabelArgs{}) {
+							Subheadline
+						}
+						@input.Input(input.InputArgs{
+							Type: "text", Placeholder: "Enter subheadline…",
+							Class: "w-full", Attributes: bindAttr(pfx, "subheadline"),
+						})
+					</div>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div class="space-y-1.5">
+							@label.Label(label.LabelArgs{}) {
+								CTA Text
+							}
+							@input.Input(input.InputArgs{
+								Type: "text", Placeholder: "e.g. Listen Now",
+								Class: "w-full", Attributes: bindAttr(pfx, "cta_text"),
+							})
+						</div>
+						<div class="space-y-1.5">
+							@label.Label(label.LabelArgs{}) {
+								CTA URL
+							}
+							@input.Input(input.InputArgs{
+								Type: "text", Placeholder: "/episodes",
+								Class: "w-full", Attributes: bindAttr(pfx, "cta_url"),
+							})
+						</div>
+					</div>
+					<div class="space-y-1.5 pt-1">
+						{{
+							overlayAttrs := bindAttr(pfx, "overlay_opacity")
+							overlayAttrs["min"] = "0"
+							overlayAttrs["max"] = "0.9"
+							overlayAttrs["step"] = "0.05"
+							overlayAttrs["inputmode"] = "decimal"
+						}}
+						@label.Label(label.LabelArgs{}) {
+							Overlay Opacity
+						}
+						@input.Input(input.InputArgs{
+							Type: "number", Placeholder: "0.5",
+							Class: "w-full", Attributes: overlayAttrs,
+						})
+						<p class="text-xs text-muted-foreground">Set the dark overlay strength from 0 to 0.9.</p>
+					</div>
+				</div>
+			</div>
+		case "cta":
+			<div class="space-y-3">
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Headline
+					}
+					@input.Input(input.InputArgs{
+						Type: "text", Placeholder: "Enter headline…",
+						Class: "w-full", Required: true, Attributes: bindAttr(pfx, "headline"),
+					})
+				</div>
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Description
+					}
+					@textarea.Textarea(textarea.TextareaArgs{
+						Placeholder: "Enter description…",
+						Class:       "w-full",
+						Attributes:  bindAttr(pfx, "description"),
+					})
+				</div>
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Button Text
+					}
+					@input.Input(input.InputArgs{
+						Type: "text", Placeholder: "e.g. Get Started",
+						Class: "w-full", Attributes: bindAttr(pfx, "button_text"),
+					})
+				</div>
+				<div class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Button URL
+					}
+					@input.Input(input.InputArgs{
+						Type: "text", Placeholder: "/signup",
+						Class: "w-full", Attributes: bindAttr(pfx, "button_url"),
+					})
+				</div>
+			</div>
+		case "features":
+			@featuresEditor(pageID, block, pfx)
+		case "episodes_showcase":
+			@episodesShowcaseEditor(block, pfx)
+		case "testimonials":
+			@testimonialsEditor(pageID, block, pfx)
+		case "footer":
+			@footerEditor(pageID, block, pfx)
+		case "prose":
+			{{
+				textareaID := pfx + "body_input"
+				taAttrs := bindAttr(pfx, "body")
+				taAttrs["id"] = textareaID
+			}}
+			<div class="space-y-3" data-signals:prose_mode="'edit'">
+				<div class="flex items-center justify-between gap-3">
+					<span class="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Rich Text</span>
+					<div class="inline-flex rounded-lg border border-border/70 bg-muted/40 p-0.5" role="tablist" aria-label="Rich text view">
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost", Size: "sm", Type: "button",
+							Class: "h-8 gap-1.5 px-2.5 text-xs data-[active=true]:bg-background data-[active=true]:shadow-sm",
+							Attributes: map[string]any{
+								"data-on:click": "$prose_mode = 'edit'",
+								"data-attr-data-active": "$prose_mode === 'edit'",
+								"data-attr-aria-selected": "$prose_mode === 'edit'",
+								"role": "tab",
+							},
+						}) {
+							@icon.Lucide("pencil", "size-3.5")
+							Edit
+						}
+						@button.Button(button.ButtonArgs{
+							Variant: "ghost", Size: "sm", Type: "button",
+							Class: "h-8 gap-1.5 px-2.5 text-xs data-[active=true]:bg-background data-[active=true]:shadow-sm",
+							Attributes: map[string]any{
+								"data-on:click": "$prose_mode = 'preview'",
+								"data-attr-data-active": "$prose_mode === 'preview'",
+								"data-attr-aria-selected": "$prose_mode === 'preview'",
+								"role": "tab",
+							},
+						}) {
+							@icon.Lucide("eye", "size-3.5")
+							Preview
+						}
+					</div>
+				</div>
+				<div data-show="$prose_mode === 'edit'" class="space-y-1.5">
+					@label.Label(label.LabelArgs{}) {
+						Content (Markdown)
+					}
+					@markdowntoolbar.Toolbar(textareaID, "")
+					@textarea.Textarea(textarea.TextareaArgs{
+						Placeholder: "Write your content in markdown…",
+						Class:       "w-full min-h-48 font-mono", Required: true,
+						Attributes:  taAttrs,
+					})
+				</div>
+				<div data-show="$prose_mode === 'preview'" class="min-h-48 rounded-xl border border-border/70 bg-background/60 p-4">
+					<div class="prose prose-public max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1">
+						if prosePreviewHTML(block) != "" {
+							@templ.Raw(prosePreviewHTML(block))
+						} else {
+							<p class="text-sm text-muted-foreground">Preview will appear here as you write content.</p>
+						}
+					</div>
+				</div>
+			</div>
+		}
+	}
+
+templ featuresEditor(pageID int64, block *domain.PageBlock, pfx string) {
+	{{ content := parseBlockContent(block) }}
+	{{ items := toItems(content["items"]) }}
+	<div class="space-y-3">
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Section Title
+			}
+			@input.Input(input.InputArgs{
+				Type: "text", Placeholder: "Enter section title…",
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "section_title"),
+			})
+		</div>
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Section Description
+			}
+			@textarea.Textarea(textarea.TextareaArgs{
+				Placeholder: "Enter description…",
+				Class:       "w-full",
+				Attributes:  bindAttr(pfx, "section_description"),
+			})
+		</div>
+		<div class="space-y-2">
+			<div class="flex items-center justify-between">
+				@label.Label(label.LabelArgs{}) {
+					Features
+				}
+				@button.Button(button.ButtonArgs{
+					Variant: "outline", Size: "sm", Type: "button",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks/%d/items?type=feature')", pageID, block.ID),
+					},
+				}) {
+					@icon.Lucide("plus", "size-4 mr-1")
+					Add Feature
+				}
+			</div>
+			<div id={ fmt.Sprintf("block-%d-features", block.ID) } class="space-y-2">
+				for i, item := range items {
+					@featureItemEditor(pageID, block.ID, pfx, i, item)
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ featureItemEditor(pageID int64, blockID int64, pfx string, index int, item map[string]any) {
+	<div class="border rounded-lg p-3 space-y-2">
+		<div class="flex items-center justify-between">
+			<span class="text-xs font-medium text-muted-foreground">Feature { fmt.Sprintf("%d", index+1) }</span>
+			@button.Button(button.ButtonArgs{
+				Variant: "ghost", Size: "icon", Type: "button",
+				Attributes: map[string]any{
+					"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d/items/%d?type=feature')", pageID, blockID, index),
+				},
+			}) {
+				@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+			}
+		</div>
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Icon name (e.g. mic, headphones)",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_icon", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Feature title",
+			Class: "w-full", Required: true, Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_title", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Feature description",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_description", index)),
+		})
+	</div>
+}
+
+templ episodesShowcaseEditor(block *domain.PageBlock, pfx string) {
+	<div class="space-y-3">
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Section Title
+			}
+			@input.Input(input.InputArgs{
+				Type: "text", Placeholder: "Enter section title…",
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "section_title"),
+			})
+		</div>
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Section Description
+			}
+			@textarea.Textarea(textarea.TextareaArgs{
+				Placeholder: "Enter description…",
+				Class:       "w-full",
+				Attributes:  bindAttr(pfx, "section_description"),
+			})
+		</div>
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Max Episodes
+			}
+			@input.Input(input.InputArgs{
+				Type: "number", Placeholder: "6",
+				Class: "w-full", Attributes: bindAttr(pfx, "max_episodes"),
+			})
+		</div>
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Display Mode
+			}
+			@selectcomponent.Select(selectcomponent.SelectArgs{
+				ID:           pfx + "display_mode_select",
+				DefaultValue: displayModeVal(block),
+				Options: []selectcomponent.SelectOptionArgs{
+					{Value: "grid", Label: "Grid"},
+					{Value: "list", Label: "List"},
+				},
+				Class:    "w-full",
+				OnChange: fmt.Sprintf("$%sdisplay_mode = $%sdisplay_mode_select.value", pfx, pfx),
+			})
+		</div>
+	</div>
+}
+
+templ testimonialsEditor(pageID int64, block *domain.PageBlock, pfx string) {
+	{{ content := parseBlockContent(block) }}
+	{{ items := toItems(content["items"]) }}
+	<div class="space-y-3">
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Section Title
+			}
+			@input.Input(input.InputArgs{
+				Type: "text", Placeholder: "Enter section title…",
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "section_title"),
+			})
+		</div>
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Section Description
+			}
+			@textarea.Textarea(textarea.TextareaArgs{
+				Placeholder: "Enter description…",
+				Class:       "w-full",
+				Attributes:  bindAttr(pfx, "section_description"),
+			})
+		</div>
+		<div class="space-y-2">
+			<div class="flex items-center justify-between">
+				@label.Label(label.LabelArgs{}) {
+					Testimonials
+				}
+				@button.Button(button.ButtonArgs{
+					Variant: "outline", Size: "sm", Type: "button",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks/%d/items?type=testimonial')", pageID, block.ID),
+					},
+				}) {
+					@icon.Lucide("plus", "size-4 mr-1")
+					Add Testimonial
+				}
+			</div>
+			<div id={ fmt.Sprintf("block-%d-testimonials", block.ID) } class="space-y-2">
+				for i, item := range items {
+					@testimonialItemEditor(pageID, block.ID, pfx, i, item)
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ testimonialItemEditor(pageID int64, blockID int64, pfx string, index int, item map[string]any) {
+	<div class="border rounded-lg p-3 space-y-2">
+		<div class="flex items-center justify-between">
+			<span class="text-xs font-medium text-muted-foreground">Testimonial { fmt.Sprintf("%d", index+1) }</span>
+			@button.Button(button.ButtonArgs{
+				Variant: "ghost", Size: "icon", Type: "button",
+				Attributes: map[string]any{
+					"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d/items/%d?type=testimonial')", pageID, blockID, index),
+				},
+			}) {
+				@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+			}
+		</div>
+		@textarea.Textarea(textarea.TextareaArgs{
+			Placeholder: "Quote…",
+			Class:       "w-full", Required: true,
+			Attributes:  bindAttr(pfx, fmt.Sprintf("item_%d_quote", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Author name",
+			Class: "w-full", Required: true, Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_author", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Author role (e.g. Listener)",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_role", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Avatar URL (optional)",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("item_%d_avatar_url", index)),
+		})
+	</div>
+}
+
+templ footerEditor(pageID int64, block *domain.PageBlock, pfx string) {
+	{{ content := parseBlockContent(block) }}
+	{{ links := toItems(content["links"]) }}
+	{{ socialLinks := toItems(content["social_links"]) }}
+	<div class="space-y-3">
+		<div class="space-y-1.5">
+			@label.Label(label.LabelArgs{}) {
+				Copyright
+			}
+			@input.Input(input.InputArgs{
+				Type: "text", Placeholder: "© 2026 My Podcast",
+				Class: "w-full", Required: true, Attributes: bindAttr(pfx, "copyright"),
+			})
+		</div>
+		<div class="space-y-2">
+			<div class="flex items-center justify-between">
+				@label.Label(label.LabelArgs{}) {
+					Navigation Links
+				}
+				@button.Button(button.ButtonArgs{
+					Variant: "outline", Size: "sm", Type: "button",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks/%d/items?type=link')", pageID, block.ID),
+					},
+				}) {
+					@icon.Lucide("plus", "size-4 mr-1")
+					Add Link
+				}
+			</div>
+			<div id={ fmt.Sprintf("block-%d-footer-links", block.ID) } class="space-y-2">
+				for i, link := range links {
+					@footerLinkEditor(pageID, block.ID, pfx, i, link)
+				}
+			</div>
+		</div>
+		<div class="space-y-2">
+			<div class="flex items-center justify-between">
+				@label.Label(label.LabelArgs{}) {
+					Social Links
+				}
+				@button.Button(button.ButtonArgs{
+					Variant: "outline", Size: "sm", Type: "button",
+					Attributes: map[string]any{
+						"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks/%d/items?type=social')", pageID, block.ID),
+					},
+				}) {
+					@icon.Lucide("plus", "size-4 mr-1")
+					Add Social
+				}
+			</div>
+			<div id={ fmt.Sprintf("block-%d-footer-social", block.ID) } class="space-y-2">
+				for i, link := range socialLinks {
+					@footerSocialEditor(pageID, block.ID, pfx, i, link)
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ footerLinkEditor(pageID int64, blockID int64, pfx string, index int, link map[string]any) {
+	<div class="border rounded-lg p-3 space-y-2">
+		<div class="flex items-center justify-between">
+			<span class="text-xs font-medium text-muted-foreground">Link { fmt.Sprintf("%d", index+1) }</span>
+			@button.Button(button.ButtonArgs{
+				Variant: "ghost", Size: "icon", Type: "button",
+				Attributes: map[string]any{
+					"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d/items/%d?type=link')", pageID, blockID, index),
+				},
+			}) {
+				@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+			}
+		</div>
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Label",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("link_%d_label", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "URL",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("link_%d_url", index)),
+		})
+	</div>
+}
+
+templ footerSocialEditor(pageID int64, blockID int64, pfx string, index int, link map[string]any) {
+	<div class="border rounded-lg p-3 space-y-2">
+		<div class="flex items-center justify-between">
+			<span class="text-xs font-medium text-muted-foreground">Social { fmt.Sprintf("%d", index+1) }</span>
+			@button.Button(button.ButtonArgs{
+				Variant: "ghost", Size: "icon", Type: "button",
+				Attributes: map[string]any{
+					"data-on:click": fmt.Sprintf("@delete('/admin/pages/%d/blocks/%d/items/%d?type=social')", pageID, blockID, index),
+				},
+			}) {
+				@icon.Lucide("trash-2", "size-4 text-muted-foreground")
+			}
+		</div>
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "Platform (e.g. twitter, github)",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("social_%d_platform", index)),
+		})
+		@input.Input(input.InputArgs{
+			Type: "text", Placeholder: "URL",
+			Class: "w-full", Attributes: bindAttr(pfx, fmt.Sprintf("social_%d_url", index)),
+		})
+	</div>
+}
+
+templ addBlockControls(pageID int64) {
+	<div
+		class="flex items-center gap-2"
+		data-signals:new_block_type="'hero'"
+	>
+		@selectcomponent.Select(selectcomponent.SelectArgs{
+			ID:           "add-block-select",
+			DefaultValue: "hero",
+			Options: []selectcomponent.SelectOptionArgs{
+				{Value: "hero", Label: "Hero"},
+				{Value: "features", Label: "Features"},
+				{Value: "episodes_showcase", Label: "Episodes"},
+				{Value: "testimonials", Label: "Testimonials"},
+				{Value: "cta", Label: "Call to Action"},
+				{Value: "footer", Label: "Footer"},
+				{Value: "prose", Label: "Rich Text"},
+			},
+			Placeholder: "Block type",
+			Class:       "w-40",
+			OnChange:    "$new_block_type = $add_block_select.value",
+		})
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+			Type:    "button",
+			Attributes: map[string]any{
+				"data-on:click": fmt.Sprintf("@post('/admin/pages/%d/blocks')", pageID),
+			},
+		}) {
+			@icon.Lucide("plus", "size-4 mr-1")
+			Add Block
+		}
+	</div>
+}
+
+templ blockListEmpty() {
+	<div class="flex flex-col items-center gap-2 py-6 text-center">
+		@icon.Lucide("layers", "size-8 text-muted-foreground/30")
+		<p class="text-sm text-muted-foreground">No blocks yet. Add blocks to build your page layout.</p>
+	</div>
+}
+
+// blockSummarySignal returns a Datastar expression for the block's summary signal.
+func blockSummarySignal(block *domain.PageBlock) string {
+	pfx := blockEditPrefix(block, "")
+	switch block.BlockType {
+	case "hero":
+		return fmt.Sprintf("$%sheadline !== '' ? $%sheadline : ($%ssubheadline !== '' ? $%ssubheadline : 'Empty block')", pfx, pfx, pfx, pfx)
+	case "cta":
+		return fmt.Sprintf("$%sheadline !== '' ? $%sheadline : ($%sdescription !== '' ? $%sdescription : 'Empty block')", pfx, pfx, pfx, pfx)
+	case "features", "testimonials", "episodes_showcase":
+		return fmt.Sprintf("$%ssection_title !== '' ? $%ssection_title : 'Empty block'", pfx, pfx)
+	case "footer":
+		return fmt.Sprintf("$%scopyright !== '' ? $%scopyright : 'Empty block'", pfx, pfx)
+	case "prose":
+		return fmt.Sprintf("$%sbody !== '' ? $%sbody.substring(0, 50) + ($%sbody.length > 50 ? '...' : '') : 'Empty block'", pfx, pfx, pfx)
+	}
+	return "'Empty block'"
+}
+
+func blockTypeLabel(blockType string) string {
+	labels := map[string]string{
+		"hero":              "Hero",
+		"features":          "Features",
+		"episodes_showcase": "Episodes",
+		"testimonials":      "Testimonials",
+		"cta":               "Call to Action",
+		"footer":            "Footer",
+		"prose":             "Rich Text",
+	}
+	if label, ok := labels[blockType]; ok {
+		return label
+	}
+	return blockType
+}
+
+func blockSummary(block *domain.PageBlock) string {
+	var raw map[string]any
+	if err := json.Unmarshal(block.Content, &raw); err != nil {
+		return "Empty block"
+	}
+	switch block.BlockType {
+	case "hero":
+		if headline, ok := raw["headline"].(string); ok && headline != "" {
+			return headline
+		}
+	case "features":
+		if title, ok := raw["section_title"].(string); ok && title != "" {
+			return title
+		}
+	case "cta":
+		if headline, ok := raw["headline"].(string); ok && headline != "" {
+			return headline
+		}
+	case "testimonials":
+		if title, ok := raw["section_title"].(string); ok && title != "" {
+			return title
+		}
+	}
+	return "Empty block"
+}
+
+// parseBlockContent returns the block's JSON content as a map, or an empty map.
+func parseBlockContent(block *domain.PageBlock) map[string]any {
+	var raw map[string]any
+	if err := json.Unmarshal(block.Content, &raw); err != nil {
+		return map[string]any{}
+	}
+	return raw
+}
+
+// toItems converts a JSON items array to []map[string]any.
+func toItems(v any) []map[string]any {
+	if v == nil {
+		return nil
+	}
+	arr, ok := v.([]any)
+	if !ok {
+		return nil
+	}
+	items := make([]map[string]any, 0, len(arr))
+	for _, item := range arr {
+		if m, ok := item.(map[string]any); ok {
+			items = append(items, m)
+		}
+	}
+	return items
+}
+
+// blockEditPrefix returns the signal prefix for a block e.g. "block_5_" or "block_5_editing".
+func blockEditPrefix(block *domain.PageBlock, suffix string) string {
+	base := fmt.Sprintf("block_%d_", block.ID)
+	if suffix == "" {
+		return base
+	}
+	return base + suffix
+}
+
+// blockSignalAttrs returns the data-signals-* HTML attributes for a block's editable fields.
+func blockSignalAttrs(block *domain.PageBlock) templ.Attributes {
+	content := parseBlockContent(block)
+	pfx := blockEditPrefix(block, "")
+
+	sig := func(name string) string { return "data-signals:" + pfx + name }
+
+	attrs := templ.Attributes{
+		sig("editing"):    "false",
+		sig("block_type"): fmt.Sprintf("'%s'", block.BlockType),
+	}
+
+	switch block.BlockType {
+	case "hero":
+		attrs[sig("headline")] = jsSignalVal(content["headline"])
+		attrs[sig("subheadline")] = jsSignalVal(content["subheadline"])
+		attrs[sig("cta_text")] = jsSignalVal(content["cta_text"])
+		attrs[sig("cta_url")] = jsSignalVal(content["cta_url"])
+		attrs[sig("background_image")] = jsSignalVal(content["background_image"])
+		attrs[sig("overlay_opacity")] = jsSignalVal(content["overlay_opacity"])
+	case "cta":
+		desc := content["description"]
+		if desc == nil {
+			desc = content["subheadline"]
+		}
+		attrs[sig("headline")] = jsSignalVal(content["headline"])
+		attrs[sig("description")] = jsSignalVal(desc)
+		attrs[sig("button_text")] = jsSignalVal(content["button_text"])
+		attrs[sig("button_url")] = jsSignalVal(content["button_url"])
+	case "features":
+		attrs[sig("section_title")] = jsSignalVal(content["section_title"])
+		attrs[sig("section_description")] = jsSignalVal(content["section_description"])
+		if items := toItems(content["items"]); items != nil {
+			for i, item := range items {
+				attrs[sig(fmt.Sprintf("item_%d_icon", i))] = jsSignalVal(item["icon"])
+				attrs[sig(fmt.Sprintf("item_%d_title", i))] = jsSignalVal(item["title"])
+				attrs[sig(fmt.Sprintf("item_%d_description", i))] = jsSignalVal(item["description"])
+			}
+		}
+	case "episodes_showcase":
+		attrs[sig("section_title")] = jsSignalVal(content["section_title"])
+		attrs[sig("section_description")] = jsSignalVal(content["section_description"])
+		attrs[sig("max_episodes")] = jsNumberSignalVal(content["max_episodes"])
+		attrs[sig("display_mode")] = jsSignalVal(content["display_mode"])
+	case "testimonials":
+		attrs[sig("section_title")] = jsSignalVal(content["section_title"])
+		attrs[sig("section_description")] = jsSignalVal(content["section_description"])
+		if items := toItems(content["items"]); items != nil {
+			for i, item := range items {
+				attrs[sig(fmt.Sprintf("item_%d_quote", i))] = jsSignalVal(item["quote"])
+				attrs[sig(fmt.Sprintf("item_%d_author", i))] = jsSignalVal(item["author"])
+				attrs[sig(fmt.Sprintf("item_%d_role", i))] = jsSignalVal(item["role"])
+				attrs[sig(fmt.Sprintf("item_%d_avatar_url", i))] = jsSignalVal(item["avatar_url"])
+			}
+		}
+	case "footer":
+		attrs[sig("copyright")] = jsSignalVal(content["copyright"])
+		attrs[sig("text")] = jsSignalVal(content["text"])
+		if links := toItems(content["links"]); links != nil {
+			for i, link := range links {
+				attrs[sig(fmt.Sprintf("link_%d_label", i))] = jsSignalVal(link["label"])
+				attrs[sig(fmt.Sprintf("link_%d_url", i))] = jsSignalVal(link["url"])
+			}
+		}
+		if socialLinks := toItems(content["social_links"]); socialLinks != nil {
+			for i, link := range socialLinks {
+				attrs[sig(fmt.Sprintf("social_%d_platform", i))] = jsSignalVal(link["platform"])
+				attrs[sig(fmt.Sprintf("social_%d_url", i))] = jsSignalVal(link["url"])
+			}
+		}
+	case "prose":
+		attrs[sig("body")] = jsSignalVal(content["body"])
+	}
+
+	return attrs
+}
+
+// jsSignalVal converts a Go value to a JS signal string literal.
+// JSON-encodes so newlines and quotes survive as expression literals — a
+// single-quoted JS string cannot span lines, and markdown content often has them.
+// nil/empty returns "".
+func jsSignalVal(v any) string {
+	if v == nil {
+		return "''"
+	}
+	s, ok := v.(string)
+	if !ok || s == "" {
+		return "''"
+	}
+	b, err := json.Marshal(s)
+	if err != nil {
+		return "''"
+	}
+	return string(b)
+}
+
+// jsNumberSignalVal converts a Go value to a JS number signal.
+func prosePreviewHTML(block *domain.PageBlock) string {
+	content := parseBlockContent(block)
+	body, _ := content["body"].(string)
+	if body == "" {
+		return ""
+	}
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(body), &buf); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
+func jsNumberSignalVal(v any) string {
+	if v == nil {
+		return "0"
+	}
+	if f, ok := v.(float64); ok {
+		return fmt.Sprintf("%d", int(f))
+	}
+	return "0"
+}
+
+// displayModeVal returns the display_mode from block content, defaulting to "grid".
+func displayModeVal(block *domain.PageBlock) string {
+	content := parseBlockContent(block)
+	if v, ok := content["display_mode"].(string); ok && v != "" {
+		return v
+	}
+	return "grid"
+}

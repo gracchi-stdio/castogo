@@ -1,0 +1,29 @@
+package page
+
+import "github.com/gracchi-stdio/castogo/internal/view/layout"
+import "github.com/gracchi-stdio/castogo/internal/view/components/button"
+import "github.com/gracchi-stdio/castogo/internal/view/components/icon"
+import "github.com/gracchi-stdio/castogo/internal/view/components/formactions"
+
+templ EditSettings(shared *layout.AdminSharedData, args Args) {
+	@layout.AdminLayout("Edit Page", shared, editPageActions(), Subnav(args.Page.ID, "settings"), formactions.FormActions(formactions.FormActionsArgs{
+		FormID:      "page-settings-form",
+		CancelLabel: "Back",
+		SubmitLabel: "Save Changes",
+		CancelHref:  "/admin/pages",
+	})) {
+		@Settings(args)
+	}
+}
+
+templ editPageActions() {
+	<a href="/admin/pages">
+		@button.Button(button.ButtonArgs{
+			Variant: "outline",
+			Size:    "sm",
+		}) {
+			@icon.Lucide("arrow-left", "size-4 mr-1")
+			Back to Pages
+		}
+	</a>
+}

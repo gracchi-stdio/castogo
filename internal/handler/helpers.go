@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gracchi-stdio/castogo/internal/domain"
+	"github.com/gracchi-stdio/castogo/internal/view/layout"
 	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -121,13 +122,13 @@ func validationMsg(field, tag, param string) string {
 	}
 }
 
-func getSharedData(c *echo.Context) *domain.AdminSharedData {
+func getSharedData(c *echo.Context) *layout.AdminSharedData {
 	user, ok := c.Get("user").(*domain.User)
 	if !ok || user == nil {
 		return nil
 	}
 
-	return &domain.AdminSharedData{
+	return &layout.AdminSharedData{
 		User:        user,
 		CurrentPath: c.Request().URL.Path,
 	}

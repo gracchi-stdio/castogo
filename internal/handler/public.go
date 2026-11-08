@@ -11,10 +11,10 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	"github.com/gracchi-stdio/castogo/internal/view/authview"
 	"github.com/gracchi-stdio/castogo/internal/view/layout"
-	"github.com/gracchi-stdio/castogo/internal/view/pageview"
-	"github.com/gracchi-stdio/castogo/internal/view/searchview"
+	"github.com/gracchi-stdio/castogo/internal/view/public/auth"
+	"github.com/gracchi-stdio/castogo/internal/view/public/page"
+	"github.com/gracchi-stdio/castogo/internal/view/public/search"
 	"github.com/labstack/echo-contrib/v5/session"
 	"github.com/labstack/echo/v5"
 )
@@ -54,12 +54,12 @@ func (h *PublicHandler) RegisterRoutes(e *echo.Echo) {
 	e.GET("/feed/podcast.xml", h.RSSFeed)
 
 	// Auth
-	e.GET("/login", echo.WrapHandler(templ.Handler(authview.LoginPage())))
+	e.GET("/login", echo.WrapHandler(templ.Handler(auth.LoginPage())))
 	e.POST("/login", h.login)
 	e.POST("/logout", h.logout)
 
 	if config.Cfg.RegistrationEnabled {
-		e.GET("/register", echo.WrapHandler(templ.Handler(authview.RegisterPage())))
+		e.GET("/register", echo.WrapHandler(templ.Handler(auth.RegisterPage())))
 	}
 
 	e.GET("/*", h.pageResolver)
@@ -98,7 +98,7 @@ func (h *PublicHandler) renderPublishedPage(c *echo.Context, path string, latest
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching podcast settings")
 	}
 
-	data := &pageview.PageData{
+	data := &page.PageData{
 		Page:           pwd.Page,
 		Blocks:         toBlocks(pwd.Blocks),
 		Episodes:       episodes,
@@ -107,7 +107,7 @@ func (h *PublicHandler) renderPublishedPage(c *echo.Context, path string, latest
 		Settings:       *settings,
 	}
 
-	return echo.WrapHandler(templ.Handler(pageview.PageView(data)))(c)
+	return echo.WrapHandler(templ.Handler(page.PageView(data)))(c)
 }
 
 type LoginInput struct {
@@ -207,14 +207,14 @@ func (h *PublicHandler) searchPage(c *echo.Context) error {
 		}
 	}
 
-	data := &searchview.SearchPageData{
+	data := &search.SearchPageData{
 		Query:    query,
 		Type:     searchType,
 		Pages:    pages,
 		Episodes: episodes,
 		Nav:      h.buildPublicNav(c),
 	}
-	return echo.WrapHandler(templ.Handler(searchview.SearchPage(data)))(c)
+	return echo.WrapHandler(templ.Handler(search.SearchPage(data)))(c)
 }
 
 func toBlocks(blocks []*domain.PageBlock) []domain.PageBlock {

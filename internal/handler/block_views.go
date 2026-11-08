@@ -7,7 +7,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
+	"github.com/gracchi-stdio/castogo/internal/view/admin/page"
 	"github.com/labstack/echo/v5"
 )
 
@@ -18,7 +18,7 @@ func (h *AdminHandler) blockCreate(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load parent pages")
 	}
 
-	return echo.WrapHandler(templ.Handler(pageform.Create(getSharedData(c), pageform.Args{
+	return echo.WrapHandler(templ.Handler(page.Create(getSharedData(c), page.Args{
 		ParentPages: parentPages,
 	})))(c)
 }
@@ -53,9 +53,9 @@ func (h *AdminHandler) blockEdit(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load page")
 	}
 
-	return echo.WrapHandler(templ.Handler(pageform.EditBlocks(
+	return echo.WrapHandler(templ.Handler(page.EditBlocks(
 		getSharedData(c),
-		pageform.Args{
+		page.Args{
 			Page:   pageWithBlocks.Page,
 			Blocks: pageWithBlocks.Blocks,
 		},

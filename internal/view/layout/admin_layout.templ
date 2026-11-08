@@ -2,7 +2,6 @@ package layout
 
 import (
 	"github.com/gracchi-stdio/castogo/internal/config"
-	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/components/brand"
 	"github.com/gracchi-stdio/castogo/internal/view/components/dropdown"
 	"github.com/gracchi-stdio/castogo/internal/view/components/icon"
@@ -10,7 +9,7 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/view/components/themetoggle"
 )
 
-templ AdminLayout(title string, data *domain.AdminSharedData, actions, subnav, footer templ.Component) {
+templ AdminLayout(title string, data *AdminSharedData, actions, subnav, footer templ.Component) {
 	@BaseLayout("") {
 		{{
 			sidebarID := "admin_sidebar"

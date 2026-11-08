@@ -1,6 +1,8 @@
 package layout
 
-import "github.com/gracchi-stdio/castogo/internal/view/components/sidebar"
+import (
+	"github.com/gracchi-stdio/castogo/internal/view/components/sidebar"
+)
 
 func sidebarSections(currentPath string) []sidebar.SidebarSection {
 	return []sidebar.SidebarSection{

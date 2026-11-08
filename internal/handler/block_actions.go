@@ -12,8 +12,8 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
-	blockEditor "github.com/gracchi-stdio/castogo/internal/view/editors/blockeditor"
-	pageform "github.com/gracchi-stdio/castogo/internal/view/editors/page"
+	"github.com/gracchi-stdio/castogo/internal/view/admin/blockeditor"
+	"github.com/gracchi-stdio/castogo/internal/view/admin/page"
 	"github.com/labstack/echo/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -72,7 +72,7 @@ func (h *AdminHandler) blockCreateAction(c *echo.Context) error {
 	if blockType == "" {
 		blockType = "hero"
 	}
-	if blockEditor.Lookup(blockType) == nil {
+	if blockeditor.Lookup(blockType) == nil {
 		blockType = "hero"
 	}
 
@@ -93,11 +93,11 @@ func (h *AdminHandler) blockCreateAction(c *echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load blocks")
 	}
-	listHTML, err := pageform.RenderBlockListFragment(pageID, pwb.Blocks, saved.ID)
+	listHTML, err := page.RenderBlockListFragment(pageID, pwb.Blocks, saved.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render list")
 	}
-	formHTML, err := pageform.RenderBlockDetailFragment(pageID, saved)
+	formHTML, err := page.RenderBlockDetailFragment(pageID, saved)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render block")
 	}
@@ -108,7 +108,7 @@ func (h *AdminHandler) blockCreateAction(c *echo.Context) error {
 	// SignalsForBlock: saving serializes Datastar's global store, which is
 	// populated here rather than relying on the browser re-applying the
 	// pane's data-signals attributes after the morph.
-	out.MarshalAndPatchSignals(blockEditor.SignalsForBlock(saved))
+	out.MarshalAndPatchSignals(blockeditor.SignalsForBlock(saved))
 	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
 	out.PatchElements(formHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
 	out.ExecuteScript("window.bustBlocksCache()")
@@ -156,7 +156,7 @@ func (h *AdminHandler) blockDeleteAction(c *echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load blocks")
 	}
-	listHTML, err := pageform.RenderBlockListFragment(pageID, pwb.Blocks, activeID)
+	listHTML, err := page.RenderBlockListFragment(pageID, pwb.Blocks, activeID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render list")
 	}
@@ -166,7 +166,7 @@ func (h *AdminHandler) blockDeleteAction(c *echo.Context) error {
 
 	// If we deleted the block currently open in the form pane, clear the pane.
 	if activeID != 0 && activeID == blockID {
-		emptyHTML, err := pageform.RenderBlockFormEmptyFragment()
+		emptyHTML, err := page.RenderBlockFormEmptyFragment()
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render")
 		}
@@ -211,11 +211,11 @@ func (h *AdminHandler) blockSelect(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Block not found")
 	}
 
-	listHTML, err := pageform.RenderBlockListFragment(pageID, pwb.Blocks, blockID)
+	listHTML, err := page.RenderBlockListFragment(pageID, pwb.Blocks, blockID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render list")
 	}
-	formHTML, err := pageform.RenderBlockDetailFragment(pageID, block)
+	formHTML, err := page.RenderBlockDetailFragment(pageID, block)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render block")
 	}
@@ -225,7 +225,7 @@ func (h *AdminHandler) blockSelect(c *echo.Context) error {
 	// Push the block's signals into the store with the pane HTML — saving
 	// serializes the global store, so this is what makes the Save button's
 	// PATCH carry the block's fields (see SignalsForBlock).
-	out.MarshalAndPatchSignals(blockEditor.SignalsForBlock(block))
+	out.MarshalAndPatchSignals(blockeditor.SignalsForBlock(block))
 	out.PatchElements(listHTML, datastar.WithSelectorID("block-list"), datastar.WithModeInner())
 	out.PatchElements(formHTML, datastar.WithSelectorID("block-form-pane"), datastar.WithModeInner())
 	return nil
@@ -290,7 +290,7 @@ func (h *AdminHandler) blockUpdateAction(c *echo.Context) error {
 		out.ExecuteScript(toastScript("Block saved, but the list could not be refreshed", "error"))
 		return nil
 	}
-	listHTML, err := pageform.RenderBlockListFragment(pageID, pageWithBlocks.Blocks, blockID)
+	listHTML, err := page.RenderBlockListFragment(pageID, pageWithBlocks.Blocks, blockID)
 	if err != nil {
 		out.ExecuteScript(toastScript("Block saved, but the list could not be refreshed", "error"))
 		return nil
@@ -605,16 +605,16 @@ func (h *AdminHandler) blockAddItemAction(c *echo.Context) error {
 	}
 
 	// Re-render items via SSE patch (no full page reload)
-	html, err := blockEditor.RenderItemsFragment(pageID, block, itemType)
+	html, err := blockeditor.RenderItemsFragment(pageID, block, itemType)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render items")
 	}
 
-	containerID := blockEditor.ItemsContainerID(blockID, itemType)
+	containerID := blockeditor.ItemsContainerID(blockID, itemType)
 	signals := map[string]any{
 		fmt.Sprintf("block_%d_editing", blockID): true,
 	}
-	for k, v := range blockEditor.NewItemSignals(block, itemType) {
+	for k, v := range blockeditor.NewItemSignals(block, itemType) {
 		signals[k] = v
 	}
 
@@ -687,16 +687,16 @@ func (h *AdminHandler) blockRemoveItemAction(c *echo.Context) error {
 	}
 
 	// Re-render items via SSE patch (no full page reload)
-	html, err := blockEditor.RenderItemsFragment(pageID, block, itemType)
+	html, err := blockeditor.RenderItemsFragment(pageID, block, itemType)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to render items")
 	}
 
-	containerID := blockEditor.ItemsContainerID(blockID, itemType)
+	containerID := blockeditor.ItemsContainerID(blockID, itemType)
 	signals := map[string]any{
 		fmt.Sprintf("block_%d_editing", blockID): true,
 	}
-	for k, v := range blockEditor.AllItemSignals(block, itemType) {
+	for k, v := range blockeditor.AllItemSignals(block, itemType) {
 		signals[k] = v
 	}
 

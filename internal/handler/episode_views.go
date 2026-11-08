@@ -8,7 +8,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/repository"
-	episodeForm "github.com/gracchi-stdio/castogo/internal/view/editors/episode"
+	episodeview "github.com/gracchi-stdio/castogo/internal/view/admin/episode"
 	"github.com/labstack/echo/v5"
 )
 
@@ -32,7 +32,7 @@ func (h *AdminHandler) episodesList(c *echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load episodes")
 	}
-	return echo.WrapHandler(templ.Handler(episodeForm.List(getSharedData(c), episodeForm.ListArgs{
+	return echo.WrapHandler(templ.Handler(episodeview.List(getSharedData(c), episodeview.ListArgs{
 		Episodes: episodes,
 		Status:   status,
 		Search:   search,
@@ -41,7 +41,7 @@ func (h *AdminHandler) episodesList(c *echo.Context) error {
 
 // episodeCreatePage renders the new-episode form.
 func (h *AdminHandler) episodeCreatePage(c *echo.Context) error {
-	return echo.WrapHandler(templ.Handler(episodeForm.Create(getSharedData(c))))(c)
+	return echo.WrapHandler(templ.Handler(episodeview.Create(getSharedData(c))))(c)
 }
 
 // episodeEdit renders the episode edit page (metadata form + companion-page card).
@@ -64,7 +64,7 @@ func (h *AdminHandler) episodeEdit(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load pages")
 	}
 
-	args := episodeForm.Args{Episode: episode, Pages: pages}
+	args := episodeview.Args{Episode: episode, Pages: pages}
 	if episode.LinkedPageID != nil {
 		for _, p := range pages {
 			if p.ID == *episode.LinkedPageID {
@@ -74,5 +74,5 @@ func (h *AdminHandler) episodeEdit(c *echo.Context) error {
 		}
 	}
 
-	return echo.WrapHandler(templ.Handler(episodeForm.Edit(getSharedData(c), args)))(c)
+	return echo.WrapHandler(templ.Handler(episodeview.Edit(getSharedData(c), args)))(c)
 }
