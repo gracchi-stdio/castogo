@@ -16,9 +16,7 @@ import (
 
 	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/handler"
-	"github.com/gracchi-stdio/castogo/internal/repository/postgres"
 	"github.com/gracchi-stdio/castogo/internal/service"
-	"github.com/gracchi-stdio/castogo/internal/session"
 	"github.com/gracchi-stdio/castogo/internal/version"
 	"github.com/gracchi-stdio/castogo/internal/view/notfoundview"
 
@@ -42,7 +40,7 @@ func main() {
 	e.Pre(middleware.RemoveTrailingSlash())
 
 	// Database
-	db, err := postgres.NewPool(context.Background(), config.Cfg.DatabaseURL)
+	db, err := connectDatabase(context.Background(), config.Cfg.DatabaseURL, config.Cfg.SessionSecret)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
@@ -51,19 +49,13 @@ func main() {
 		return c.Request().URL.Path == "/healthcheck"
 	}
 
-	// Session store (PostgreSQL-backed)
-	sessionStore, err := session.NewPGStore(db, []byte(config.Cfg.SessionSecret))
-	if err != nil {
-		log.Fatalf("failed to create session store: %v", err)
-	}
-
 	// Middleware. RequestID runs before the request logger so each log line
 	// carries a correlation id; Recover wraps everything so a panic in any
 	// downstream handler/middleware is caught.
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
 	e.Use(handler.RequestLogger(skipHealth))
-	e.Use(echosession.Middleware(sessionStore))
+	e.Use(echosession.Middleware(db.sessionStore))
 
 	// Echo's default IPExtractor trusts the X-Forwarded-For header blindly,
 	// which any client can forge. ExtractIPDirect reads the actual peer address
@@ -73,10 +65,10 @@ func main() {
 	e.IPExtractor = echo.ExtractIPDirect()
 
 	// Repositories
-	userRepo := postgres.NewUserRepo(db)
-	episodeRepo := postgres.NewEpisodeRepo(db)
-	podcastRepo := postgres.NewPodcastConfigRepository(db)
-	pageRepo := postgres.NewPageRepo(db)
+	userRepo := db.userRepo
+	episodeRepo := db.episodeRepo
+	podcastRepo := db.podcastRepo
+	pageRepo := db.pageRepo
 
 	// Services
 	authService := service.NewAuthService(userRepo)
@@ -106,7 +98,7 @@ func main() {
 	adminHandler.RegisterRoutes(adminGroup)
 
 	readyHandler := func(c *echo.Context) error {
-		if err := db.Ping(c.Request().Context()); err != nil {
+		if err := db.ping(c.Request().Context()); err != nil {
 			return c.JSON(http.StatusServiceUnavailable, map[string]string{
 				"status":  "unready",
 				"version": version.Version,
@@ -170,7 +162,7 @@ func main() {
 		config.Cfg.BunnyPullZoneID,
 		httpClient, // use default HTTP client
 	)
-	analyticsRepo := postgres.NewAnalyticsRepo(db)
+	analyticsRepo := db.analyticsRepo
 	analyticsService := service.NewAnalyticsService(fetcher, analyticsRepo, episodeRepo)
 	worker := service.NewAnalyticsWorker(analyticsService, 5*time.Hour)
 
@@ -189,7 +181,7 @@ func main() {
 
 	worker.Stop()
 
-	db.Close()
+	db.close()
 
 	log.Println("Server gracefully stopped")
 }
