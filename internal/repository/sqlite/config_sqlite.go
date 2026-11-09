@@ -11,9 +11,9 @@ import (
 	"github.com/gracchi-stdio/castogo/internal/sqlcsqlite"
 )
 
-var _ repository.PodcastConfigRepository = (*PocastConfigRepo)(nil)
+var _ repository.PodcastConfigRepository = (*PodcastConfigRepo)(nil)
 
-type PocastConfigRepo struct {
+type PodcastConfigRepo struct {
 	q *sqlcsqlite.Queries
 }
 
@@ -36,7 +36,7 @@ func podcastConfigFromRow(p *sqlcsqlite.PodcastConfig) *domain.PodcastConfig {
 }
 
 // Get implements [repository.PodcastConfigRepository].
-func (p *PocastConfigRepo) Get(ctx context.Context) (*domain.PodcastConfig, error) {
+func (p *PodcastConfigRepo) Get(ctx context.Context) (*domain.PodcastConfig, error) {
 	res, err := p.q.GetPodcastConfig(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -48,7 +48,7 @@ func (p *PocastConfigRepo) Get(ctx context.Context) (*domain.PodcastConfig, erro
 }
 
 // Update implements [repository.PodcastConfigRepository].
-func (p *PocastConfigRepo) Update(ctx context.Context, config *domain.UpdatePodcastConfig) (*domain.PodcastConfig, error) {
+func (p *PodcastConfigRepo) Update(ctx context.Context, config *domain.UpdatePodcastConfig) (*domain.PodcastConfig, error) {
 	res, err := p.q.UpdatePodcastConfig(ctx, sqlcsqlite.UpdatePodcastConfigParams{
 		ID:            config.ID,
 		Title:         config.Title,
@@ -70,6 +70,6 @@ func (p *PocastConfigRepo) Update(ctx context.Context, config *domain.UpdatePodc
 	return podcastConfigFromRow(&res), nil
 }
 
-func NewPodcastConfigRepo(db *sql.DB) *PocastConfigRepo {
-	return &PocastConfigRepo{q: sqlcsqlite.New(db)}
+func NewPodcastConfigRepo(db *sql.DB) *PodcastConfigRepo {
+	return &PodcastConfigRepo{q: sqlcsqlite.New(db)}
 }
