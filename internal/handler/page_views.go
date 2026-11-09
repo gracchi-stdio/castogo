@@ -60,3 +60,26 @@ func (h *AdminHandler) pageEdit(c *echo.Context) error {
 		},
 	)))(c)
 }
+
+func (h *AdminHandler) blockEdit(c *echo.Context) error {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid page ID")
+	}
+
+	pageWithBlocks, err := h.pageService.GetPageWithBlocks(c.Request().Context(), id)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "Page not found")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load page")
+	}
+
+	return echo.WrapHandler(templ.Handler(page.EditBlocks(
+		getSharedData(c),
+		page.Args{
+			Page:   pageWithBlocks.Page,
+			Blocks: pageWithBlocks.Blocks,
+		},
+	)))(c)
+}

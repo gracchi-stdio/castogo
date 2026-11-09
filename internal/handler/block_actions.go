@@ -1,16 +1,13 @@
 package handler
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/gracchi-stdio/castogo/internal/config"
 	"github.com/gracchi-stdio/castogo/internal/domain"
 	"github.com/gracchi-stdio/castogo/internal/view/admin/blockeditor"
 	"github.com/gracchi-stdio/castogo/internal/view/admin/page"
@@ -515,34 +512,6 @@ func (h *AdminHandler) blockUploadImage(c *echo.Context) error {
 		signalName: url,
 	})
 	return nil
-}
-
-// uploadImageFile validates the multipart "image_file" field and stores it
-// under <appname>/<keyPrefix>_<rand hex><ext>, returning the CDN URL. Shared by
-// the SSE-patching block image endpoint and the JSON slide-image endpoint.
-func (h *AdminHandler) uploadImageFile(c *echo.Context, keyPrefix string) (string, error) {
-	file, header, err := c.Request().FormFile("image_file")
-	if err != nil {
-		return "", errors.New("Please select a file to upload")
-	}
-	defer file.Close()
-
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	switch ext {
-	case ".jpg", ".jpeg", ".png", ".webp":
-	default:
-		return "", errors.New("Invalid file type. Please upload a JPG, PNG, or WebP image.")
-	}
-
-	b := make([]byte, 4)
-	_, _ = rand.Read(b)
-	filename := fmt.Sprintf("%s/%s_%x%s", strings.ToLower(strings.TrimSpace(config.Cfg.AppName)), keyPrefix, b, ext)
-
-	url, err := h.storageService.UploadFile(c.Request().Context(), file, filename)
-	if err != nil {
-		return "", errors.New("Failed to upload image. Please try again.")
-	}
-	return url, nil
 }
 
 func (h *AdminHandler) blockAddItemAction(c *echo.Context) error {
