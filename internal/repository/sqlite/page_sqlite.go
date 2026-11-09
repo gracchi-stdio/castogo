@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -85,7 +86,7 @@ func blockFromRow(b sqlcsqlite.PageBlock) (*domain.PageBlock, error) {
 		ID:        b.ID,
 		PageID:    b.PageID,
 		BlockType: b.BlockType,
-		Content:   b.Content,
+		Content:   json.RawMessage(b.Content),
 		SortOrder: int(b.SortOrder),
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
@@ -126,7 +127,7 @@ func (p *PageRepo) Create(ctx context.Context, page *domain.Page) (*domain.Page,
 // CreateBlock implements [repository.PageRepository].
 func (p *PageRepo) CreateBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error) {
 	result, err := p.q.CreateBlock(ctx, sqlcsqlite.CreateBlockParams{
-		Content:   block.Content,
+		Content:   domain.RawMessage(block.Content),
 		SortOrder: int64(block.SortOrder),
 		BlockType: block.BlockType,
 		PageID:    block.PageID,
@@ -262,7 +263,7 @@ func (p *PageRepo) Update(ctx context.Context, page *domain.Page) (*domain.Page,
 // UpdateBlock implements [repository.PageRepository].
 func (p *PageRepo) UpdateBlock(ctx context.Context, block *domain.PageBlock) (*domain.PageBlock, error) {
 	result, err := p.q.UpdateBlock(ctx, sqlcsqlite.UpdateBlockParams{
-		Content:   block.Content,
+		Content:   domain.RawMessage(block.Content),
 		SortOrder: toPtr(int64(block.SortOrder)),
 		ID:        block.ID,
 	})

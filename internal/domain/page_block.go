@@ -7,6 +7,36 @@ import (
 	"time"
 )
 
+// RawMessage is arbitrary JSON for a block's content column. It exists for
+// the same reason AudioMetadata/PageMetadata do: modernc hands TEXT as
+// string, libsql as []byte -- json.RawMessage implements neither Scan nor
+// Value, so reading blocks would fail on local file DBs without this type.
+type RawMessage []byte
+
+// Scan implements sql.Scanner. See AudioMetadata.Scan.
+func (m *RawMessage) Scan(src any) error {
+	switch v := src.(type) {
+	case nil:
+		*m = nil
+		return nil
+	case string:
+		*m = RawMessage(v)
+		return nil
+	case []byte:
+		*m = append((*m)[:0], v...)
+		return nil
+	default:
+		return fmt.Errorf("block content: unsupported scan type %T", src)
+	}
+}
+
+func (m RawMessage) Value() (driver.Value, error) {
+	if m == nil {
+		return nil, nil
+	}
+	return string(m), nil
+}
+
 type PageMetadata struct {
 	MetaTitle       string `json:"meta_title"`
 	MetaDescription string `json:"meta_description"`
